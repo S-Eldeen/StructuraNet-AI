@@ -10,14 +10,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
-      - name: Checkout Repo
-        uses: actions/checkout@v4
-
       - name: Send Slack Notification
         run: |
           curl -X POST -H 'Content-type: application/json' \
-          --data '{
-          "text":"🚀 New commit pushed to GitHub repo!"
-          }' \
+          --data "{
+          \"text\": \"🚀 New Push on Repo: ${{ github.repository }} \n👤 User: ${{ github.actor }} \n🌿 Branch: ${{ github.ref_name }}\"
+          }" \
           ${{ secrets.SLACK_WEBHOOK }}
