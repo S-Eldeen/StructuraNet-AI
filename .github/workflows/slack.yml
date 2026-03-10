@@ -14,6 +14,6 @@ jobs:
         run: |
           curl -X POST -H 'Content-type: application/json' \
           --data "{
-          \"text\": \"🚀 New Push on Repo: ${{ github.repository }} \n👤 User: ${{ github.actor }} \n🌿 Branch: ${{ github.ref_name }}\"
+          \"text\": \"🚀 New Push on Repo : ${{ github.repository }} \n👤 User : ${{ github.actor }} \n🌿 Branch: ${{ github.ref_name }}\"
           }" \
           ${{ secrets.SLACK_WEBHOOK }}
