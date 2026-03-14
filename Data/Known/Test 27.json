@@ -1,0 +1,1369 @@
+{
+    "auto_close": true,
+    "auto_open": false,
+    "auto_start": false,
+    "drawing_grid_size": 25,
+    "grid_size": 75,
+    "name": "Junos for IOS",
+    "project_id": "1036153c-cade-4c9a-9294-ebe86e51b34e",
+    "revision": 9,
+    "scene_height": 1000,
+    "scene_width": 2000,
+    "show_grid": true,
+    "show_interface_labels": false,
+    "show_layers": false,
+    "snap_to_grid": true,
+    "supplier": null,
+    "topology": {
+        "computes": [],
+        "drawings": [],
+        "links": [
+            {
+                "filters": {},
+                "link_id": "9cea5c2d-3bd9-4048-a3da-657768026c6c",
+                "link_style": {
+                    "color": "#000000",
+                    "type": 0,
+                    "width": 2
+                },
+                "nodes": [
+                    {
+                        "adapter_number": 1,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "PFE_1",
+                            "x": 7,
+                            "y": 59
+                        },
+                        "node_id": "04a8b10f-5664-4d03-b15a-622affc86b5a",
+                        "port_number": 0
+                    },
+                    {
+                        "adapter_number": 0,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "e0",
+                            "x": 53,
+                            "y": -19
+                        },
+                        "node_id": "82d59c42-88e1-42dc-824d-f5459d2c0f0a",
+                        "port_number": 0
+                    }
+                ],
+                "suspend": false
+            },
+            {
+                "filters": {},
+                "link_id": "4d1e3b50-eb23-473d-b728-bfacfbfac131",
+                "link_style": {
+                    "color": "#000000",
+                    "type": 0,
+                    "width": 2
+                },
+                "nodes": [
+                    {
+                        "adapter_number": 4,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "PFE_4",
+                            "x": 12,
+                            "y": 61
+                        },
+                        "node_id": "04a8b10f-5664-4d03-b15a-622affc86b5a",
+                        "port_number": 0
+                    },
+                    {
+                        "adapter_number": 0,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "e1",
+                            "x": 57,
+                            "y": -17
+                        },
+                        "node_id": "82d59c42-88e1-42dc-824d-f5459d2c0f0a",
+                        "port_number": 1
+                    }
+                ],
+                "suspend": false
+            },
+            {
+                "filters": {},
+                "link_id": "cf2316c0-3c1a-4ea9-94a4-cc984e95b4b1",
+                "link_style": {
+                    "color": "#000000",
+                    "type": 0,
+                    "width": 2
+                },
+                "nodes": [
+                    {
+                        "adapter_number": 2,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "RPIO_2",
+                            "x": 3,
+                            "y": 57
+                        },
+                        "node_id": "04a8b10f-5664-4d03-b15a-622affc86b5a",
+                        "port_number": 0
+                    },
+                    {
+                        "adapter_number": 0,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "e2",
+                            "x": 48,
+                            "y": -22
+                        },
+                        "node_id": "82d59c42-88e1-42dc-824d-f5459d2c0f0a",
+                        "port_number": 2
+                    }
+                ],
+                "suspend": false
+            },
+            {
+                "filters": {},
+                "link_id": "69c9fa6c-baff-4be9-85ff-523fc1bddedf",
+                "link_style": {
+                    "color": "#000000",
+                    "type": 0,
+                    "width": 2
+                },
+                "nodes": [
+                    {
+                        "adapter_number": 3,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "RPIO_3",
+                            "x": 16,
+                            "y": 63
+                        },
+                        "node_id": "04a8b10f-5664-4d03-b15a-622affc86b5a",
+                        "port_number": 0
+                    },
+                    {
+                        "adapter_number": 0,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "e3",
+                            "x": 62,
+                            "y": -15
+                        },
+                        "node_id": "82d59c42-88e1-42dc-824d-f5459d2c0f0a",
+                        "port_number": 3
+                    }
+                ],
+                "suspend": false
+            },
+            {
+                "filters": {},
+                "link_id": "64fb1460-ac1f-4bac-9728-36cb2e1e570f",
+                "link_style": {
+                    "color": "#000000",
+                    "type": 0,
+                    "width": 2
+                },
+                "nodes": [
+                    {
+                        "adapter_number": 1,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "PFE_1",
+                            "x": -11,
+                            "y": 38
+                        },
+                        "node_id": "9987821b-e7d9-4637-9547-bcc34460d765",
+                        "port_number": 0
+                    },
+                    {
+                        "adapter_number": 0,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "e4",
+                            "x": 72,
+                            "y": 1
+                        },
+                        "node_id": "82d59c42-88e1-42dc-824d-f5459d2c0f0a",
+                        "port_number": 4
+                    }
+                ],
+                "suspend": false
+            },
+            {
+                "filters": {},
+                "link_id": "6b63e5b0-bd56-49fe-9301-6f1f2c8e4fd8",
+                "link_style": {
+                    "color": "#000000",
+                    "type": 0,
+                    "width": 2
+                },
+                "nodes": [
+                    {
+                        "adapter_number": 2,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "RPIO_2",
+                            "x": -13,
+                            "y": 33
+                        },
+                        "node_id": "9987821b-e7d9-4637-9547-bcc34460d765",
+                        "port_number": 0
+                    },
+                    {
+                        "adapter_number": 0,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "e6",
+                            "x": 70,
+                            "y": -3
+                        },
+                        "node_id": "82d59c42-88e1-42dc-824d-f5459d2c0f0a",
+                        "port_number": 6
+                    }
+                ],
+                "suspend": false
+            },
+            {
+                "filters": {},
+                "link_id": "ae5cd214-9f17-46f0-b027-17afef015693",
+                "link_style": {
+                    "color": "#000000",
+                    "type": 0,
+                    "width": 2
+                },
+                "nodes": [
+                    {
+                        "adapter_number": 3,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "RPIO_3",
+                            "x": -7,
+                            "y": 47
+                        },
+                        "node_id": "9987821b-e7d9-4637-9547-bcc34460d765",
+                        "port_number": 0
+                    },
+                    {
+                        "adapter_number": 0,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "e7",
+                            "x": 76,
+                            "y": 10
+                        },
+                        "node_id": "82d59c42-88e1-42dc-824d-f5459d2c0f0a",
+                        "port_number": 7
+                    }
+                ],
+                "suspend": false
+            },
+            {
+                "filters": {},
+                "link_id": "5899671f-a222-4c78-8612-863d3cda67f9",
+                "link_style": {
+                    "color": "#000000",
+                    "type": 0,
+                    "width": 2
+                },
+                "nodes": [
+                    {
+                        "adapter_number": 1,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "PFE_1",
+                            "x": -14,
+                            "y": 23
+                        },
+                        "node_id": "82cfdb67-d13a-4b4d-aebd-fd669f0d43d5",
+                        "port_number": 0
+                    },
+                    {
+                        "adapter_number": 0,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "e8",
+                            "x": 75,
+                            "y": 16
+                        },
+                        "node_id": "82d59c42-88e1-42dc-824d-f5459d2c0f0a",
+                        "port_number": 8
+                    }
+                ],
+                "suspend": false
+            },
+            {
+                "filters": {},
+                "link_id": "438319c9-ace7-47b5-bb4a-4b81d4924aac",
+                "link_style": {
+                    "color": "#000000",
+                    "type": 0,
+                    "width": 2
+                },
+                "nodes": [
+                    {
+                        "adapter_number": 4,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "PFE_4",
+                            "x": -14,
+                            "y": 28
+                        },
+                        "node_id": "82cfdb67-d13a-4b4d-aebd-fd669f0d43d5",
+                        "port_number": 0
+                    },
+                    {
+                        "adapter_number": 0,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "e9",
+                            "x": 75,
+                            "y": 21
+                        },
+                        "node_id": "82d59c42-88e1-42dc-824d-f5459d2c0f0a",
+                        "port_number": 9
+                    }
+                ],
+                "suspend": false
+            },
+            {
+                "filters": {},
+                "link_id": "5250442a-cad4-46e5-bceb-69b2a9a6507e",
+                "link_style": {
+                    "color": "#000000",
+                    "type": 0,
+                    "width": 2
+                },
+                "nodes": [
+                    {
+                        "adapter_number": 2,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "RPIO_2",
+                            "x": -14,
+                            "y": 18
+                        },
+                        "node_id": "82cfdb67-d13a-4b4d-aebd-fd669f0d43d5",
+                        "port_number": 0
+                    },
+                    {
+                        "adapter_number": 0,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "e10",
+                            "x": 75,
+                            "y": 11
+                        },
+                        "node_id": "82d59c42-88e1-42dc-824d-f5459d2c0f0a",
+                        "port_number": 10
+                    }
+                ],
+                "suspend": false
+            },
+            {
+                "filters": {},
+                "link_id": "346eb4c2-2560-4807-ab6a-9d6292920cab",
+                "link_style": {
+                    "color": "#000000",
+                    "type": 0,
+                    "width": 2
+                },
+                "nodes": [
+                    {
+                        "adapter_number": 3,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "RPIO_3",
+                            "x": -14,
+                            "y": 33
+                        },
+                        "node_id": "82cfdb67-d13a-4b4d-aebd-fd669f0d43d5",
+                        "port_number": 0
+                    },
+                    {
+                        "adapter_number": 0,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "0/11",
+                            "x": 75,
+                            "y": 26
+                        },
+                        "node_id": "82d59c42-88e1-42dc-824d-f5459d2c0f0a",
+                        "port_number": 11
+                    }
+                ],
+                "suspend": false
+            },
+            {
+                "filters": {},
+                "link_id": "5c0a519e-f824-4172-b700-eddbfc79f3ee",
+                "link_style": {
+                    "color": "#000000",
+                    "type": 0,
+                    "width": 2
+                },
+                "nodes": [
+                    {
+                        "adapter_number": 4,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "PFE_4",
+                            "x": -7,
+                            "y": 47
+                        },
+                        "node_id": "9987821b-e7d9-4637-9547-bcc34460d765",
+                        "port_number": 0
+                    },
+                    {
+                        "adapter_number": 0,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "e5",
+                            "x": 76,
+                            "y": 10
+                        },
+                        "node_id": "82d59c42-88e1-42dc-824d-f5459d2c0f0a",
+                        "port_number": 5
+                    }
+                ],
+                "suspend": false
+            },
+            {
+                "filters": {},
+                "link_id": "d4831574-ff1c-4195-b640-883e5ec3540c",
+                "link_style": {},
+                "nodes": [
+                    {
+                        "adapter_number": 5,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "et-0/0/0",
+                            "x": 25,
+                            "y": -16
+                        },
+                        "node_id": "04a8b10f-5664-4d03-b15a-622affc86b5a",
+                        "port_number": 0
+                    },
+                    {
+                        "adapter_number": 0,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "Gi0/0",
+                            "x": 33,
+                            "y": 61
+                        },
+                        "node_id": "ef4b5221-0a80-4d32-881e-fb6c16d812fc",
+                        "port_number": 0
+                    }
+                ],
+                "suspend": false
+            },
+            {
+                "filters": {},
+                "link_id": "8632ae40-6938-4d62-be9a-415fbc8da030",
+                "link_style": {},
+                "nodes": [
+                    {
+                        "adapter_number": 5,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "et-0/0/0",
+                            "x": 25,
+                            "y": -16
+                        },
+                        "node_id": "9987821b-e7d9-4637-9547-bcc34460d765",
+                        "port_number": 0
+                    },
+                    {
+                        "adapter_number": 0,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "Gi0/0",
+                            "x": 32,
+                            "y": 61
+                        },
+                        "node_id": "dc83c455-20d6-4363-a859-51dce0b470b0",
+                        "port_number": 0
+                    }
+                ],
+                "suspend": false
+            },
+            {
+                "filters": {},
+                "link_id": "04063374-4b72-45bf-bdfb-8fc45a8dd466",
+                "link_style": {},
+                "nodes": [
+                    {
+                        "adapter_number": 6,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "et-0/0/1",
+                            "x": -10,
+                            "y": 41
+                        },
+                        "node_id": "9987821b-e7d9-4637-9547-bcc34460d765",
+                        "port_number": 0
+                    },
+                    {
+                        "adapter_number": 0,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "e1",
+                            "x": 71,
+                            "y": -2
+                        },
+                        "node_id": "d124aa28-69b5-4bf7-9c84-1099df007b02",
+                        "port_number": 1
+                    }
+                ],
+                "suspend": false
+            },
+            {
+                "filters": {},
+                "link_id": "379804a6-3ce8-4546-ab89-e0ec00c2e2f6",
+                "link_style": {},
+                "nodes": [
+                    {
+                        "adapter_number": 6,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "et-0/0/1",
+                            "x": 61,
+                            "y": 41
+                        },
+                        "node_id": "04a8b10f-5664-4d03-b15a-622affc86b5a",
+                        "port_number": 0
+                    },
+                    {
+                        "adapter_number": 0,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "e0",
+                            "x": 0,
+                            "y": -2
+                        },
+                        "node_id": "d124aa28-69b5-4bf7-9c84-1099df007b02",
+                        "port_number": 0
+                    }
+                ],
+                "suspend": false
+            },
+            {
+                "filters": {},
+                "link_id": "d930d225-e2ac-450a-a72f-f75ee90d8a53",
+                "link_style": {},
+                "nodes": [
+                    {
+                        "adapter_number": 0,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "e2",
+                            "x": 35,
+                            "y": 56
+                        },
+                        "node_id": "d124aa28-69b5-4bf7-9c84-1099df007b02",
+                        "port_number": 2
+                    },
+                    {
+                        "adapter_number": 6,
+                        "label": {
+                            "rotation": 0,
+                            "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                            "text": "et-0/0/1",
+                            "x": 25,
+                            "y": -16
+                        },
+                        "node_id": "82cfdb67-d13a-4b4d-aebd-fd669f0d43d5",
+                        "port_number": 0
+                    }
+                ],
+                "suspend": false
+            }
+        ],
+        "nodes": [
+            {
+                "compute_id": "vm",
+                "console": 5008,
+                "console_auto_start": true,
+                "console_type": "telnet",
+                "custom_adapters": [
+                    {
+                        "adapter_number": 0,
+                        "port_name": "re0:mgmt-0"
+                    },
+                    {
+                        "adapter_number": 1,
+                        "port_name": "PFE_1"
+                    },
+                    {
+                        "adapter_number": 2,
+                        "port_name": "RPIO_2"
+                    },
+                    {
+                        "adapter_number": 3,
+                        "port_name": "RPIO_3"
+                    },
+                    {
+                        "adapter_number": 4,
+                        "port_name": "PFE_4"
+                    },
+                    {
+                        "adapter_number": 5,
+                        "port_name": "et-0/0/0"
+                    },
+                    {
+                        "adapter_number": 6,
+                        "port_name": "et-0/0/1"
+                    },
+                    {
+                        "adapter_number": 7,
+                        "port_name": "et-0/0/2"
+                    },
+                    {
+                        "adapter_number": 8,
+                        "port_name": "et-0/0/3"
+                    },
+                    {
+                        "adapter_number": 9,
+                        "port_name": "et-0/0/4"
+                    },
+                    {
+                        "adapter_number": 10,
+                        "port_name": "et-0/0/5"
+                    },
+                    {
+                        "adapter_number": 11,
+                        "port_name": "et-0/0/6"
+                    },
+                    {
+                        "adapter_number": 12,
+                        "port_name": "et-0/0/7"
+                    },
+                    {
+                        "adapter_number": 13,
+                        "port_name": "et-0/0/8"
+                    },
+                    {
+                        "adapter_number": 14,
+                        "port_name": "et-0/0/9"
+                    },
+                    {
+                        "adapter_number": 15,
+                        "port_name": "et-0/0/10"
+                    },
+                    {
+                        "adapter_number": 16,
+                        "port_name": "et-0/0/11"
+                    }
+                ],
+                "first_port_name": "re0:mgmt-0",
+                "height": 48,
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "R-1",
+                    "x": 10,
+                    "y": -25
+                },
+                "locked": false,
+                "name": "R-1",
+                "node_id": "04a8b10f-5664-4d03-b15a-622affc86b5a",
+                "node_type": "qemu",
+                "port_name_format": "et-0/0/{port0}",
+                "port_segment_size": 0,
+                "properties": {
+                    "adapter_type": "virtio-net-pci",
+                    "adapters": 17,
+                    "bios_image": "",
+                    "bios_image_md5sum": null,
+                    "boot_priority": "c",
+                    "cdrom_image": "",
+                    "cdrom_image_md5sum": null,
+                    "cpu_throttling": 0,
+                    "cpus": 4,
+                    "create_config_disk": false,
+                    "hda_disk_image": "vJunosEvolved-23.1R1.8.qcow2",
+                    "hda_disk_image_md5sum": "4ba05e60b9be4adf3e31ed2eec723d23",
+                    "hda_disk_interface": "virtio",
+                    "hdb_disk_image": "",
+                    "hdb_disk_image_md5sum": null,
+                    "hdb_disk_interface": "none",
+                    "hdc_disk_image": "",
+                    "hdc_disk_image_md5sum": null,
+                    "hdc_disk_interface": "none",
+                    "hdd_disk_image": "",
+                    "hdd_disk_image_md5sum": null,
+                    "hdd_disk_interface": "none",
+                    "initrd": "",
+                    "initrd_md5sum": null,
+                    "kernel_command_line": "",
+                    "kernel_image": "",
+                    "kernel_image_md5sum": null,
+                    "legacy_networking": false,
+                    "linked_clone": true,
+                    "mac_address": "0c:a8:b1:0f:00:00",
+                    "on_close": "power_off",
+                    "options": "-serial mon:stdio -smbios type=0,vendor=Bochs,version=Bochs -smbios type=3,manufacturer=Bochs -smbios type=1,product=Bochs,manufacturer=Bochs,serial=chassis_no=0:slot=0:type=1:assembly_id=0x0D20:platform=251:master=0:channelized=no -cpu IvyBridge,ibpb=on,md-clear=on,spec-ctrl=on,ssbd=on",
+                    "platform": "x86_64",
+                    "process_priority": "normal",
+                    "qemu_path": "/bin/qemu-system-x86_64",
+                    "ram": 5120,
+                    "replicate_network_connection_state": true,
+                    "tpm": false,
+                    "usage": "Initial username is root, no password.\n\nUSAGE INSTRUCTIONS\n\nThe PFE_1 and PFE_4 interfaces need to be interconnected in one VLAN.\nThe RPIO_2 and RPIO_3 interfaces need to be interconnected in another VLAN."
+                },
+                "symbol": "juniper-vmx.svg",
+                "template_id": "6cc95b24-079c-453b-86d8-359a2e2547c6",
+                "width": 51,
+                "x": -250,
+                "y": 51,
+                "z": 1
+            },
+            {
+                "compute_id": "vm",
+                "console": 5001,
+                "console_auto_start": true,
+                "console_type": "telnet",
+                "custom_adapters": [
+                    {
+                        "adapter_number": 0,
+                        "port_name": "re0:mgmt-0"
+                    },
+                    {
+                        "adapter_number": 1,
+                        "port_name": "PFE_1"
+                    },
+                    {
+                        "adapter_number": 2,
+                        "port_name": "RPIO_2"
+                    },
+                    {
+                        "adapter_number": 3,
+                        "port_name": "RPIO_3"
+                    },
+                    {
+                        "adapter_number": 4,
+                        "port_name": "PFE_4"
+                    },
+                    {
+                        "adapter_number": 5,
+                        "port_name": "et-0/0/0"
+                    },
+                    {
+                        "adapter_number": 6,
+                        "port_name": "et-0/0/1"
+                    },
+                    {
+                        "adapter_number": 7,
+                        "port_name": "et-0/0/2"
+                    },
+                    {
+                        "adapter_number": 8,
+                        "port_name": "et-0/0/3"
+                    },
+                    {
+                        "adapter_number": 9,
+                        "port_name": "et-0/0/4"
+                    },
+                    {
+                        "adapter_number": 10,
+                        "port_name": "et-0/0/5"
+                    },
+                    {
+                        "adapter_number": 11,
+                        "port_name": "et-0/0/6"
+                    },
+                    {
+                        "adapter_number": 12,
+                        "port_name": "et-0/0/7"
+                    },
+                    {
+                        "adapter_number": 13,
+                        "port_name": "et-0/0/8"
+                    },
+                    {
+                        "adapter_number": 14,
+                        "port_name": "et-0/0/9"
+                    },
+                    {
+                        "adapter_number": 15,
+                        "port_name": "et-0/0/10"
+                    },
+                    {
+                        "adapter_number": 16,
+                        "port_name": "et-0/0/11"
+                    }
+                ],
+                "first_port_name": "re0:mgmt-0",
+                "height": 48,
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "R-2",
+                    "x": 10,
+                    "y": -25
+                },
+                "locked": false,
+                "name": "R-2",
+                "node_id": "9987821b-e7d9-4637-9547-bcc34460d765",
+                "node_type": "qemu",
+                "port_name_format": "et-0/0/{port0}",
+                "port_segment_size": 0,
+                "properties": {
+                    "adapter_type": "virtio-net-pci",
+                    "adapters": 17,
+                    "bios_image": "",
+                    "bios_image_md5sum": null,
+                    "boot_priority": "c",
+                    "cdrom_image": "",
+                    "cdrom_image_md5sum": null,
+                    "cpu_throttling": 0,
+                    "cpus": 4,
+                    "create_config_disk": false,
+                    "hda_disk_image": "vJunosEvolved-23.1R1.8.qcow2",
+                    "hda_disk_image_md5sum": "4ba05e60b9be4adf3e31ed2eec723d23",
+                    "hda_disk_interface": "virtio",
+                    "hdb_disk_image": "",
+                    "hdb_disk_image_md5sum": null,
+                    "hdb_disk_interface": "none",
+                    "hdc_disk_image": "",
+                    "hdc_disk_image_md5sum": null,
+                    "hdc_disk_interface": "none",
+                    "hdd_disk_image": "",
+                    "hdd_disk_image_md5sum": null,
+                    "hdd_disk_interface": "none",
+                    "initrd": "",
+                    "initrd_md5sum": null,
+                    "kernel_command_line": "",
+                    "kernel_image": "",
+                    "kernel_image_md5sum": null,
+                    "legacy_networking": false,
+                    "linked_clone": true,
+                    "mac_address": "0c:87:82:1b:00:00",
+                    "on_close": "power_off",
+                    "options": "-serial mon:stdio -smbios type=0,vendor=Bochs,version=Bochs -smbios type=3,manufacturer=Bochs -smbios type=1,product=Bochs,manufacturer=Bochs,serial=chassis_no=0:slot=0:type=1:assembly_id=0x0D20:platform=251:master=0:channelized=no -cpu IvyBridge,ibpb=on,md-clear=on,spec-ctrl=on,ssbd=on",
+                    "platform": "x86_64",
+                    "process_priority": "normal",
+                    "qemu_path": "/bin/qemu-system-x86_64",
+                    "ram": 5120,
+                    "replicate_network_connection_state": true,
+                    "tpm": false,
+                    "usage": "Initial username is root, no password.\n\nUSAGE INSTRUCTIONS\n\nThe PFE_1 and PFE_4 interfaces need to be interconnected in one VLAN.\nThe RPIO_2 and RPIO_3 interfaces need to be interconnected in another VLAN."
+                },
+                "symbol": "juniper-vmx.svg",
+                "template_id": "6cc95b24-079c-453b-86d8-359a2e2547c6",
+                "width": 51,
+                "x": 49,
+                "y": 51,
+                "z": 1
+            },
+            {
+                "compute_id": "vm",
+                "console": 5003,
+                "console_auto_start": true,
+                "console_type": "telnet",
+                "custom_adapters": [
+                    {
+                        "adapter_number": 0,
+                        "port_name": "re0:mgmt-0"
+                    },
+                    {
+                        "adapter_number": 1,
+                        "port_name": "PFE_1"
+                    },
+                    {
+                        "adapter_number": 2,
+                        "port_name": "RPIO_2"
+                    },
+                    {
+                        "adapter_number": 3,
+                        "port_name": "RPIO_3"
+                    },
+                    {
+                        "adapter_number": 4,
+                        "port_name": "PFE_4"
+                    },
+                    {
+                        "adapter_number": 5,
+                        "port_name": "et-0/0/0"
+                    },
+                    {
+                        "adapter_number": 6,
+                        "port_name": "et-0/0/1"
+                    },
+                    {
+                        "adapter_number": 7,
+                        "port_name": "et-0/0/2"
+                    },
+                    {
+                        "adapter_number": 8,
+                        "port_name": "et-0/0/3"
+                    },
+                    {
+                        "adapter_number": 9,
+                        "port_name": "et-0/0/4"
+                    },
+                    {
+                        "adapter_number": 10,
+                        "port_name": "et-0/0/5"
+                    },
+                    {
+                        "adapter_number": 11,
+                        "port_name": "et-0/0/6"
+                    },
+                    {
+                        "adapter_number": 12,
+                        "port_name": "et-0/0/7"
+                    },
+                    {
+                        "adapter_number": 13,
+                        "port_name": "et-0/0/8"
+                    },
+                    {
+                        "adapter_number": 14,
+                        "port_name": "et-0/0/9"
+                    },
+                    {
+                        "adapter_number": 15,
+                        "port_name": "et-0/0/10"
+                    },
+                    {
+                        "adapter_number": 16,
+                        "port_name": "et-0/0/11"
+                    }
+                ],
+                "first_port_name": "re0:mgmt-0",
+                "height": 48,
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "R-3",
+                    "x": 10,
+                    "y": -25
+                },
+                "locked": false,
+                "name": "R-3",
+                "node_id": "82cfdb67-d13a-4b4d-aebd-fd669f0d43d5",
+                "node_type": "qemu",
+                "port_name_format": "et-0/0/{port0}",
+                "port_segment_size": 0,
+                "properties": {
+                    "adapter_type": "virtio-net-pci",
+                    "adapters": 17,
+                    "bios_image": "",
+                    "bios_image_md5sum": null,
+                    "boot_priority": "c",
+                    "cdrom_image": "",
+                    "cdrom_image_md5sum": null,
+                    "cpu_throttling": 0,
+                    "cpus": 4,
+                    "create_config_disk": false,
+                    "hda_disk_image": "vJunosEvolved-23.1R1.8.qcow2",
+                    "hda_disk_image_md5sum": "4ba05e60b9be4adf3e31ed2eec723d23",
+                    "hda_disk_interface": "virtio",
+                    "hdb_disk_image": "",
+                    "hdb_disk_image_md5sum": null,
+                    "hdb_disk_interface": "none",
+                    "hdc_disk_image": "",
+                    "hdc_disk_image_md5sum": null,
+                    "hdc_disk_interface": "none",
+                    "hdd_disk_image": "",
+                    "hdd_disk_image_md5sum": null,
+                    "hdd_disk_interface": "none",
+                    "initrd": "",
+                    "initrd_md5sum": null,
+                    "kernel_command_line": "",
+                    "kernel_image": "",
+                    "kernel_image_md5sum": null,
+                    "legacy_networking": false,
+                    "linked_clone": true,
+                    "mac_address": "0c:cf:db:67:00:00",
+                    "on_close": "power_off",
+                    "options": "-serial mon:stdio -smbios type=0,vendor=Bochs,version=Bochs -smbios type=3,manufacturer=Bochs -smbios type=1,product=Bochs,manufacturer=Bochs,serial=chassis_no=0:slot=0:type=1:assembly_id=0x0D20:platform=251:master=0:channelized=no -cpu IvyBridge,ibpb=on,md-clear=on,spec-ctrl=on,ssbd=on",
+                    "platform": "x86_64",
+                    "process_priority": "normal",
+                    "qemu_path": "/bin/qemu-system-x86_64",
+                    "ram": 5120,
+                    "replicate_network_connection_state": true,
+                    "tpm": false,
+                    "usage": "Initial username is root, no password.\n\nUSAGE INSTRUCTIONS\n\nThe PFE_1 and PFE_4 interfaces need to be interconnected in one VLAN.\nThe RPIO_2 and RPIO_3 interfaces need to be interconnected in another VLAN."
+                },
+                "symbol": "juniper-vmx.svg",
+                "template_id": "6cc95b24-079c-453b-86d8-359a2e2547c6",
+                "width": 51,
+                "x": -100,
+                "y": 276,
+                "z": 1
+            },
+            {
+                "compute_id": "vm",
+                "console": 5005,
+                "console_auto_start": false,
+                "console_type": "none",
+                "custom_adapters": [],
+                "first_port_name": null,
+                "height": 32,
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "Don'tTouch",
+                    "x": -5,
+                    "y": -25
+                },
+                "locked": false,
+                "name": "Don'tTouch",
+                "node_id": "82d59c42-88e1-42dc-824d-f5459d2c0f0a",
+                "node_type": "ethernet_switch",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "properties": {
+                    "ports_mapping": [
+                        {
+                            "ethertype": "",
+                            "name": "Ethernet0",
+                            "port_number": 0,
+                            "type": "access",
+                            "vlan": 1
+                        },
+                        {
+                            "ethertype": "",
+                            "name": "Ethernet1",
+                            "port_number": 1,
+                            "type": "access",
+                            "vlan": 1
+                        },
+                        {
+                            "ethertype": "",
+                            "name": "Ethernet2",
+                            "port_number": 2,
+                            "type": "access",
+                            "vlan": 2
+                        },
+                        {
+                            "ethertype": "",
+                            "name": "Ethernet3",
+                            "port_number": 3,
+                            "type": "access",
+                            "vlan": 2
+                        },
+                        {
+                            "ethertype": "",
+                            "name": "Ethernet4",
+                            "port_number": 4,
+                            "type": "access",
+                            "vlan": 3
+                        },
+                        {
+                            "ethertype": "",
+                            "name": "Ethernet5",
+                            "port_number": 5,
+                            "type": "access",
+                            "vlan": 3
+                        },
+                        {
+                            "ethertype": "",
+                            "name": "Ethernet6",
+                            "port_number": 6,
+                            "type": "access",
+                            "vlan": 4
+                        },
+                        {
+                            "ethertype": "",
+                            "name": "Ethernet7",
+                            "port_number": 7,
+                            "type": "access",
+                            "vlan": 4
+                        },
+                        {
+                            "ethertype": "",
+                            "name": "Ethernet8",
+                            "port_number": 8,
+                            "type": "access",
+                            "vlan": 5
+                        },
+                        {
+                            "ethertype": "",
+                            "name": "Ethernet9",
+                            "port_number": 9,
+                            "type": "access",
+                            "vlan": 5
+                        },
+                        {
+                            "ethertype": "",
+                            "name": "Ethernet10",
+                            "port_number": 10,
+                            "type": "access",
+                            "vlan": 6
+                        },
+                        {
+                            "ethertype": "",
+                            "name": "Ethernet11",
+                            "port_number": 11,
+                            "type": "access",
+                            "vlan": 6
+                        }
+                    ]
+                },
+                "symbol": ":/symbols/ethernet_switch.svg",
+                "template_id": "1966b864-93e7-32d5-965f-001384eec461",
+                "width": 72,
+                "x": -335,
+                "y": 209,
+                "z": 1
+            },
+            {
+                "compute_id": "vm",
+                "console": 5006,
+                "console_auto_start": true,
+                "console_type": "telnet",
+                "custom_adapters": [],
+                "first_port_name": "",
+                "height": 45,
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "ISP-1",
+                    "x": 11,
+                    "y": -25
+                },
+                "locked": false,
+                "name": "ISP-1",
+                "node_id": "ef4b5221-0a80-4d32-881e-fb6c16d812fc",
+                "node_type": "qemu",
+                "port_name_format": "Gi0/{0}",
+                "port_segment_size": 0,
+                "properties": {
+                    "adapter_type": "e1000",
+                    "adapters": 8,
+                    "bios_image": "",
+                    "bios_image_md5sum": null,
+                    "boot_priority": "c",
+                    "cdrom_image": "",
+                    "cdrom_image_md5sum": null,
+                    "cpu_throttling": 0,
+                    "cpus": 1,
+                    "create_config_disk": false,
+                    "hda_disk_image": "vios-adventerprisek9-m.vmdk.SPA.156-2.T",
+                    "hda_disk_image_md5sum": "83707e3cc93646da58ee6563a68002b5",
+                    "hda_disk_interface": "virtio",
+                    "hdb_disk_image": "IOSv_startup_config.img",
+                    "hdb_disk_image_md5sum": "bc605651c4688276f81fd59dcf5cc786",
+                    "hdb_disk_interface": "virtio",
+                    "hdc_disk_image": "",
+                    "hdc_disk_image_md5sum": null,
+                    "hdc_disk_interface": "none",
+                    "hdd_disk_image": "",
+                    "hdd_disk_image_md5sum": null,
+                    "hdd_disk_interface": "none",
+                    "initrd": "",
+                    "initrd_md5sum": null,
+                    "kernel_command_line": "",
+                    "kernel_image": "",
+                    "kernel_image_md5sum": null,
+                    "legacy_networking": false,
+                    "linked_clone": true,
+                    "mac_address": "0c:4b:52:21:00:00",
+                    "on_close": "power_off",
+                    "options": "",
+                    "platform": "x86_64",
+                    "process_priority": "normal",
+                    "qemu_path": "/bin/qemu-system-x86_64",
+                    "ram": 512,
+                    "replicate_network_connection_state": true,
+                    "tpm": false,
+                    "usage": "There is no default password and enable password. There is no default configuration present."
+                },
+                "symbol": ":/symbols/router.svg",
+                "template_id": "8f308eae-9053-4c93-833a-e4fb3386aebb",
+                "width": 66,
+                "x": -258,
+                "y": -97,
+                "z": 1
+            },
+            {
+                "compute_id": "vm",
+                "console": 5009,
+                "console_auto_start": true,
+                "console_type": "telnet",
+                "custom_adapters": [],
+                "first_port_name": "",
+                "height": 45,
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "ISP-2",
+                    "x": 11,
+                    "y": -25
+                },
+                "locked": false,
+                "name": "ISP-2",
+                "node_id": "dc83c455-20d6-4363-a859-51dce0b470b0",
+                "node_type": "qemu",
+                "port_name_format": "Gi0/{0}",
+                "port_segment_size": 0,
+                "properties": {
+                    "adapter_type": "e1000",
+                    "adapters": 8,
+                    "bios_image": "",
+                    "bios_image_md5sum": null,
+                    "boot_priority": "c",
+                    "cdrom_image": "",
+                    "cdrom_image_md5sum": null,
+                    "cpu_throttling": 0,
+                    "cpus": 1,
+                    "create_config_disk": false,
+                    "hda_disk_image": "vios-adventerprisek9-m.vmdk.SPA.156-2.T",
+                    "hda_disk_image_md5sum": "83707e3cc93646da58ee6563a68002b5",
+                    "hda_disk_interface": "virtio",
+                    "hdb_disk_image": "IOSv_startup_config.img",
+                    "hdb_disk_image_md5sum": "bc605651c4688276f81fd59dcf5cc786",
+                    "hdb_disk_interface": "virtio",
+                    "hdc_disk_image": "",
+                    "hdc_disk_image_md5sum": null,
+                    "hdc_disk_interface": "none",
+                    "hdd_disk_image": "",
+                    "hdd_disk_image_md5sum": null,
+                    "hdd_disk_interface": "none",
+                    "initrd": "",
+                    "initrd_md5sum": null,
+                    "kernel_command_line": "",
+                    "kernel_image": "",
+                    "kernel_image_md5sum": null,
+                    "legacy_networking": false,
+                    "linked_clone": true,
+                    "mac_address": "0c:83:c4:55:00:00",
+                    "on_close": "power_off",
+                    "options": "",
+                    "platform": "x86_64",
+                    "process_priority": "normal",
+                    "qemu_path": "/bin/qemu-system-x86_64",
+                    "ram": 512,
+                    "replicate_network_connection_state": true,
+                    "tpm": false,
+                    "usage": "There is no default password and enable password. There is no default configuration present."
+                },
+                "symbol": ":/symbols/router.svg",
+                "template_id": "8f308eae-9053-4c93-833a-e4fb3386aebb",
+                "width": 66,
+                "x": 42,
+                "y": -97,
+                "z": 1
+            },
+            {
+                "compute_id": "vm",
+                "console": 5011,
+                "console_auto_start": false,
+                "console_type": "none",
+                "custom_adapters": [],
+                "first_port_name": null,
+                "height": 32,
+                "label": {
+                    "rotation": 0,
+                    "style": "font-family: TypeWriter;font-size: 10.0;font-weight: bold;fill: #000000;fill-opacity: 1.0;",
+                    "text": "Switch1",
+                    "x": 6,
+                    "y": -25
+                },
+                "locked": false,
+                "name": "Switch1",
+                "node_id": "d124aa28-69b5-4bf7-9c84-1099df007b02",
+                "node_type": "ethernet_switch",
+                "port_name_format": "Ethernet{0}",
+                "port_segment_size": 0,
+                "properties": {
+                    "ports_mapping": [
+                        {
+                            "name": "Ethernet0",
+                            "port_number": 0,
+                            "type": "access",
+                            "vlan": 1
+                        },
+                        {
+                            "name": "Ethernet1",
+                            "port_number": 1,
+                            "type": "access",
+                            "vlan": 1
+                        },
+                        {
+                            "name": "Ethernet2",
+                            "port_number": 2,
+                            "type": "access",
+                            "vlan": 1
+                        },
+                        {
+                            "name": "Ethernet3",
+                            "port_number": 3,
+                            "type": "access",
+                            "vlan": 1
+                        },
+                        {
+                            "name": "Ethernet4",
+                            "port_number": 4,
+                            "type": "access",
+                            "vlan": 1
+                        },
+                        {
+                            "name": "Ethernet5",
+                            "port_number": 5,
+                            "type": "access",
+                            "vlan": 1
+                        },
+                        {
+                            "name": "Ethernet6",
+                            "port_number": 6,
+                            "type": "access",
+                            "vlan": 1
+                        },
+                        {
+                            "name": "Ethernet7",
+                            "port_number": 7,
+                            "type": "access",
+                            "vlan": 1
+                        }
+                    ]
+                },
+                "symbol": ":/symbols/ethernet_switch.svg",
+                "template_id": "1966b864-93e7-32d5-965f-001384eec461",
+                "width": 72,
+                "x": -110,
+                "y": 134,
+                "z": 1
+            }
+        ]
+    },
+    "type": "topology",
+    "variables": null,
+    "version": "2.2.38",
+    "zoom": 100
+}

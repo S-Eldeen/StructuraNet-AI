@@ -1,0 +1,736 @@
+{
+  "name": "Large_Scale_Project_46",
+  "project_id": "5cfde7eb-900d-4337-96ee-0411a23871d5",
+  "revision": 9,
+  "type": "topology",
+  "topology": {
+    "nodes": [
+      {
+        "compute_id": "local",
+        "console": 0,
+        "console_type": "telnet",
+        "name": "R1",
+        "node_id": "267094e6-ccb9-410d-a7db-6fb060d56aaa",
+        "node_type": "dynamips",
+        "template_id": "ac460a9c-9274-4ccf-a056-af50b699925f",
+        "symbol": ":/symbols/router.svg",
+        "width": 65,
+        "height": 59,
+        "x": -466,
+        "y": 186,
+        "z": 1,
+        "properties": {}
+      },
+      {
+        "compute_id": "local",
+        "console": 0,
+        "console_type": "telnet",
+        "name": "R2",
+        "node_id": "8c16b713-dac7-4812-9f52-c6033308bc61",
+        "node_type": "dynamips",
+        "template_id": "ac460a9c-9274-4ccf-a056-af50b699925f",
+        "symbol": ":/symbols/router.svg",
+        "width": 65,
+        "height": 59,
+        "x": 226,
+        "y": 34,
+        "z": 1,
+        "properties": {}
+      },
+      {
+        "compute_id": "local",
+        "console": 0,
+        "console_type": "telnet",
+        "name": "R3",
+        "node_id": "ed801359-601b-456f-a8d2-02ce2cc6440a",
+        "node_type": "dynamips",
+        "template_id": "ac460a9c-9274-4ccf-a056-af50b699925f",
+        "symbol": ":/symbols/router.svg",
+        "width": 65,
+        "height": 59,
+        "x": 384,
+        "y": -6,
+        "z": 1,
+        "properties": {}
+      },
+      {
+        "compute_id": "local",
+        "console": 0,
+        "console_type": "telnet",
+        "name": "R4",
+        "node_id": "ab27f3d9-0c0e-48da-8624-5c855a78f0a8",
+        "node_type": "dynamips",
+        "template_id": "ac460a9c-9274-4ccf-a056-af50b699925f",
+        "symbol": ":/symbols/router.svg",
+        "width": 65,
+        "height": 59,
+        "x": -261,
+        "y": -187,
+        "z": 1,
+        "properties": {}
+      },
+      {
+        "compute_id": "local",
+        "console": 0,
+        "console_type": "telnet",
+        "name": "R5",
+        "node_id": "b18aaec1-d550-411d-881d-3771b80d0b55",
+        "node_type": "dynamips",
+        "template_id": "ac460a9c-9274-4ccf-a056-af50b699925f",
+        "symbol": ":/symbols/router.svg",
+        "width": 65,
+        "height": 59,
+        "x": 38,
+        "y": 306,
+        "z": 1,
+        "properties": {}
+      },
+      {
+        "compute_id": "local",
+        "console": 0,
+        "console_type": "telnet",
+        "name": "R6",
+        "node_id": "3fc8b716-38e3-447d-8826-b31ae40c471b",
+        "node_type": "dynamips",
+        "template_id": "ac460a9c-9274-4ccf-a056-af50b699925f",
+        "symbol": ":/symbols/router.svg",
+        "width": 65,
+        "height": 59,
+        "x": -66,
+        "y": -64,
+        "z": 1,
+        "properties": {}
+      },
+      {
+        "compute_id": "local",
+        "console": 0,
+        "console_type": "telnet",
+        "name": "R7",
+        "node_id": "cf4be714-67ae-4bed-8894-f1c1a43a0ab6",
+        "node_type": "dynamips",
+        "template_id": "ac460a9c-9274-4ccf-a056-af50b699925f",
+        "symbol": ":/symbols/router.svg",
+        "width": 65,
+        "height": 59,
+        "x": -460,
+        "y": -195,
+        "z": 1,
+        "properties": {}
+      },
+      {
+        "compute_id": "local",
+        "console": 0,
+        "console_type": "telnet",
+        "name": "R8",
+        "node_id": "e21a1e4b-428f-4f2c-bd37-7eb60cfac366",
+        "node_type": "dynamips",
+        "template_id": "ac460a9c-9274-4ccf-a056-af50b699925f",
+        "symbol": ":/symbols/router.svg",
+        "width": 65,
+        "height": 59,
+        "x": 313,
+        "y": -495,
+        "z": 1,
+        "properties": {}
+      },
+      {
+        "compute_id": "local",
+        "console": 0,
+        "console_type": "none",
+        "name": "SW1",
+        "node_id": "7e2f1bdf-df02-4516-aabb-466107a7c7e5",
+        "node_type": "ethernet_switch",
+        "symbol": ":/symbols/switch.svg",
+        "width": 65,
+        "height": 59,
+        "x": 278,
+        "y": 224,
+        "z": 1,
+        "properties": {}
+      },
+      {
+        "compute_id": "local",
+        "console": 0,
+        "console_type": "none",
+        "name": "SW2",
+        "node_id": "e5d7b6da-58d2-4be4-82e7-f9efc5ffe675",
+        "node_type": "ethernet_switch",
+        "symbol": ":/symbols/switch.svg",
+        "width": 65,
+        "height": 59,
+        "x": -393,
+        "y": 335,
+        "z": 1,
+        "properties": {}
+      },
+      {
+        "compute_id": "local",
+        "console": 0,
+        "console_type": "none",
+        "name": "SW3",
+        "node_id": "ac09dae2-8d24-434b-ba3e-d9d3a69b73dc",
+        "node_type": "ethernet_switch",
+        "symbol": ":/symbols/switch.svg",
+        "width": 65,
+        "height": 59,
+        "x": -197,
+        "y": 170,
+        "z": 1,
+        "properties": {}
+      },
+      {
+        "compute_id": "local",
+        "console": 0,
+        "console_type": "telnet",
+        "name": "PC1",
+        "node_id": "2d79017e-7960-4e5f-8a1a-afc52a550383",
+        "node_type": "vpcs",
+        "symbol": ":/symbols/vpcs.svg",
+        "width": 65,
+        "height": 59,
+        "x": 178,
+        "y": -420,
+        "z": 1,
+        "properties": {}
+      },
+      {
+        "compute_id": "local",
+        "console": 0,
+        "console_type": "telnet",
+        "name": "PC2",
+        "node_id": "f825892b-49cc-4664-934b-0487cf3c6843",
+        "node_type": "vpcs",
+        "symbol": ":/symbols/vpcs.svg",
+        "width": 65,
+        "height": 59,
+        "x": -436,
+        "y": 12,
+        "z": 1,
+        "properties": {}
+      },
+      {
+        "compute_id": "local",
+        "console": 0,
+        "console_type": "telnet",
+        "name": "PC3",
+        "node_id": "51c6b6f4-fdd3-463b-b95b-c55ed1a6dc28",
+        "node_type": "vpcs",
+        "symbol": ":/symbols/vpcs.svg",
+        "width": 65,
+        "height": 59,
+        "x": 168,
+        "y": -8,
+        "z": 1,
+        "properties": {}
+      },
+      {
+        "compute_id": "local",
+        "console": 0,
+        "console_type": "telnet",
+        "name": "PC4",
+        "node_id": "ee8a4a76-0eaf-473a-8f84-d0813bf4ac26",
+        "node_type": "vpcs",
+        "symbol": ":/symbols/vpcs.svg",
+        "width": 65,
+        "height": 59,
+        "x": 579,
+        "y": -474,
+        "z": 1,
+        "properties": {}
+      },
+      {
+        "compute_id": "local",
+        "console": 0,
+        "console_type": "telnet",
+        "name": "PC5",
+        "node_id": "71a95ec3-8351-497d-a432-8adc60679ab8",
+        "node_type": "vpcs",
+        "symbol": ":/symbols/vpcs.svg",
+        "width": 65,
+        "height": 59,
+        "x": -52,
+        "y": 91,
+        "z": 1,
+        "properties": {}
+      },
+      {
+        "compute_id": "local",
+        "console": 0,
+        "console_type": "telnet",
+        "name": "PC6",
+        "node_id": "2bb9feee-2254-4785-b98a-42e51e37752d",
+        "node_type": "vpcs",
+        "symbol": ":/symbols/vpcs.svg",
+        "width": 65,
+        "height": 59,
+        "x": 58,
+        "y": -567,
+        "z": 1,
+        "properties": {}
+      }
+    ],
+    "links": [
+      {
+        "filters": {},
+        "link_id": "4d65c232-20ae-4f5f-a218-fad57df1334b",
+        "nodes": [
+          {
+            "adapter_number": 0,
+            "node_id": "267094e6-ccb9-410d-a7db-6fb060d56aaa",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "adapter_number": 0,
+            "node_id": "8c16b713-dac7-4812-9f52-c6033308bc61",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          }
+        ],
+        "suspend": false
+      },
+      {
+        "filters": {},
+        "link_id": "a6409beb-6d49-4ad2-823a-4b010304ce67",
+        "nodes": [
+          {
+            "adapter_number": 0,
+            "node_id": "8c16b713-dac7-4812-9f52-c6033308bc61",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "adapter_number": 0,
+            "node_id": "ed801359-601b-456f-a8d2-02ce2cc6440a",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          }
+        ],
+        "suspend": false
+      },
+      {
+        "filters": {},
+        "link_id": "9a5b5577-eef1-41bc-ac54-f34774d166e8",
+        "nodes": [
+          {
+            "adapter_number": 0,
+            "node_id": "ed801359-601b-456f-a8d2-02ce2cc6440a",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "adapter_number": 0,
+            "node_id": "ab27f3d9-0c0e-48da-8624-5c855a78f0a8",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          }
+        ],
+        "suspend": false
+      },
+      {
+        "filters": {},
+        "link_id": "26dbc981-7773-4c4c-ae68-00dedd1b0689",
+        "nodes": [
+          {
+            "adapter_number": 0,
+            "node_id": "ab27f3d9-0c0e-48da-8624-5c855a78f0a8",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "adapter_number": 0,
+            "node_id": "b18aaec1-d550-411d-881d-3771b80d0b55",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          }
+        ],
+        "suspend": false
+      },
+      {
+        "filters": {},
+        "link_id": "e59a6cb1-cc7f-46db-ab77-1a9e39affa1b",
+        "nodes": [
+          {
+            "adapter_number": 0,
+            "node_id": "b18aaec1-d550-411d-881d-3771b80d0b55",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "adapter_number": 0,
+            "node_id": "3fc8b716-38e3-447d-8826-b31ae40c471b",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          }
+        ],
+        "suspend": false
+      },
+      {
+        "filters": {},
+        "link_id": "95e43697-2e14-4429-9b72-8f109f2a5f1e",
+        "nodes": [
+          {
+            "adapter_number": 0,
+            "node_id": "3fc8b716-38e3-447d-8826-b31ae40c471b",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "adapter_number": 0,
+            "node_id": "cf4be714-67ae-4bed-8894-f1c1a43a0ab6",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          }
+        ],
+        "suspend": false
+      },
+      {
+        "filters": {},
+        "link_id": "dc1ad537-f08d-45a5-831d-4f9a87959e71",
+        "nodes": [
+          {
+            "adapter_number": 0,
+            "node_id": "cf4be714-67ae-4bed-8894-f1c1a43a0ab6",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "adapter_number": 0,
+            "node_id": "e21a1e4b-428f-4f2c-bd37-7eb60cfac366",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          }
+        ],
+        "suspend": false
+      },
+      {
+        "filters": {},
+        "link_id": "b35ee418-75d7-4388-935c-6f5bb6228f1f",
+        "nodes": [
+          {
+            "adapter_number": 0,
+            "node_id": "e21a1e4b-428f-4f2c-bd37-7eb60cfac366",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "adapter_number": 0,
+            "node_id": "267094e6-ccb9-410d-a7db-6fb060d56aaa",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          }
+        ],
+        "suspend": false
+      },
+      {
+        "filters": {},
+        "link_id": "77bd0f8c-fbb0-4155-8eaa-c2051860d28d",
+        "nodes": [
+          {
+            "adapter_number": 0,
+            "node_id": "ed801359-601b-456f-a8d2-02ce2cc6440a",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "adapter_number": 0,
+            "node_id": "7e2f1bdf-df02-4516-aabb-466107a7c7e5",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          }
+        ],
+        "suspend": false
+      },
+      {
+        "filters": {},
+        "link_id": "c5ff9b52-bce9-423e-a4c3-d3ac4c4129df",
+        "nodes": [
+          {
+            "adapter_number": 0,
+            "node_id": "3fc8b716-38e3-447d-8826-b31ae40c471b",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "adapter_number": 0,
+            "node_id": "e5d7b6da-58d2-4be4-82e7-f9efc5ffe675",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          }
+        ],
+        "suspend": false
+      },
+      {
+        "filters": {},
+        "link_id": "ae8513f0-7cdd-4fc5-8d1b-c1a80e65fb38",
+        "nodes": [
+          {
+            "adapter_number": 0,
+            "node_id": "3fc8b716-38e3-447d-8826-b31ae40c471b",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "adapter_number": 0,
+            "node_id": "ac09dae2-8d24-434b-ba3e-d9d3a69b73dc",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          }
+        ],
+        "suspend": false
+      },
+      {
+        "filters": {},
+        "link_id": "f4750d54-a0c7-47eb-8a5d-6dae064e013f",
+        "nodes": [
+          {
+            "adapter_number": 0,
+            "node_id": "7e2f1bdf-df02-4516-aabb-466107a7c7e5",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "adapter_number": 0,
+            "node_id": "2d79017e-7960-4e5f-8a1a-afc52a550383",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          }
+        ],
+        "suspend": false
+      },
+      {
+        "filters": {},
+        "link_id": "c41e6c8c-b432-458b-acf5-e5dc3e9d1bd2",
+        "nodes": [
+          {
+            "adapter_number": 0,
+            "node_id": "ac09dae2-8d24-434b-ba3e-d9d3a69b73dc",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "adapter_number": 0,
+            "node_id": "f825892b-49cc-4664-934b-0487cf3c6843",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          }
+        ],
+        "suspend": false
+      },
+      {
+        "filters": {},
+        "link_id": "b3f47718-2c97-46a1-b794-aee8ca5b803f",
+        "nodes": [
+          {
+            "adapter_number": 0,
+            "node_id": "e5d7b6da-58d2-4be4-82e7-f9efc5ffe675",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "adapter_number": 0,
+            "node_id": "51c6b6f4-fdd3-463b-b95b-c55ed1a6dc28",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          }
+        ],
+        "suspend": false
+      },
+      {
+        "filters": {},
+        "link_id": "752441fb-be52-486c-83b3-7cd35fecbab4",
+        "nodes": [
+          {
+            "adapter_number": 0,
+            "node_id": "ac09dae2-8d24-434b-ba3e-d9d3a69b73dc",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "adapter_number": 0,
+            "node_id": "ee8a4a76-0eaf-473a-8f84-d0813bf4ac26",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          }
+        ],
+        "suspend": false
+      },
+      {
+        "filters": {},
+        "link_id": "f22778df-77f5-4fec-af9d-8581cf6bbbb4",
+        "nodes": [
+          {
+            "adapter_number": 0,
+            "node_id": "e5d7b6da-58d2-4be4-82e7-f9efc5ffe675",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "adapter_number": 0,
+            "node_id": "71a95ec3-8351-497d-a432-8adc60679ab8",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          }
+        ],
+        "suspend": false
+      },
+      {
+        "filters": {},
+        "link_id": "d7b9f460-6a18-4a5a-ba8b-4c117ad33445",
+        "nodes": [
+          {
+            "adapter_number": 0,
+            "node_id": "7e2f1bdf-df02-4516-aabb-466107a7c7e5",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          },
+          {
+            "adapter_number": 0,
+            "node_id": "2bb9feee-2254-4785-b98a-42e51e37752d",
+            "port_number": 0,
+            "label": {
+              "text": "",
+              "x": 0,
+              "y": 0
+            }
+          }
+        ],
+        "suspend": false
+      }
+    ],
+    "drawings": [],
+    "computes": []
+  }
+}
