@@ -1,0 +1,58 @@
+.chatList {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden; /* Prevent the whole sidebar from scrolling */
+
+  hr {
+    border: none;
+    height: 2px;
+    background-color: white;
+    opacity: 0.1;
+    border-radius: 5px;
+    margin: 20px 0px;
+  }
+
+  .title {
+    font-weight: 600;
+    font-size: 600; /* Consider fixing this to e.g., 16px if needed */
+    margin-bottom: 10px;
+  }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+    flex: 1;                /* Take remaining vertical space */
+    min-height: 0;          /* Allow flex item to shrink below content */
+    overflow-y: auto;       /* Enable vertical scrolling */
+
+    /* Hide scrollbar for all browsers */
+    -ms-overflow-style: none;  /* Internet Explorer and Edge */
+    scrollbar-width: none;     /* Firefox */
+  }
+  .list::-webkit-scrollbar {
+    display: none;          /* Chrome, Safari, Opera */
+  }
+
+  a {
+    padding: 10px;
+    border-radius: 10px;
+
+    &:hover {
+      background-color: #2c2937;
+    }
+  }
+
+  .upgrade {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+
+    img {
+      width: 24px;
+      height: 24px;
+    }
+  }
+}
