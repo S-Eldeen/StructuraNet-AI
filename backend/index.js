@@ -56,7 +56,7 @@ const requireAuth = async (req, res, next) => {
     }
 
     // تسجيل جزء صغير من التوكن للتصحيح (آمن)
-    console.log(`🔑 Token received: ${token.substring(0, 15)}...`);
+    
 
     // التحقق من التوكن باستخدام المفتاح العام
     const session = await verifyToken(token, { 

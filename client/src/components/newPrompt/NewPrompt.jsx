@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useAuth } from '@clerk/clerk-react';
 import Upload from '../upload/Upload';
-import { askGemini } from '../../lib/gemini';
+import { askGeminiStream } from '../../lib/gemini';
 import './newPrompt.css';
 
-const NewPrompt = ({ addMessage, setIsTyping, chatId }) => {
+const NewPrompt = ({ addMessage, setIsTyping, chatId, history = [] }) => {
   const [text, setText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [images, setImages] = useState([]);
@@ -50,19 +50,33 @@ const NewPrompt = ({ addMessage, setIsTyping, chatId }) => {
     const hasImages = completedImages.length > 0;
     if (!hasText && !hasImages) return;
 
+    // User message
     const userMessage = { role: 'user', content: text, images: completedImages };
     addMessage(userMessage);
 
+    // Clear input
     setText('');
     setImages([]);
     setIsLoading(true);
     setIsTyping(true);
 
-    try {
-      const reply = await askGemini(text, completedImages);
-      const aiMessage = { role: 'assistant', content: reply };
-      addMessage(aiMessage);
+    // Create a placeholder for the AI message (with a unique ID)
+    const aiMessageId = Date.now() + Math.random();
+    addMessage({ role: 'assistant', content: '', id: aiMessageId, streaming: true });
 
+    try {
+      // Call streaming API
+      let accumulatedText = '';
+      await askGeminiStream(text, completedImages, (partialText) => {
+        accumulatedText = partialText;
+        // Update the existing AI message with the latest accumulated text
+        addMessage({ role: 'assistant', content: accumulatedText, id: aiMessageId, streaming: true }, true);
+      });
+
+      // After streaming finishes, mark message as no longer streaming (optional)
+      addMessage({ role: 'assistant', content: accumulatedText, id: aiMessageId, streaming: false }, true);
+
+      // Save the conversation to the backend if chatId exists
       if (chatId) {
         const token = await getToken();
         await fetch(`http://localhost:3000/api/chats/${chatId}/messages`, {
@@ -71,12 +85,12 @@ const NewPrompt = ({ addMessage, setIsTyping, chatId }) => {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ messages: [userMessage, aiMessage] }),
+          body: JSON.stringify({ messages: [userMessage, { role: 'assistant', content: accumulatedText }] }),
         });
       }
     } catch (error) {
       console.error('AI Error:', error);
-      addMessage({ role: 'assistant', content: 'عذراً، حدث خطأ. حاول مرة أخرى.' });
+      addMessage({ role: 'assistant', content: 'Sorry, something went wrong. Please try again.', id: aiMessageId, streaming: false }, true);
     } finally {
       setIsLoading(false);
       setIsTyping(false);

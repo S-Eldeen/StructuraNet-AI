@@ -56,7 +56,6 @@ const DashboardPage = () => {
     try {
       const token = await getToken();
 
-      // 1. إنشاء المحادثة مع رسالة المستخدم
       const createResponse = await fetch("http://localhost:3000/api/chats", {
         method: "POST",
         headers: {
@@ -68,10 +67,11 @@ const DashboardPage = () => {
       if (!createResponse.ok) throw new Error('Failed to create chat');
       const chat = await createResponse.json();
 
-      // 2. الحصول على رد AI
+      // ✅ إرسال الحدث لتحديث القائمة في كلا الصفحتين
+      window.dispatchEvent(new CustomEvent('chat-created'));
+
       const reply = await askGemini(text, completedImages);
 
-      // 3. إضافة رد AI إلى المحادثة
       await fetch(`http://localhost:3000/api/chats/${chat._id}/messages`, {
         method: 'POST',
         headers: {
@@ -81,7 +81,6 @@ const DashboardPage = () => {
         body: JSON.stringify({ messages: [{ role: 'assistant', content: reply }] }),
       });
 
-      // 4. التوجيه إلى صفحة المحادثة الجديدة
       navigate(`/dashboard/chats/${chat._id}`);
 
     } catch (error) {

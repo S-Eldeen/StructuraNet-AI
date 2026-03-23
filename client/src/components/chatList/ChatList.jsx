@@ -9,25 +9,15 @@ const ChatList = () => {
   const [loading, setLoading] = useState(true);
 
   const fetchChats = useCallback(async () => {
-    if (!isLoaded) {
-      console.log("⏳ Clerk not loaded yet");
-      return;
-    }
-    console.log("📡 Fetching chats...");
+    if (!isLoaded) return;
     try {
       const token = await getToken();
-      if (!token) {
-        console.log("❌ No token available");
-        return;
-      }
+      if (!token) return;
       const response = await fetch("http://localhost:3000/api/userchats", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
-      console.log("✅ Chats fetched:", data.chats);
       setChats(data.chats || []);
     } catch (error) {
       console.error("❌ Error fetching chats:", error);
@@ -38,11 +28,7 @@ const ChatList = () => {
 
   useEffect(() => {
     fetchChats();
-    // استمع لحدث إنشاء محادثة جديدة
-    const handleChatCreated = () => {
-      console.log("🎯 Chat created event received");
-      fetchChats();
-    };
+    const handleChatCreated = () => fetchChats();
     window.addEventListener('chat-created', handleChatCreated);
     return () => window.removeEventListener('chat-created', handleChatCreated);
   }, [fetchChats]);
