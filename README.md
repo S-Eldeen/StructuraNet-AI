@@ -1,120 +1,194 @@
-🚀 What is Structranet AI?
-Structranet AI is an intelligent assistant that helps network engineers design, simulate, and document network architectures. It combines conversational AI (Gemini) with real‑time network topology generation and integration with GNS3.
+# 🚀 Structranet AI
 
-This platform is built for network professionals who want to:
+## What is Structranet AI?
 
-Design complex topologies using natural language
+**Structranet AI** is an intelligent assistant designed to help network engineers **design, simulate, and document network architectures** efficiently.
 
-Generate network diagrams, configurations, and images
+It combines **conversational AI (Google Gemini)** with **real-time network topology generation** and planned integration with **GNS3 automation**, creating a powerful all-in-one platform for modern network design.
 
-Automate deployment via GNS3
+---
 
-Manage conversations and designs with a clean React frontend and Node.js backend
+## 🎯 Key Capabilities
 
-🛠️ Tech Stack
-Layer	Technologies
-Frontend	React, Vite, React Router, Clerk (authentication), React Markdown, ImageKit React SDK
-Backend	Node.js, Express, MongoDB (Mongoose), ImageKit Node SDK, Clerk Backend SDK
-AI Services	Google Gemini API (text + image generation), GNS3 automation (planned)
-Styling	CSS Modules, custom animations
-📋 Prerequisites
-Make sure you have the following installed on your machine:
+Structranet AI is built for network professionals who want to:
 
-Node.js (v18 or later)
+* Design complex network topologies using **natural language**
+* Generate **network diagrams, configurations, and images**
+* Automate deployment through **GNS3 integration** *(planned)*
+* Manage conversations and designs via a **modern web interface**
 
-npm (comes with Node.js)
+---
 
-MongoDB Atlas account (or a local MongoDB instance)
+## 🛠️ Tech Stack
 
-A Clerk account for authentication (get your keys from clerk.com)
+| Layer           | Technologies                                                                          |
+| --------------- | ------------------------------------------------------------------------------------- |
+| **Frontend**    | React, Vite, React Router, Clerk (Authentication), React Markdown, ImageKit React SDK |
+| **Backend**     | Node.js, Express, MongoDB (Mongoose), ImageKit Node SDK, Clerk Backend SDK            |
+| **AI Services** | Google Gemini API (text + image generation), GNS3 Automation *(planned)*              |
+| **Styling**     | CSS Modules, Custom Animations                                                        |
 
-An ImageKit account for image uploads and transformations (imagekit.io)
+---
 
-A Google Gemini API key (from Google AI Studio)
+## 📋 Prerequisites
 
-🧪 Getting Started (Local Development)
-Follow these steps to run Structranet AI on your own machine.
+Ensure you have the following installed:
 
-1. Clone the repository
-bash
+* **Node.js** (v18 or later)
+* **npm** (included with Node.js)
+* **MongoDB Atlas account** (or local MongoDB)
+* **Clerk account** (authentication keys from clerk.com)
+* **ImageKit account** (imagekit.io)
+* **Google Gemini API key** (Google AI Studio)
+
+---
+
+## 🧪 Getting Started (Local Development)
+
+### 1. Clone the Repository
+
+```bash
 git clone https://github.com/your-username/structranet-ai.git
 cd structranet-ai
-2. Open two terminals
-You will need two terminal windows (or split your terminal) – one for the backend and one for the client.
+```
 
-Terminal 1 – Backend
-bash
+---
+
+### 2. Open Two Terminals
+
+You’ll need:
+
+* One for the **backend**
+* One for the **client**
+
+---
+
+### 3. Install Dependencies
+
+**Terminal 1 – Backend**
+
+```bash
 cd backend
 npm install
-Terminal 2 – Client
-bash
+```
+
+**Terminal 2 – Client**
+
+```bash
 cd client
 npm install
-⚠️ Important: Do not modify or delete the existing .env files or package.json files unless you know exactly what you are doing. The project already includes the necessary configuration for the test version.
+```
 
-3. Set up environment variables
-The project uses .env files in both backend and client folders. The required variables are already listed inside the files. If you need to adjust them, you can replace the placeholder values with your own keys, but for the test version you can keep them as they are.
+---
 
-Backend .env example:
+### ⚠️ Important Notes
 
-text
+* Do **not modify or delete** existing `.env` or `package.json` files unless necessary
+* The project already includes working configurations for testing
+
+---
+
+## 🔐 Environment Variables
+
+Both `backend` and `client` folders include `.env` files.
+
+### Backend `.env`
+
+```env
 MONGO=your_mongodb_uri
 CLERK_JWT_KEY=your_jwt_key
 IMAGE_KIT_ENDPOINT=your_imagekit_endpoint
 IMAGE_KIT_PUBLIC_KEY=your_imagekit_public_key
 IMAGE_KIT_PRIVATE_KEY=your_imagekit_private_key
 CLIENT_URL=http://localhost:5173
-Client .env example:
+```
 
-text
+### Client `.env`
+
+```env
 VITE_IMAGE_KIT_ENDPOINT=your_imagekit_endpoint
 VITE_IMAGE_KIT_PUBLIC_KEY=your_imagekit_public_key
 VITE_GEMINI_PUBLIC_KEY=your_gemini_api_key
 VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-⚠️ Never commit .env files to version control. They are already in .gitignore.
+```
 
-4. Run the application
-Now start both servers.
+⚠️ **Never commit `.env` files** — they are already included in `.gitignore`.
 
-Terminal 1 – Backend
-bash
+---
+
+## ▶️ Running the Application
+
+**Start Backend**
+
+```bash
 npm start
-The backend server will run on http://localhost:3000.
+```
 
-Terminal 2 – Client
-bash
+Runs on: **[http://localhost:3000](http://localhost:3000)**
+
+**Start Client**
+
+```bash
 npm run dev
-The client development server will start on http://localhost:5173.
+```
 
-Open your browser and visit http://localhost:5173. You should see the Structranet AI homepage.
+Runs on: **[http://localhost:5173](http://localhost:5173)**
 
-🧑‍💻 How to Use the Test Version
-Sign up / Sign in using Clerk (you can use Google, GitHub, or email).
+---
 
-Create a new chat from the dashboard.
+### 🌐 Access the App
 
-Ask questions about network design, or request a network diagram (e.g., “Draw a simple network with 3 routers and 2 switches”).
+Open your browser and go to:
 
-Upload images to analyze them together with your questions.
+```
+http://localhost:5173
+```
 
-Explore the chat history – all conversations are saved in MongoDB.
+---
 
-🔧 Troubleshooting
-“Missing publicKey” error – Ensure your ImageKit public key is correctly set in client/.env.
+## 🧑‍💻 How to Use (Test Version)
 
-Clerk authentication fails – Verify that your Clerk publishable key and secret key are correct.
+1. Sign up / Sign in via **Clerk** (Google, GitHub, or email)
+2. Create a new chat from the dashboard
+3. Ask questions or request network designs
+   *Example:*
+   *“Draw a simple network with 3 routers and 2 switches”*
+4. Upload images for analysis
+5. View saved conversations (stored in MongoDB)
 
-MongoDB connection refused – Check that your IP is whitelisted in MongoDB Atlas and the URI is correct.
+---
 
-“Failed to fetch” – Make sure both backend and client are running and that CLIENT_URL in backend points to http://localhost:5173.
+## 🔧 Troubleshooting
 
-🤝 Contributing
-This is a test version. If you encounter bugs or have suggestions, feel free to open an issue or submit a pull request.
+| Issue                          | Solution                                                    |
+| ------------------------------ | ----------------------------------------------------------- |
+| **Missing publicKey**          | Check ImageKit public key in `client/.env`                  |
+| **Clerk authentication fails** | Verify Clerk keys                                           |
+| **MongoDB connection refused** | Whitelist IP & verify URI                                   |
+| **Failed to fetch**            | Ensure both servers are running and `CLIENT_URL` is correct |
 
-📄 License
-This project is for educational and evaluation purposes. Not intended for production use without proper security hardening.
+---
 
-🎉 Enjoy!
-Now you're ready to explore the power of AI in network design. Have fun with Structranet AI!
+## 🤝 Contributing
 
-Built with ❤️ for network engineers everywhere.
+This is a **test version**.
+Feel free to:
+
+* Open issues
+* Submit pull requests
+* Suggest improvements
+
+---
+
+## 📄 License
+
+This project is intended for **educational and evaluation purposes only**.
+Not recommended for production without proper security hardening.
+
+---
+
+## 🎉 Final Note
+
+You're now ready to explore the power of AI-driven network design.
+
+**Structranet AI** — built with ❤️ for network engineers everywhere.
