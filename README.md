@@ -48,8 +48,8 @@ Ensure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/structranet-ai.git
-cd structranet-ai
+git clone https://github.com:S-Eldeen/AutoTopology.git
+
 ```
 
 ---
