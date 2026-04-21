@@ -54,6 +54,7 @@ links
     height: 60%;
     object-fit: contain;
     animation: spin-logo 4s linear infinite;
+    mix-blend-mode: screen; /* Removes black background */
 }
 
 @keyframes spin {

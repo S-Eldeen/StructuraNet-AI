@@ -275,7 +275,6 @@
   border-radius: 4px;
 }
 
-/* مؤشر الكتابة (ثلاث نقاط) */
 .typing-indicator {
   display: flex;
   gap: 4px;
@@ -286,6 +285,46 @@
   border-bottom-right-radius: 20px;
   align-self: flex-start;
   max-width: fit-content;
+}
+
+/* التنسيق الجديد لمؤشر الكتابة الديناميكي (مكسور ويرجع يتكون) */
+.typing-dynamic-logo {
+  width: 10px !important;
+  height: 10px !important;
+  /* نزيل حركة bounce القديمة من الغلاف لنطبق الكسر على اللوجو مباشرة */
+}
+
+/* حركة التكسر وإعادة التكوين */
+.typing-dynamic-logo .spinner-logo {
+  animation: shatter-reform 2s infinite ease-in-out !important;
+}
+
+@keyframes shatter-reform {
+  0%, 100% { 
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); 
+    transform: scale(1) rotate(0deg); 
+    opacity: 1; 
+  }
+  20% { 
+    clip-path: polygon(10% 10%, 40% 30%, 90% 5%, 70% 50%, 95% 90%, 50% 70%, 5% 95%, 20% 40%); 
+    transform: scale(1.3) rotate(15deg); 
+    opacity: 0.8;
+  }
+  40% { 
+    clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%); 
+    transform: scale(0) rotate(90deg); 
+    opacity: 0; 
+  }
+  60% { 
+    clip-path: polygon(25% 25%, 75% 20%, 80% 80%, 20% 75%); 
+    transform: scale(0.6) rotate(-45deg); 
+    opacity: 0.5; 
+  }
+  80% { 
+    clip-path: polygon(0 5%, 95% 0, 100% 95%, 5% 100%); 
+    transform: scale(1.1) rotate(5deg); 
+    opacity: 0.9; 
+  }
 }
 
 .typing-indicator span {
