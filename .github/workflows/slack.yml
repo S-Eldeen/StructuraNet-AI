@@ -13,7 +13,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    
+
+      # Notify on Push and Pull Request Events 
       - name: Notify Push (All Branches Except Main)
         if: github.event_name == 'push' && github.ref_name != 'main'
         run: |
