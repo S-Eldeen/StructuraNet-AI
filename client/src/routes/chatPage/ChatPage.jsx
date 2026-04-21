@@ -116,7 +116,7 @@ const Chatpage = () => {
 
             {isTyping && (
               <div className="message ai typing-indicator" style={{ backgroundColor: 'transparent', padding: '0', boxShadow: 'none' }}>
-                <div className="logo-spinner-wrapper" style={{ width: '30px', height: '30px' }}>
+                <div className="logo-spinner-wrapper typing-dynamic-logo">
                   <div className="spinner-ring"></div>
                   <img src="/logo.png" alt="Typing" className="spinner-logo" />
                 </div>
