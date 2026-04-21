@@ -16,7 +16,16 @@ dotenv.config();
 const port = process.env.PORT || 3000;
 const app = express();
 
-app.use(cors({ origin: process.env.CLIENT_URL }));
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests from any localhost port or the configured CLIENT_URL
+    if (!origin || origin.startsWith('http://localhost:') || origin === process.env.CLIENT_URL) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+}));
 app.use(express.json());
 
 const connect = async () => {
