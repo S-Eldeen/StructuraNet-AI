@@ -9,6 +9,20 @@ const safetySettings = [
   },
 ];
 
+// قائمة النماذج البديلة للنصوص (حسب الأولوية)
+const TEXT_MODELS = [
+  "gemini-3-flash-preview",
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash"
+];
+
+// قائمة النماذج البديلة للصور (توليد الصور)
+const IMAGE_MODELS = [
+  "gemini-3.1-flash-image-preview",
+  "gemini-2.5-flash-image"
+];
+
 // تحويل رابط الصورة إلى base64
 async function urlToBase64(url) {
   const response = await fetch(url);
@@ -22,7 +36,7 @@ async function urlToBase64(url) {
   });
 }
 
-// دالة إعادة المحاولة مع التراجع الأسي
+// دالة إعادة المحاولة مع التراجع الأسي (لنموذج محدد)
 async function callWithRetry(fn, maxRetries = 5, baseDelay = 1000) {
   let lastError;
   for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -35,7 +49,7 @@ async function callWithRetry(fn, maxRetries = 5, baseDelay = 1000) {
                     error.message?.includes('overloaded');
       if (!is503 || attempt === maxRetries - 1) throw error;
       const delay = Math.min(baseDelay * Math.pow(2, attempt), 30000);
-      console.log(`⚠️ إعادة المحاولة بعد ${delay}ms... (محاولة ${attempt + 1}/${maxRetries - 1})`);
+      console.log(`⚠️ Retrying after ${delay}ms... (attempt ${attempt + 1}/${maxRetries - 1})`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
@@ -49,7 +63,37 @@ Your mission is to assist users with their questions regarding networking, netwo
  design analysis, and image generation upon request. If the user requests an image 
 (e.g., 'draw a network' or 'generate a network image'), use the appropriate model to generate it.`;
 
-// إرسال طلب عادي (غير متدفق) – مع دعم تعليمات النظام
+// دالة مساعدة لتجربة عدة نماذج للطلبات النصية
+async function tryModelsForText(promptParts, imageMode = false) {
+  const models = imageMode ? IMAGE_MODELS : TEXT_MODELS;
+  let lastError;
+  for (const model of models) {
+    try {
+      console.log(`🔄 Trying model: ${model}`);
+      const response = await callWithRetry(async () => {
+        const result = await ai.models.generateContent({
+          model: model,
+          contents: promptParts,
+          config: { safetySettings, systemInstruction: { parts: [{ text: systemInstruction }] } },
+        });
+        return result;
+      });
+      console.log(`✅ Success with model: ${model}`);
+      return response;
+    } catch (error) {
+      console.warn(`❌ Model ${model} failed:`, error.message);
+      lastError = error;
+      if (error.message?.includes('429') || error.message?.includes('quota')) {
+        console.log(`Quota exhausted for ${model}, trying next...`);
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError;
+}
+
+// إرسال طلب عادي (غير متدفق) – مع دعم تعليمات النظام وتبديل النماذج
 export async function askGemini(text, imageUrls = []) {
   const parts = [];
   if (text?.trim()) parts.push({ text });
@@ -64,17 +108,11 @@ export async function askGemini(text, imageUrls = []) {
 
   if (parts.length === 0) throw new Error("No content to send.");
 
-  return callWithRetry(async () => {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview", // يمكن تغييره إلى gemini-3.1-flash-image-preview إذا أردت توليد صور
-      contents: parts,
-      config: { safetySettings, systemInstruction: { parts: [{ text: systemInstruction }] } },
-    });
-    return response.text;
-  });
+  const response = await tryModelsForText(parts, imageUrls.length > 0);
+  return response.text;
 }
 
-// إرسال طلب متدفق مع إعادة المحاولة
+// إرسال طلب متدفق مع إعادة المحاولة وتبديل النماذج
 export async function askGeminiStream(text, imageUrls = [], onChunk) {
   const parts = [];
   if (text?.trim()) parts.push({ text });
@@ -89,26 +127,43 @@ export async function askGeminiStream(text, imageUrls = [], onChunk) {
 
   if (parts.length === 0) throw new Error("No content to send.");
 
-  await callWithRetry(async () => {
-    const stream = await ai.models.generateContentStream({
-      model: "gemini-3-flash-preview",
-      contents: parts,
-      config: { safetySettings, systemInstruction: { parts: [{ text: systemInstruction }] } },
-    });
-
-    let fullText = '';
-    for await (const chunk of stream) {
-      const chunkText = chunk.text;
-      if (chunkText) {
-        fullText += chunkText;
-        onChunk(fullText);
+  const models = imageUrls.length > 0 ? IMAGE_MODELS : TEXT_MODELS;
+  let lastError;
+  for (const model of models) {
+    try {
+      console.log(`🔄 Streaming with model: ${model}`);
+      await callWithRetry(async () => {
+        const stream = await ai.models.generateContentStream({
+          model: model,
+          contents: parts,
+          config: { safetySettings, systemInstruction: { parts: [{ text: systemInstruction }] } },
+        });
+        let fullText = '';
+        for await (const chunk of stream) {
+          const chunkText = chunk.text;
+          if (chunkText) {
+            fullText += chunkText;
+            onChunk(fullText);
+          }
+        }
+        return fullText;
+      });
+      console.log(`✅ Streaming succeeded with model: ${model}`);
+      return;
+    } catch (error) {
+      console.warn(`❌ Streaming model ${model} failed:`, error.message);
+      lastError = error;
+      if (error.message?.includes('429') || error.message?.includes('quota')) {
+        console.log(`Quota exhausted for ${model}, trying next...`);
+        continue;
       }
+      throw error;
     }
-    return fullText;
-  });
+  }
+  throw lastError;
 }
 
-// ✅ دالة جديدة لدعم المحادثات المتعددة (مع التاريخ) وتوليد الصور
+// ✅ دالة لدعم المحادثات المتعددة (مع التاريخ) وتوليد الصور مع تبديل النماذج
 export async function askGeminiWithHistory(messages, newMessageText, newImages = []) {
   const imageParts = await Promise.all(
     newImages.map(async (url) => {
@@ -136,32 +191,49 @@ export async function askGeminiWithHistory(messages, newMessageText, newImages =
   newParts.push(...imageParts);
   contents.push({ role: 'user', parts: newParts });
 
-  return callWithRetry(async () => {
-    const response = await ai.models.generateContent({
-      model: "gemini-3.1-flash-image-preview", // نموذج يدعم توليد الصور
-      contents: contents,
-      config: {
-        safetySettings,
-        systemInstruction: { parts: [{ text: systemInstruction }] },
-      },
-    });
+  const models = newImages.length > 0 ? IMAGE_MODELS : TEXT_MODELS;
+  let lastError;
+  for (const model of models) {
+    try {
+      console.log(`🔄 History+Images with model: ${model}`);
+      const response = await callWithRetry(async () => {
+        return await ai.models.generateContent({
+          model: model,
+          contents: contents,
+          config: {
+            safetySettings,
+            systemInstruction: { parts: [{ text: systemInstruction }] },
+          },
+        });
+      });
 
-    let fullText = '';
-    const images = [];
+      let fullText = '';
+      const images = [];
 
-    if (response.candidates && response.candidates[0] && response.candidates[0].content) {
-      for (const part of response.candidates[0].content.parts) {
-        if (part.text) {
-          fullText += part.text;
-        } else if (part.inlineData) {
-          const mimeType = part.inlineData.mimeType || 'image/png';
-          const data = part.inlineData.data;
-          const dataUrl = `data:${mimeType};base64,${data}`;
-          images.push(dataUrl);
+      if (response.candidates && response.candidates[0] && response.candidates[0].content) {
+        for (const part of response.candidates[0].content.parts) {
+          if (part.text) {
+            fullText += part.text;
+          } else if (part.inlineData) {
+            const mimeType = part.inlineData.mimeType || 'image/png';
+            const data = part.inlineData.data;
+            const dataUrl = `data:${mimeType};base64,${data}`;
+            images.push(dataUrl);
+          }
         }
       }
-    }
 
-    return { text: fullText, images };
-  });
+      console.log(`✅ History+Images succeeded with model: ${model}`);
+      return { text: fullText, images };
+    } catch (error) {
+      console.warn(`❌ History+Images model ${model} failed:`, error.message);
+      lastError = error;
+      if (error.message?.includes('429') || error.message?.includes('quota')) {
+        console.log(`Quota exhausted for ${model}, trying next...`);
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw lastError;
 }
