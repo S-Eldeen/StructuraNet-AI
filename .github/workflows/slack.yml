@@ -1,0 +1,45 @@
+name: Slack Notification
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      # =========================
+      # 🚀 PUSH EVENT HANDLER
+      # =========================
+      - name: Handle Push Events
+        if: github.event_name == 'push'
+        run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            MESSAGE="🚨 WARNING! Direct Push on MAIN 🚨
+          👤 User: ${{ github.actor }}
+          📦 Repo: ${{ github.repository }}
+          ❗ This is a protected branch. Please review immediately!"
+          else
+            MESSAGE="🚀 New Push
+          📦 Repo: ${{ github.repository }}
+          👤 User: ${{ github.actor }}
+          🌿 Branch: ${{ github.ref_name }}
+          👉 Pull latest changes:
+          git pull origin ${{ github.ref_name }}"
+          fi
+
+          curl -X POST -H "Content-type: application/json" \
+          --data "{\"text\": \"$MESSAGE\"}" \
+          ${{ secrets.SLACK_WEBHOOK }}
+
+      # =========================
+      # 🔁 PULL REQUEST HANDLER
+      # =========================
+      - name: Handle Pull Requests
+        if: github.event_name == 'pull_request'
+        run: |
+          curl -X POST -H "Content-type: application/json" \
+          --data '{
+            "text": "🔁 New Pull Request\n📦 Repo: ${{ github.repository }}\n👤 User: ${{ github.actor }}\n🌿 From: ${{ github.head_ref }} → To: ${{ github.base_ref }}\n👉 Please review and merge if approved."
+          }' \
+          ${{ secrets.SLACK_WEBHOOK }}
