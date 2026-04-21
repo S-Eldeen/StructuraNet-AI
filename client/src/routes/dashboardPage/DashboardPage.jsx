@@ -9,6 +9,7 @@ const DashboardPage = () => {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState([]);
+  const [isListening, setIsListening] = useState(false);
   const { getToken } = useAuth();
   const navigate = useNavigate();
 
@@ -43,6 +44,39 @@ const DashboardPage = () => {
     setImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  const startListening = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert('المتصفح لا يدعم التعرف على الصوت. يرجى استخدام Chrome أو Edge.');
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'ar-EG';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    setIsListening(true);
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setText(prev => prev + (prev ? ' ' : '') + transcript);
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+      setIsListening(false);
+      alert('حدث خطأ أثناء التعرف على الصوت. حاول مرة أخرى.');
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (loading) return;
@@ -67,7 +101,6 @@ const DashboardPage = () => {
       if (!createResponse.ok) throw new Error('Failed to create chat');
       const chat = await createResponse.json();
 
-      // ✅ إرسال الحدث لتحديث القائمة في كلا الصفحتين
       window.dispatchEvent(new CustomEvent('chat-created'));
 
       const reply = await askGemini(text, completedImages);
@@ -82,7 +115,6 @@ const DashboardPage = () => {
       });
 
       navigate(`/dashboard/chats/${chat._id}`);
-
     } catch (error) {
       console.error("❌ Error:", error);
     } finally {
@@ -144,7 +176,19 @@ const DashboardPage = () => {
               onChange={(e) => setText(e.target.value)}
               disabled={loading}
             />
-            <button type="submit" disabled={loading || (!text.trim() && images.filter(img => img.filePath).length === 0)}>
+            <button
+              type="button"
+              className={`mic-btn ${isListening ? 'listening' : ''}`}
+              onClick={startListening}
+              disabled={loading}
+              title="إدخال صوتي"
+            >
+              <img src="/microphone.png" alt="mic" className="mic-icon" />
+            </button>
+            <button
+              type="submit"
+              disabled={loading || (!text.trim() && images.filter(img => img.filePath).length === 0)}
+            >
               <img className="img" src="/arrow.png" alt="" />
             </button>
           </div>

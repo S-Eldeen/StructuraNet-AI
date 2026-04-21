@@ -9,23 +9,28 @@ const safetySettings = [
   },
 ];
 
-// قائمة النماذج البديلة للنصوص (حسب الأولوية)
 const TEXT_MODELS = [
   "gemini-3-flash-preview",
   "gemini-2.5-flash",
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
-  "gemini-1.5-pro"      // ✅ تمت الإضافة
+  "gemini-2.0-flash"
 ];
 
-// قائمة النماذج البديلة للصور (توليد الصور)
 const IMAGE_MODELS = [
   "gemini-3.1-flash-image-preview",
-  "gemini-2.5-flash-image",
-  "gemini-2.0-flash-image"  // ✅ تمت الإضافة (إذا كان متاحاً)
+  "gemini-2.5-flash-image"
 ];
 
-// تحويل رابط الصورة إلى base64
+// دالة للكشف عن أسئلة الهوية
+function isIdentityQuestion(prompt) {
+  const keywords = [
+    'who are you', 'what is your name', 'tell me about yourself',
+    'who created you', 'what are you', 'your name', 'introduce yourself',
+    'مين أنت', 'ما اسمك', 'عرف نفسك', 'من أنت', 'قوللي عن نفسك'
+  ];
+  const lowerPrompt = prompt.toLowerCase().trim();
+  return keywords.some(keyword => lowerPrompt.includes(keyword));
+}
+
 async function urlToBase64(url) {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
@@ -38,7 +43,6 @@ async function urlToBase64(url) {
   });
 }
 
-// دالة إعادة المحاولة مع التراجع الأسي (لنموذج محدد)
 async function callWithRetry(fn, maxRetries = 5, baseDelay = 1000) {
   let lastError;
   for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -58,14 +62,30 @@ async function callWithRetry(fn, maxRetries = 5, baseDelay = 1000) {
   throw lastError;
 }
 
-// تعليمات النظام – يقدم نفسه باسم StructranetAI
 const systemInstruction = `You are an intelligent assistant specialized in network design; your name is StructranetAI.
  If the user asks for your name, tell them that your name is StructranetAI (not Gemini). 
 Your mission is to assist users with their questions regarding networking, network design,
  design analysis, and image generation upon request. If the user requests an image 
 (e.g., 'draw a network' or 'generate a network image'), use the appropriate model to generate it.`;
 
-// دالة مساعدة لتجربة عدة نماذج للطلبات النصية
+function getFriendlyErrorMessage(error) {
+  const message = error.message || '';
+  
+  if (message.includes('429') || message.includes('quota') || message.includes('RESOURCE_EXHAUSTED')) {
+    return 'عذراً، تم استنفاد عدد الطلبات المجانية لهذا اليوم. يرجى المحاولة لاحقاً أو ترقية الحساب.';
+  }
+  if (message.includes('503') || message.includes('UNAVAILABLE') || message.includes('overloaded')) {
+    return 'الخدمة مشغولة حالياً، يرجى المحاولة مرة أخرى بعد قليل.';
+  }
+  if (message.includes('404') || message.includes('not found')) {
+    return 'النموذج المطلوب غير متوفر حالياً. يرجى تحديث التطبيق أو المحاولة لاحقاً.';
+  }
+  if (message.includes('403') || message.includes('PERMISSION_DENIED')) {
+    return 'مشكلة في مفتاح API. يرجى التواصل مع الدعم الفني.';
+  }
+  return 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.';
+}
+
 async function tryModelsForText(promptParts, imageMode = false) {
   const models = imageMode ? IMAGE_MODELS : TEXT_MODELS;
   let lastError;
@@ -85,18 +105,24 @@ async function tryModelsForText(promptParts, imageMode = false) {
     } catch (error) {
       console.warn(`❌ Model ${model} failed:`, error.message);
       lastError = error;
-      if (error.message?.includes('429') || error.message?.includes('quota')) {
-        console.log(`Quota exhausted for ${model}, trying next...`);
+      if (error.message?.includes('429') || error.message?.includes('quota') ||
+          error.message?.includes('503') || error.message?.includes('UNAVAILABLE') ||
+          error.message?.includes('404') || error.message?.includes('not found')) {
+        console.log(`Model ${model} unavailable, trying next...`);
         continue;
       }
       throw error;
     }
   }
-  throw lastError;
+  throw new Error(getFriendlyErrorMessage(lastError));
 }
 
-// إرسال طلب عادي (غير متدفق) – مع دعم تعليمات النظام وتبديل النماذج
 export async function askGemini(text, imageUrls = []) {
+  // إذا كان السؤال عن الهوية، نرد مباشرة من الكود بدون استدعاء Gemini
+  if (text && isIdentityQuestion(text)) {
+    return `Hello! I'm StructranetAI, an intelligent assistant specialized in network design. I can help you design networks, analyze topologies, explain protocols, and even generate network diagrams. How can I assist you with your IT project today?`;
+  }
+
   const parts = [];
   if (text?.trim()) parts.push({ text });
 
@@ -114,8 +140,14 @@ export async function askGemini(text, imageUrls = []) {
   return response.text;
 }
 
-// إرسال طلب متدفق مع إعادة المحاولة وتبديل النماذج
 export async function askGeminiStream(text, imageUrls = [], onChunk) {
+  // نفس المنطق للأسئلة عن الهوية في حالة التدفق
+  if (text && isIdentityQuestion(text)) {
+    const identityResponse = `Hello! I'm StructranetAI, an intelligent assistant specialized in network design. I can help you design networks, analyze topologies, explain protocols, and even generate network diagrams. How can I assist you with your IT project today?`;
+    onChunk(identityResponse);
+    return identityResponse;
+  }
+
   const parts = [];
   if (text?.trim()) parts.push({ text });
 
@@ -155,18 +187,25 @@ export async function askGeminiStream(text, imageUrls = [], onChunk) {
     } catch (error) {
       console.warn(`❌ Streaming model ${model} failed:`, error.message);
       lastError = error;
-      if (error.message?.includes('429') || error.message?.includes('quota')) {
-        console.log(`Quota exhausted for ${model}, trying next...`);
+      if (error.message?.includes('429') || error.message?.includes('quota') ||
+          error.message?.includes('503') || error.message?.includes('UNAVAILABLE') ||
+          error.message?.includes('404') || error.message?.includes('not found')) {
+        console.log(`Model ${model} unavailable, trying next...`);
         continue;
       }
       throw error;
     }
   }
-  throw lastError;
+  throw new Error(getFriendlyErrorMessage(lastError));
 }
 
-// ✅ دالة لدعم المحادثات المتعددة (مع التاريخ) وتوليد الصور مع تبديل النماذج
 export async function askGeminiWithHistory(messages, newMessageText, newImages = []) {
+  // إذا كانت الرسالة الجديدة عن الهوية، نرد مباشرة
+  if (newMessageText && isIdentityQuestion(newMessageText)) {
+    const identityResponse = `Hello! I'm StructranetAI, an intelligent assistant specialized in network design. I can help you design networks, analyze topologies, explain protocols, and even generate network diagrams. How can I assist you with your IT project today?`;
+    return { text: identityResponse, images: [] };
+  }
+
   const imageParts = await Promise.all(
     newImages.map(async (url) => {
       const fullUrl = import.meta.env.VITE_IMAGE_KIT_ENDPOINT + url;
@@ -230,12 +269,14 @@ export async function askGeminiWithHistory(messages, newMessageText, newImages =
     } catch (error) {
       console.warn(`❌ History+Images model ${model} failed:`, error.message);
       lastError = error;
-      if (error.message?.includes('429') || error.message?.includes('quota')) {
-        console.log(`Quota exhausted for ${model}, trying next...`);
+      if (error.message?.includes('429') || error.message?.includes('quota') ||
+          error.message?.includes('503') || error.message?.includes('UNAVAILABLE') ||
+          error.message?.includes('404') || error.message?.includes('not found')) {
+        console.log(`Model ${model} unavailable, trying next...`);
         continue;
       }
       throw error;
     }
   }
-  throw lastError;
+  throw new Error(getFriendlyErrorMessage(lastError));
 }

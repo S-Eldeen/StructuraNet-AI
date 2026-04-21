@@ -8,6 +8,7 @@ const NewPrompt = ({ addMessage, setIsTyping, chatId, history = [] }) => {
   const [text, setText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [images, setImages] = useState([]);
+  const [isListening, setIsListening] = useState(false);
   const { getToken } = useAuth();
 
   const handleUploadStart = (file) => {
@@ -41,6 +42,39 @@ const NewPrompt = ({ addMessage, setIsTyping, chatId, history = [] }) => {
     setImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  const startListening = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      alert('المتصفح لا يدعم التعرف على الصوت. يرجى استخدام Chrome أو Edge.');
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'ar-EG';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    setIsListening(true);
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setText(prev => prev + (prev ? ' ' : '') + transcript);
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+      setIsListening(false);
+      alert('حدث خطأ أثناء التعرف على الصوت. حاول مرة أخرى.');
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isLoading) return;
@@ -50,33 +84,26 @@ const NewPrompt = ({ addMessage, setIsTyping, chatId, history = [] }) => {
     const hasImages = completedImages.length > 0;
     if (!hasText && !hasImages) return;
 
-    // User message
     const userMessage = { role: 'user', content: text, images: completedImages };
     addMessage(userMessage);
 
-    // Clear input
     setText('');
     setImages([]);
     setIsLoading(true);
     setIsTyping(true);
 
-    // Create a placeholder for the AI message (with a unique ID)
     const aiMessageId = Date.now() + Math.random();
     addMessage({ role: 'assistant', content: '', id: aiMessageId, streaming: true });
 
     try {
-      // Call streaming API
       let accumulatedText = '';
       await askGeminiStream(text, completedImages, (partialText) => {
         accumulatedText = partialText;
-        // Update the existing AI message with the latest accumulated text
         addMessage({ role: 'assistant', content: accumulatedText, id: aiMessageId, streaming: true }, true);
       });
 
-      // After streaming finishes, mark message as no longer streaming (optional)
       addMessage({ role: 'assistant', content: accumulatedText, id: aiMessageId, streaming: false }, true);
 
-      // Save the conversation to the backend if chatId exists
       if (chatId) {
         const token = await getToken();
         await fetch(`http://localhost:3000/api/chats/${chatId}/messages`, {
@@ -90,7 +117,7 @@ const NewPrompt = ({ addMessage, setIsTyping, chatId, history = [] }) => {
       }
     } catch (error) {
       console.error('AI Error:', error);
-      addMessage({ role: 'assistant', content: 'Sorry, something went wrong. Please try again.', id: aiMessageId, streaming: false }, true);
+      addMessage({ role: 'assistant', content: 'عذراً، حدث خطأ. حاول مرة أخرى.', id: aiMessageId, streaming: false }, true);
     } finally {
       setIsLoading(false);
       setIsTyping(false);
@@ -132,6 +159,15 @@ const NewPrompt = ({ addMessage, setIsTyping, chatId, history = [] }) => {
             onChange={(e) => setText(e.target.value)}
             disabled={isLoading}
           />
+          <button
+            type="button"
+            className={`mic-btn ${isListening ? 'listening' : ''}`}
+            onClick={startListening}
+            disabled={isLoading}
+            title="إدخال صوتي"
+          >
+            <img src="/microphone.png" alt="mic" className="mic-icon" />
+          </button>
           <button
             type="submit"
             className="send-btn"
