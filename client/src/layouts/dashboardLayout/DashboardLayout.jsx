@@ -14,7 +14,14 @@ const DashboardLayout = () => {
         }
     }, [isLoaded, userId, navigate]);
 
-    if (!isLoaded) return <div>Loading...</div>;
+    if (!isLoaded) return (
+        <div className="global-logo-loader">
+            <div className="logo-spinner-wrapper">
+                <div className="spinner-ring"></div>
+                <img src="/logo.png" alt="Loading" className="spinner-logo" />
+            </div>
+        </div>
+    );
 
     return (
         <div className='dashboardLayout'>

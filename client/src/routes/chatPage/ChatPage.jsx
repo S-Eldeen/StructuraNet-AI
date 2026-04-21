@@ -81,7 +81,14 @@ const Chatpage = () => {
     setTimeout(scrollToBottom, 100);
   }, []);
 
-  if (loading) return <div className="loading">جاري التحميل...</div>;
+  if (loading) return (
+    <div className="global-logo-loader">
+      <div className="logo-spinner-wrapper">
+        <div className="spinner-ring"></div>
+        <img src="/logo.png" alt="Loading" className="spinner-logo" />
+      </div>
+    </div>
+  );
 
   return (
     <div className="chatpage">
@@ -108,10 +115,11 @@ const Chatpage = () => {
             ))}
 
             {isTyping && (
-              <div className="message ai typing-indicator">
-                <span></span>
-                <span></span>
-                <span></span>
+              <div className="message ai typing-indicator" style={{ backgroundColor: 'transparent', padding: '0', boxShadow: 'none' }}>
+                <div className="logo-spinner-wrapper" style={{ width: '30px', height: '30px' }}>
+                  <div className="spinner-ring"></div>
+                  <img src="/logo.png" alt="Typing" className="spinner-logo" />
+                </div>
               </div>
             )}
 
