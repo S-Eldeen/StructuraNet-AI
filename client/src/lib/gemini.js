@@ -14,13 +14,15 @@ const TEXT_MODELS = [
   "gemini-3-flash-preview",
   "gemini-2.5-flash",
   "gemini-2.0-flash",
-  "gemini-1.5-flash"
+  "gemini-1.5-flash",
+  "gemini-1.5-pro"      // ✅ تمت الإضافة
 ];
 
 // قائمة النماذج البديلة للصور (توليد الصور)
 const IMAGE_MODELS = [
   "gemini-3.1-flash-image-preview",
-  "gemini-2.5-flash-image"
+  "gemini-2.5-flash-image",
+  "gemini-2.0-flash-image"  // ✅ تمت الإضافة (إذا كان متاحاً)
 ];
 
 // تحويل رابط الصورة إلى base64
