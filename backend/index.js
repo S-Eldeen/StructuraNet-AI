@@ -4,11 +4,9 @@ import dotenv from 'dotenv';
 import cors from "cors";
 import mongoose from "mongoose";
 import { verifyToken } from '@clerk/backend';
-
 import UserChat from "./models/userChat.js";
 import Chat from "./models/chat.js";
-import dns from "dns"
-
+import dns from "dns";
 
 dns.setServers(["1.1.1.1", "8.8.8.8"]);
 dotenv.config();
@@ -16,16 +14,7 @@ dotenv.config();
 const port = process.env.PORT || 3000;
 const app = express();
 
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests from any localhost port or the configured CLIENT_URL
-    if (!origin || origin.startsWith('http://localhost:') || origin === process.env.CLIENT_URL) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  }
-}));
+app.use(cors({ origin: process.env.CLIENT_URL }));
 app.use(express.json());
 
 const connect = async () => {
@@ -49,66 +38,30 @@ app.get("/api/upload", (req, res) => {
   res.send(result);
 });
 
-// Middleware للتحقق من المصادقة باستخدام JWT Key
+// Middleware للتحقق من المصادقة
 const requireAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      console.log("❌ No Authorization header");
-      return res.status(401).json({ error: "No token provided" });
-    }
-
+    if (!authHeader) return res.status(401).json({ error: "No token provided" });
     const token = authHeader.split(' ')[1];
-    if (!token) {
-      console.log("❌ Token missing after Bearer");
-      return res.status(401).json({ error: "Malformed token" });
-    }
-
-    // تسجيل جزء صغير من التوكن للتصحيح (آمن)
-    
-
-    // التحقق من التوكن باستخدام المفتاح العام
-    const session = await verifyToken(token, { 
-      jwtKey: process.env.CLERK_JWT_KEY,
-      // يمكن إضافة خيارات أخرى إذا لزم الأمر
-    });
-
-    if (!session || !session.sub) {
-      console.log("❌ Invalid token payload");
-      return res.status(401).json({ error: "Invalid token" });
-    }
-
+    if (!token) return res.status(401).json({ error: "Malformed token" });
+    const session = await verifyToken(token, { jwtKey: process.env.CLERK_JWT_KEY });
+    if (!session || !session.sub) return res.status(401).json({ error: "Invalid token" });
     req.userId = session.sub;
-    
     next();
   } catch (error) {
-    console.error("❌ Auth error details:", {
-      name: error.name,
-      message: error.message,
-      reason: error.reason,
-      stack: error.stack,
-    });
-
-    // رسائل خطأ مخصصة حسب نوع الخطأ
-    if (error.message?.includes('Invalid JWT form')) {
-      return res.status(401).json({ error: "Invalid token format" });
-    }
-    if (error.message?.includes('jwt expired')) {
-      return res.status(401).json({ error: "Token expired" });
-    }
-    if (error.message?.includes('invalid signature')) {
-      return res.status(401).json({ error: "Invalid signature" });
-    }
-
+    console.error("❌ Auth error:", error);
+    if (error.message?.includes('Invalid JWT form')) return res.status(401).json({ error: "Invalid token format" });
+    if (error.message?.includes('jwt expired')) return res.status(401).json({ error: "Token expired" });
+    if (error.message?.includes('invalid signature')) return res.status(401).json({ error: "Invalid signature" });
     res.status(401).json({ error: "Authentication failed" });
   }
 };
 
-// إنشاء محادثة جديدة (محمية)
+// إنشاء محادثة جديدة
 app.post("/api/chats", requireAuth, async (req, res) => {
   const { text, images = [] } = req.body;
   const userId = req.userId;
-
   try {
     const firstMessage = { role: "user", content: text || "", images };
     const newChat = new Chat({ userId, messages: [firstMessage] });
@@ -129,7 +82,6 @@ app.post("/api/chats", requireAuth, async (req, res) => {
         { $push: { chats: { _id: savedChat._id, title, createdAt: savedChat.createdAt } } }
       );
     }
-
     res.status(201).json(savedChat);
   } catch (error) {
     console.error("❌ Error creating chat:", error);
@@ -156,7 +108,6 @@ app.post("/api/chats/:chatId/messages", requireAuth, async (req, res) => {
   const { chatId } = req.params;
   const userId = req.userId;
   const { messages } = req.body;
-
   try {
     const chat = await Chat.findOne({ _id: chatId, userId });
     if (!chat) return res.status(404).json({ error: "Chat not found" });
@@ -169,30 +120,21 @@ app.post("/api/chats/:chatId/messages", requireAuth, async (req, res) => {
   }
 });
 
-// إعادة إنشاء آخر رد AI
+// إعادة إنشاء آخر رد AI (placeholder)
 app.post("/api/chats/:chatId/regenerate", requireAuth, async (req, res) => {
   const { chatId } = req.params;
   const userId = req.userId;
-
   try {
     const chat = await Chat.findOne({ _id: chatId, userId });
     if (!chat) return res.status(404).json({ error: "Chat not found" });
-
     const lastMessage = chat.messages[chat.messages.length - 1];
-    if (lastMessage && lastMessage.role === 'assistant') {
-      chat.messages.pop();
-    }
-
+    if (lastMessage && lastMessage.role === 'assistant') chat.messages.pop();
     const userMessages = chat.messages.filter(m => m.role === 'user');
     const lastUserMessage = userMessages[userMessages.length - 1];
     if (!lastUserMessage) return res.status(400).json({ error: "No user message to regenerate from" });
-
-    // هنا يجب استدعاء Gemini API مع السياق الكامل
-    // سنقوم برد وهمي الآن
     const newReply = { role: 'assistant', content: "This is a regenerated response (placeholder)." };
     chat.messages.push(newReply);
     await chat.save();
-
     res.json({ message: newReply });
   } catch (error) {
     console.error("Error regenerating:", error);
@@ -203,8 +145,6 @@ app.post("/api/chats/:chatId/regenerate", requireAuth, async (req, res) => {
 // مشاركة المحادثة
 app.post("/api/chats/:chatId/share", requireAuth, async (req, res) => {
   const { chatId } = req.params;
-  const userId = req.userId;
-
   try {
     const shareUrl = `${process.env.CLIENT_URL}/dashboard/chats/${chatId}`;
     res.json({ shareUrl });
@@ -226,9 +166,58 @@ app.get("/api/userchats", requireAuth, async (req, res) => {
   }
 });
 
+// ── Rename chat ──
+app.patch("/api/userchats/:chatId/rename", requireAuth, async (req, res) => {
+  const { chatId } = req.params;
+  const { title } = req.body;
+  const userId = req.userId;
+  if (!title || !title.trim()) return res.status(400).json({ error: "Title is required" });
+  try {
+    const result = await UserChat.updateOne(
+      { userId, "chats._id": chatId },
+      { $set: { "chats.$.title": title.trim() } }
+    );
+    if (result.matchedCount === 0) return res.status(404).json({ error: "Chat not found" });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error renaming chat:", error);
+    res.status(500).json({ error: "Failed to rename chat" });
+  }
+});
+
+// ── Star / unstar chat ──
+app.patch("/api/userchats/:chatId/star", requireAuth, async (req, res) => {
+  const { chatId } = req.params;
+  const { starred } = req.body;
+  const userId = req.userId;
+  try {
+    const result = await UserChat.updateOne(
+      { userId, "chats._id": chatId },
+      { $set: { "chats.$.starred": starred } }
+    );
+    if (result.matchedCount === 0) return res.status(404).json({ error: "Chat not found" });
+    res.json({ success: true, starred });
+  } catch (error) {
+    console.error("Error starring chat:", error);
+    res.status(500).json({ error: "Failed to star chat" });
+  }
+});
+
+// ── Delete chat ──
+app.delete("/api/userchats/:chatId", requireAuth, async (req, res) => {
+  const { chatId } = req.params;
+  const userId = req.userId;
+  try {
+    await UserChat.updateOne({ userId }, { $pull: { chats: { _id: chatId } } });
+    await Chat.findOneAndDelete({ _id: chatId, userId });
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting chat:", error);
+    res.status(500).json({ error: "Failed to delete chat" });
+  }
+});
+
 app.listen(port, () => {
   connect();
   console.log(`🚀 Server running on port ${port}`);
 });
-/* import dns from "dns";
-dns.setServers(["1.1.1.1", "8.8.8.8"]);*/

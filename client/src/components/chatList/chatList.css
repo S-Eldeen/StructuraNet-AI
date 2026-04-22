@@ -2,57 +2,336 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  overflow: hidden; /* Prevent the whole sidebar from scrolling */
+  overflow: hidden;
+  width: 260px;
+  min-width: 260px;
+  transition: width 0.25s ease, min-width 0.25s ease;
+  padding: 0 4px;
+}
 
-  hr {
-    border: none;
-    height: 2px;
-    background-color: white;
-    opacity: 0.1;
-    border-radius: 5px;
-    margin: 20px 0px;
-  }
+.chatList.collapsed {
+  width: 56px;
+  min-width: 56px;
+}
 
-  .title {
-    font-weight: 600;
-    font-size: 600; /* Consider fixing this to e.g., 16px if needed */
-    margin-bottom: 10px;
-  }
+/* ── Header ── */
+.chatList-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  min-height: 36px;
+}
 
-  .list {
-    display: flex;
-    flex-direction: column;
-    flex: 1;                /* Take remaining vertical space */
-    min-height: 0;          /* Allow flex item to shrink below content */
-    overflow-y: auto;       /* Enable vertical scrolling */
+.chatList.collapsed .chatList-header {
+  justify-content: center;
+}
 
-    /* Hide scrollbar for all browsers */
-    -ms-overflow-style: none;  /* Internet Explorer and Edge */
-    scrollbar-width: none;     /* Firefox */
-  }
-  .list::-webkit-scrollbar {
-    display: none;          /* Chrome, Safari, Opera */
-  }
+.chatList-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+}
 
-  a {
-    padding: 10px;
-    border-radius: 10px;
+.brand-name {
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  background: linear-gradient(135deg, #4f8ef7 0%, #a8ccff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 
-    &:hover {
-      background-color: #2c2937;
-    }
-  }
+.toggle-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255,255,255,0.5);
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
 
-  .upgrade {
-    margin-top: auto;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 14px;
+.toggle-btn:hover {
+  background-color: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.9);
+}
 
-    img {
-      width: 24px;
-      height: 24px;
-    }
-  }
+/* ── New chat ── */
+.new-chat-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.85);
+  text-decoration: none;
+  background-color: rgba(79,142,247,0.12);
+  border: 1px solid rgba(79,142,247,0.2);
+  margin-bottom: 8px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.new-chat-btn:hover {
+  background-color: rgba(79,142,247,0.22);
+  border-color: rgba(79,142,247,0.4);
+}
+
+.new-chat-icon-only {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px;
+  border-radius: 10px;
+  color: rgba(255,255,255,0.7);
+  text-decoration: none;
+  background-color: rgba(79,142,247,0.12);
+  border: 1px solid rgba(79,142,247,0.2);
+  margin-bottom: 8px;
+  transition: background 0.15s;
+}
+
+.new-chat-icon-only:hover { background-color: rgba(79,142,247,0.25); }
+
+/* ── Divider ── */
+hr {
+  border: none;
+  height: 1px;
+  background-color: white;
+  opacity: 0.1;
+  border-radius: 5px;
+  margin: 16px 0;
+}
+
+/* ── Section title ── */
+.title {
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.8px;
+  opacity: 0.45;
+  margin-bottom: 8px;
+  padding-left: 4px;
+}
+
+/* ── Scrollable list ── */
+.list {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.list::-webkit-scrollbar { display: none; }
+
+.loading-message,
+.no-chats {
+  font-size: 13px;
+  opacity: 0.4;
+  padding: 8px 4px;
+}
+
+/* ── Nav links ── */
+a {
+  padding: 9px 10px;
+  border-radius: 10px;
+  font-size: 14px;
+  color: rgba(255,255,255,0.75);
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+a:hover {
+  background-color: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.95);
+}
+
+/* ── Chat item wrapper (row with dots btn) ── */
+.chat-item-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border-radius: 10px;
+  transition: background 0.15s;
+}
+
+.chat-item-wrapper:hover,
+.chat-item-wrapper.menu-open {
+  background-color: rgba(255,255,255,0.07);
+}
+
+.chat-item-wrapper .chat-item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 6px 9px 10px;
+  border-radius: 10px;
+  background: none;
+  color: rgba(255,255,255,0.75);
+  text-decoration: none;
+  font-size: 13.5px;
+}
+
+.chat-item-wrapper .chat-item:hover {
+  background: none;
+  color: rgba(255,255,255,0.95);
+}
+
+.chat-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.star-dot {
+  color: #f5c842;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+/* ── Three dots button ── */
+.chat-item-menu {
+  position: relative;
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.dots-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255,255,255,0.4);
+  padding: 5px 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+}
+
+.chat-item-wrapper:hover .dots-btn,
+.chat-item-wrapper.menu-open .dots-btn {
+  opacity: 1;
+}
+
+.dots-btn:hover {
+  background-color: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.9);
+}
+
+/* ── Dropdown menu ── */
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  background-color: #1e1e2e;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 6px;
+  min-width: 155px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+  z-index: 1000;
+  animation: dropIn 0.12s ease;
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 7px;
+  font-size: 13.5px;
+  color: rgba(255,255,255,0.8);
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+
+.dropdown-item:hover {
+  background-color: rgba(255,255,255,0.08);
+  color: #fff;
+}
+
+.dropdown-item.danger { color: #f87171; }
+.dropdown-item.danger:hover { background-color: rgba(248,113,113,0.12); color: #f87171; }
+
+.dropdown-divider {
+  height: 1px;
+  background-color: rgba(255,255,255,0.08);
+  margin: 4px 0;
+}
+
+/* ── Rename inline input ── */
+.rename-form {
+  padding: 4px 6px;
+}
+
+.rename-input {
+  width: 100%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(79,142,247,0.5);
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 13.5px;
+  color: #fff;
+  outline: none;
+}
+
+.rename-input:focus {
+  border-color: rgba(79,142,247,0.9);
+  background: rgba(79,142,247,0.1);
+}
+
+/* ── Upgrade banner ── */
+.upgrade {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  padding: 10px;
+  border-radius: 10px;
+  background-color: rgba(79,142,247,0.06);
+  border: 1px solid rgba(79,142,247,0.12);
+}
+
+.upgrade:hover { background-color: rgba(79,142,247,0.12); }
+
+.upgrade .texts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.upgrade .texts span {
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.subtext {
+  font-size: 11px;
+  opacity: 0.5;
+  font-weight: 400 !important;
 }

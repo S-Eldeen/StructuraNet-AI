@@ -1,16 +1,55 @@
-.dashboardLayout{
-    display:flex;
-    gap:50px;
+.dashboardLayout {
+    display: flex;
+    gap: 0;
     padding-top: 20px;
     height: 100%;
+    width: 100%;
+}
 
-    .menu{
-        flex:1;
+.menu {
+    flex-shrink: 0;
+    transition: width 0.25s ease, min-width 0.25s ease;
+    width: 260px;
+    min-width: 260px;
+    overflow: hidden;
+}
 
-    }
-    .content{
-        flex:5;
-        background-color:rgb(19, 19, 29)
+.menu.collapsed {
+    width: 0;
+    min-width: 0;
+    padding: 0;
+}
 
-    }
+.content {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    background-color: rgb(19, 19, 29);
+    border-radius: 12px 0 0 0;
+    transition: all 0.25s ease;
+    position: relative;
+}
+
+/* زر طي القائمة */
+.sidebar-toggle-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    z-index: 10;
+    background: rgba(30, 30, 46, 0.8);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    color: white;
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    transition: background 0.2s;
+}
+.sidebar-toggle-btn:hover {
+    background: rgba(79,142,247,0.5);
 }

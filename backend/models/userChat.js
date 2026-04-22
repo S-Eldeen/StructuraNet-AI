@@ -6,6 +6,7 @@ const userChatsSchema = new mongoose.Schema({
     {
       _id: { type: mongoose.Schema.Types.ObjectId, ref: "Chat", required: true },
       title: { type: String, required: true },
+      starred: { type: Boolean, default: false },
       createdAt: { type: Date, default: Date.now },
     },
   ],
