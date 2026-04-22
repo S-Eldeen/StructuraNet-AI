@@ -3,60 +3,19 @@
     gap: 0;
     padding-top: 20px;
     height: 100%;
-    width: 100%;
-}
 
-/* menu زي ما هو + دعم collapse */
-.menu {
-    flex-shrink: 0;
-    transition: width 0.25s ease, min-width 0.25s ease;
-    padding-right: 16px;
+    .menu {
+        /* width controlled by ChatList itself via its collapsed state */
+        flex-shrink: 0;
+        transition: width 0.25s ease;
+        padding-right: 16px;
+    }
 
-    /* fallback لو ChatList مش محدد width */
-    width: 260px;
-    min-width: 260px;
-    overflow: hidden;
-}
-
-/* الجديد: collapse بدون ما نكسر القديم */
-.menu.collapsed {
-    width: 0 !important;
-    min-width: 0 !important;
-    padding: 0 !important;
-}
-
-/* content زي ما هو */
-.content {
-    flex: 1;
-    min-width: 0;
-    width: 100%;
-    background-color: rgb(19, 19, 29);
-    border-radius: 12px 0 0 0;
-    transition: all 0.25s ease;
-    position: relative;
-}
-
-/* زرار toggle (إضافة جديدة فقط) */
-.sidebar-toggle-btn {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    z-index: 10;
-    background: rgba(30, 30, 46, 0.8);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 8px;
-    color: white;
-    width: 36px;
-    height: 36px;
-    font-size: 18px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(4px);
-    transition: background 0.2s;
-}
-
-.sidebar-toggle-btn:hover {
-    background: rgba(79,142,247,0.5);
+    .content {
+        flex: 1;
+        min-width: 0;
+        background-color: rgb(19, 19, 29);
+        border-radius: 12px 0 0 0;
+        transition: all 0.25s ease;
+    }
 }
