@@ -14,22 +14,18 @@ const DashboardLayout = () => {
         }
     }, [isLoaded, userId, navigate]);
 
-    if (!isLoaded) return (
-        <div className="global-logo-loader">
-            <div className="logo-spinner-wrapper">
-                <div className="spinner-ring"></div>
-                <img src="/logo.png" alt="Loading" className="spinner-logo" />
-            </div>
-        </div>
-    );
+    if (!isLoaded) return <div>Loading...</div>;
 
     return (
         <div className='dashboardLayout'>
-            <div className="menu"><ChatList /></div>
+            <div className="menu">
+                <ChatList />
+            </div>
             <div className="content">
                 <Outlet />
             </div>
         </div>
     );
 };
+
 export default DashboardLayout;
