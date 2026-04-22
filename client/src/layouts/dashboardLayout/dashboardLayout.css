@@ -6,20 +6,26 @@
     width: 100%;
 }
 
+/* menu زي ما هو + دعم collapse */
 .menu {
     flex-shrink: 0;
     transition: width 0.25s ease, min-width 0.25s ease;
+    padding-right: 16px;
+
+    /* fallback لو ChatList مش محدد width */
     width: 260px;
     min-width: 260px;
     overflow: hidden;
 }
 
+/* الجديد: collapse بدون ما نكسر القديم */
 .menu.collapsed {
-    width: 0;
-    min-width: 0;
-    padding: 0;
+    width: 0 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
 }
 
+/* content زي ما هو */
 .content {
     flex: 1;
     min-width: 0;
@@ -30,7 +36,7 @@
     position: relative;
 }
 
-/* زر طي القائمة */
+/* زرار toggle (إضافة جديدة فقط) */
 .sidebar-toggle-btn {
     position: absolute;
     top: 20px;
@@ -50,6 +56,7 @@
     backdrop-filter: blur(4px);
     transition: background 0.2s;
 }
+
 .sidebar-toggle-btn:hover {
     background: rgba(79,142,247,0.5);
 }
