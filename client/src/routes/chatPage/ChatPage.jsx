@@ -21,12 +21,18 @@ const Chatpage = () => {
   useEffect(() => {
     const fetchChat = async () => {
       if (!chatId) return;
+
       try {
-        const token = await getToken();
+        const token = await getToken({ skipCache: true });
+
         const response = await fetch(`http://localhost:3000/api/chats/${chatId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!response.ok) throw new Error('Failed to fetch chat');
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch chat');
+        }
+
         const chat = await response.json();
         setMessages(chat.messages || []);
       } catch (error) {
@@ -35,13 +41,16 @@ const Chatpage = () => {
         setLoading(false);
       }
     };
+
     fetchChat();
   }, [chatId, getToken]);
 
   const saveMessages = async (newMessages) => {
     if (!chatId) return;
+
     try {
-      const token = await getToken();
+      const token = await getToken({ skipCache: true });
+
       await fetch(`http://localhost:3000/api/chats/${chatId}/messages`, {
         method: 'POST',
         headers: {
@@ -57,12 +66,18 @@ const Chatpage = () => {
 
   const addMessage = async (message, isUpdate = false) => {
     if (isUpdate && message.id) {
-      setMessages(prev => prev.map(msg =>
-        msg.id === message.id ? { ...msg, content: message.content, streaming: message.streaming } : msg
-      ));
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === message.id
+            ? { ...msg, content: message.content, streaming: message.streaming }
+            : msg
+        )
+      );
     } else {
       const newMsg = { ...message, id: message.id || Date.now() + Math.random() };
-      setMessages(prev => [...prev, newMsg]);
+
+      setMessages((prev) => [...prev, newMsg]);
+
       if (!message.streaming && !isUpdate) {
         await saveMessages([newMsg]);
       }
@@ -81,14 +96,16 @@ const Chatpage = () => {
     setTimeout(scrollToBottom, 100);
   }, []);
 
-  if (loading) return (
-    <div className="global-logo-loader">
-      <div className="logo-spinner-wrapper">
-        <div className="spinner-ring"></div>
-        <img src="/logo.png" alt="Loading" className="spinner-logo" />
+  if (loading) {
+    return (
+      <div className="global-logo-loader">
+        <div className="logo-spinner-wrapper">
+          <div className="spinner-ring"></div>
+          <img src="/logo.png" alt="Loading" className="spinner-logo" />
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
   return (
     <div className="chatpage">
@@ -96,7 +113,10 @@ const Chatpage = () => {
         <div className="wrapper" ref={wrapperRef}>
           <div className="chat">
             {messages.map((msg, index) => (
-              <div key={msg.id || index} className={`message ${msg.role} ${msg.streaming ? 'streaming' : ''}`}>
+              <div
+                key={msg.id || index}
+                className={`message ${msg.role} ${msg.streaming ? 'streaming' : ''}`}
+              >
                 {msg.role === 'user' && msg.images?.length > 0 && (
                   <div className="user-images">
                     {msg.images.map((img, i) => (
@@ -110,12 +130,16 @@ const Chatpage = () => {
                     ))}
                   </div>
                 )}
+
                 {msg.content && <Markdown>{msg.content}</Markdown>}
               </div>
             ))}
 
             {isTyping && (
-              <div className="message ai typing-indicator" style={{ backgroundColor: 'transparent', padding: '0', boxShadow: 'none' }}>
+              <div
+                className="message ai typing-indicator"
+                style={{ backgroundColor: 'transparent', padding: '0', boxShadow: 'none' }}
+              >
                 <div className="logo-spinner-wrapper typing-dynamic-logo">
                   <div className="spinner-ring"></div>
                   <img src="/logo.png" alt="Typing" className="spinner-logo" />
@@ -132,6 +156,7 @@ const Chatpage = () => {
             addMessage={addMessage}
             setIsTyping={setIsTyping}
             chatId={chatId}
+            history={messages}
           />
         </div>
       </div>

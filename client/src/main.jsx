@@ -12,6 +12,9 @@ import DashboardLayout from "./layouts/dashboardLayout/DashboardLayout";
 import SignInPage from "./routes/signInPage/signInPage";
 import SignUpPage from "./routes/signUpPage/signUpPage";
 
+import UpgradePage from "./routes/upgradePage/UpgradePage";
+import CheckoutPage from "./routes/checkoutPage/CheckoutPage";
+
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
 if (!PUBLISHABLE_KEY) {
@@ -27,13 +30,34 @@ const router = createBrowserRouter([
         element: <Homepage />
       },
       {
-        path: '/sign-in/*',          // ✅ يغطي جميع المسارات الفرعية
+        path: '/sign-in/*',
         element: <SignInPage />
       },
       {
-        path: '/sign-up/*',          // ✅ يغطي جميع المسارات الفرعية
+        path: '/sign-up/*',
         element: <SignUpPage />
       },
+
+      // ✅ Upgrade page
+      {
+        path: '/upgrade',
+        element: <UpgradePage />
+      },
+
+      // ✅ Checkout pages
+      {
+        path: '/checkout/go',
+        element: <CheckoutPage />
+      },
+      {
+        path: '/checkout/plus',
+        element: <CheckoutPage />
+      },
+      {
+        path: '/checkout/pro',
+        element: <CheckoutPage />
+      },
+
       {
         element: <DashboardLayout />,
         children: [

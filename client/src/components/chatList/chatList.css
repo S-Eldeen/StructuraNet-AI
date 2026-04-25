@@ -334,4 +334,15 @@ a:hover {
   font-size: 11px;
   opacity: 0.5;
   font-weight: 400 !important;
+
+}
+/* ── Fix cursor for Current Plan ── */
+.current-plan-box {
+  cursor: pointer;
+  user-select: none; /* يمنع تحديد النص */
+}
+
+.current-plan-box * {
+  cursor: pointer; /* يخلي كل اللي جوا نفس شكل الماوس */
+
 }

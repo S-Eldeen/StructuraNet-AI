@@ -1,9 +1,9 @@
 import express from "express";
 import ImageKit from "imagekit";
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
 import cors from "cors";
 import mongoose from "mongoose";
-import { verifyToken } from '@clerk/backend';
+import { verifyToken } from "@clerk/backend";
 import UserChat from "./models/userChat.js";
 import Chat from "./models/chat.js";
 import dns from "dns";
@@ -38,30 +38,86 @@ app.get("/api/upload", (req, res) => {
   res.send(result);
 });
 
-// Middleware للتحقق من المصادقة
 const requireAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ error: "No token provided" });
-    const token = authHeader.split(' ')[1];
-    if (!token) return res.status(401).json({ error: "Malformed token" });
-    const session = await verifyToken(token, { jwtKey: process.env.CLERK_JWT_KEY });
-    if (!session || !session.sub) return res.status(401).json({ error: "Invalid token" });
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        error: "NO_TOKEN",
+        message: "No token provided",
+      });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({
+        error: "MALFORMED_TOKEN",
+        message: "Malformed token",
+      });
+    }
+
+    const session = await verifyToken(token, {
+  jwtKey: process.env.CLERK_JWT_KEY,
+  clockSkewInMs: 300000,
+});
+
+    if (!session?.sub) {
+      return res.status(401).json({
+        error: "INVALID_TOKEN",
+        message: "Invalid token",
+      });
+    }
+
     req.userId = session.sub;
     next();
   } catch (error) {
-    console.error("❌ Auth error:", error);
-    if (error.message?.includes('Invalid JWT form')) return res.status(401).json({ error: "Invalid token format" });
-    if (error.message?.includes('jwt expired')) return res.status(401).json({ error: "Token expired" });
-    if (error.message?.includes('invalid signature')) return res.status(401).json({ error: "Invalid signature" });
-    res.status(401).json({ error: "Authentication failed" });
+    const reason = error?.reason || "";
+    const message = error?.message || "";
+
+    console.error("❌ Auth error:", {
+      reason,
+      message,
+    });
+
+    if (
+      reason === "token-expired" ||
+      message.includes("jwt expired") ||
+      message.includes("expired")
+    ) {
+      return res.status(401).json({
+        error: "TOKEN_EXPIRED",
+        message: "Session expired. Please sign in again.",
+        shouldLogout: true,
+      });
+    }
+
+    if (
+      reason === "token-invalid" ||
+      message.includes("Invalid JWT") ||
+      message.includes("Invalid JWT form") ||
+      message.includes("invalid signature")
+    ) {
+      return res.status(401).json({
+        error: "INVALID_TOKEN",
+        message: "Invalid session. Please sign in again.",
+        shouldLogout: true,
+      });
+    }
+
+    return res.status(401).json({
+      error: "AUTHENTICATION_FAILED",
+      message: "Authentication failed",
+      shouldLogout: true,
+    });
   }
 };
 
-// إنشاء محادثة جديدة
 app.post("/api/chats", requireAuth, async (req, res) => {
   const { text, images = [] } = req.body;
   const userId = req.userId;
+
   try {
     const firstMessage = { role: "user", content: text || "", images };
     const newChat = new Chat({ userId, messages: [firstMessage] });
@@ -79,20 +135,29 @@ app.post("/api/chats", requireAuth, async (req, res) => {
     } else {
       await UserChat.updateOne(
         { userId },
-        { $push: { chats: { _id: savedChat._id, title, createdAt: savedChat.createdAt } } }
+        {
+          $push: {
+            chats: {
+              _id: savedChat._id,
+              title,
+              createdAt: savedChat.createdAt,
+            },
+          },
+        }
       );
     }
+
     res.status(201).json(savedChat);
   } catch (error) {
     console.error("❌ Error creating chat:", error);
-    res.status(500).send("Error Creating Chat!!");
+    res.status(500).json({ error: "Error Creating Chat" });
   }
 });
 
-// جلب محادثة محددة
 app.get("/api/chats/:chatId", requireAuth, async (req, res) => {
   const { chatId } = req.params;
   const userId = req.userId;
+
   try {
     const chat = await Chat.findOne({ _id: chatId, userId });
     if (!chat) return res.status(404).json({ error: "Chat not found" });
@@ -103,16 +168,18 @@ app.get("/api/chats/:chatId", requireAuth, async (req, res) => {
   }
 });
 
-// إضافة رسائل إلى محادثة
 app.post("/api/chats/:chatId/messages", requireAuth, async (req, res) => {
   const { chatId } = req.params;
   const userId = req.userId;
   const { messages } = req.body;
+
   try {
     const chat = await Chat.findOne({ _id: chatId, userId });
     if (!chat) return res.status(404).json({ error: "Chat not found" });
+
     chat.messages.push(...messages);
     await chat.save();
+
     res.json(chat);
   } catch (error) {
     console.error("Error saving messages:", error);
@@ -120,21 +187,34 @@ app.post("/api/chats/:chatId/messages", requireAuth, async (req, res) => {
   }
 });
 
-// إعادة إنشاء آخر رد AI (placeholder)
 app.post("/api/chats/:chatId/regenerate", requireAuth, async (req, res) => {
   const { chatId } = req.params;
   const userId = req.userId;
+
   try {
     const chat = await Chat.findOne({ _id: chatId, userId });
     if (!chat) return res.status(404).json({ error: "Chat not found" });
+
     const lastMessage = chat.messages[chat.messages.length - 1];
-    if (lastMessage && lastMessage.role === 'assistant') chat.messages.pop();
-    const userMessages = chat.messages.filter(m => m.role === 'user');
+    if (lastMessage && lastMessage.role === "assistant") {
+      chat.messages.pop();
+    }
+
+    const userMessages = chat.messages.filter((m) => m.role === "user");
     const lastUserMessage = userMessages[userMessages.length - 1];
-    if (!lastUserMessage) return res.status(400).json({ error: "No user message to regenerate from" });
-    const newReply = { role: 'assistant', content: "This is a regenerated response (placeholder)." };
+
+    if (!lastUserMessage) {
+      return res.status(400).json({ error: "No user message to regenerate from" });
+    }
+
+    const newReply = {
+      role: "assistant",
+      content: "This is a regenerated response (placeholder).",
+    };
+
     chat.messages.push(newReply);
     await chat.save();
+
     res.json({ message: newReply });
   } catch (error) {
     console.error("Error regenerating:", error);
@@ -142,9 +222,9 @@ app.post("/api/chats/:chatId/regenerate", requireAuth, async (req, res) => {
   }
 });
 
-// مشاركة المحادثة
 app.post("/api/chats/:chatId/share", requireAuth, async (req, res) => {
   const { chatId } = req.params;
+
   try {
     const shareUrl = `${process.env.CLIENT_URL}/dashboard/chats/${chatId}`;
     res.json({ shareUrl });
@@ -154,9 +234,9 @@ app.post("/api/chats/:chatId/share", requireAuth, async (req, res) => {
   }
 });
 
-// جلب محادثات المستخدم
 app.get("/api/userchats", requireAuth, async (req, res) => {
   const userId = req.userId;
+
   try {
     const userChatsDoc = await UserChat.findOne({ userId });
     res.json(userChatsDoc || { chats: [] });
@@ -166,18 +246,25 @@ app.get("/api/userchats", requireAuth, async (req, res) => {
   }
 });
 
-// ── Rename chat ──
 app.patch("/api/userchats/:chatId/rename", requireAuth, async (req, res) => {
   const { chatId } = req.params;
   const { title } = req.body;
   const userId = req.userId;
-  if (!title || !title.trim()) return res.status(400).json({ error: "Title is required" });
+
+  if (!title || !title.trim()) {
+    return res.status(400).json({ error: "Title is required" });
+  }
+
   try {
     const result = await UserChat.updateOne(
       { userId, "chats._id": chatId },
       { $set: { "chats.$.title": title.trim() } }
     );
-    if (result.matchedCount === 0) return res.status(404).json({ error: "Chat not found" });
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Chat not found" });
+    }
+
     res.json({ success: true });
   } catch (error) {
     console.error("Error renaming chat:", error);
@@ -185,17 +272,21 @@ app.patch("/api/userchats/:chatId/rename", requireAuth, async (req, res) => {
   }
 });
 
-// ── Star / unstar chat ──
 app.patch("/api/userchats/:chatId/star", requireAuth, async (req, res) => {
   const { chatId } = req.params;
   const { starred } = req.body;
   const userId = req.userId;
+
   try {
     const result = await UserChat.updateOne(
       { userId, "chats._id": chatId },
       { $set: { "chats.$.starred": starred } }
     );
-    if (result.matchedCount === 0) return res.status(404).json({ error: "Chat not found" });
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ error: "Chat not found" });
+    }
+
     res.json({ success: true, starred });
   } catch (error) {
     console.error("Error starring chat:", error);
@@ -203,13 +294,14 @@ app.patch("/api/userchats/:chatId/star", requireAuth, async (req, res) => {
   }
 });
 
-// ── Delete chat ──
 app.delete("/api/userchats/:chatId", requireAuth, async (req, res) => {
   const { chatId } = req.params;
   const userId = req.userId;
+
   try {
     await UserChat.updateOne({ userId }, { $pull: { chats: { _id: chatId } } });
     await Chat.findOneAndDelete({ _id: chatId, userId });
+
     res.json({ success: true });
   } catch (error) {
     console.error("Error deleting chat:", error);

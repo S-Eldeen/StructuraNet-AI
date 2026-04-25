@@ -1,0 +1,112 @@
+.upgradePage {
+  min-height: 100vh;
+  padding: 30px 24px;
+  background: #000;
+  color: white;
+  position: relative;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.upgradePage h1 {
+  text-align: center;
+  margin-bottom: 40px;
+  font-size: 34px;
+}
+
+.plans {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+
+.card {
+  width: 260px;
+  background: #111;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 22px;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255,255,255,0.18);
+}
+
+.card.highlight {
+  background: linear-gradient(180deg, #161622 0%, #111 100%);
+  border-color: rgba(108, 92, 231, 0.45);
+}
+
+.card.current {
+  box-shadow: 0 0 0 1px rgba(168,204,255,0.18);
+}
+
+.card h2 {
+  font-size: 26px;
+  margin: 0;
+}
+
+.card .price {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.card .desc {
+  font-size: 14px;
+  color: rgba(255,255,255,0.72);
+  margin: 0;
+  min-height: 38px;
+}
+
+.card ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 145px;
+}
+
+.card li {
+  font-size: 14px;
+  color: rgba(255,255,255,0.9);
+}
+
+.card button {
+  margin-top: auto;
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: white;
+  color: black;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.card button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.card button:disabled {
+  background: #2b2b2b;
+  color: rgba(255,255,255,0.65);
+  cursor: not-allowed;
+}

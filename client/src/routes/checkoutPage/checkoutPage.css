@@ -1,0 +1,133 @@
+.checkoutPage {
+  height: 100vh;
+  padding: 20px;
+  background: black;
+  color: white;
+}
+
+.backBtn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.checkoutContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 60px;
+  height: 90%;
+}
+
+/* LEFT SIDE */
+.paymentForm {
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.paymentForm h2 {
+  margin-bottom: 10px;
+}
+
+.paymentForm input {
+  padding: 14px;
+  border-radius: 10px;
+  border: none;
+  background: #1f1f1f;
+  color: white;
+  outline: none;
+  font-size: 14px;
+}
+
+.paymentForm input::placeholder {
+  color: #888;
+}
+
+.paymentForm .row {
+  display: flex;
+  gap: 10px;
+}
+
+.fieldGroup {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ERROR STYLE */
+.error {
+  color: #ff4d4f;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+/* INPUT ERROR */
+.inputError {
+  border: 1px solid #ff4d4f !important;
+}
+
+/* BUTTON */
+.payBtn {
+  margin-top: 15px;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: white;
+  color: black;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.payBtn:hover {
+  opacity: 0.9;
+}
+
+.payBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* RIGHT SIDE */
+.planSummary {
+  width: 300px;
+  background: #111;
+  padding: 25px;
+  border-radius: 20px;
+}
+
+.planSummary h2 {
+  margin-bottom: 15px;
+}
+
+.planSummary ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.planSummary li {
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.planSummary hr {
+  border: none;
+  height: 1px;
+  background: #333;
+  margin: 20px 0;
+}
+
+.price {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.total {
+  font-weight: bold;
+}
