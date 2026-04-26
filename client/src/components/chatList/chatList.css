@@ -346,3 +346,122 @@ a:hover {
   cursor: pointer; /* يخلي كل اللي جوا نفس شكل الماوس */
 
 }
+
+
+/* ← أضفت هذه الخصائص الجديدة */
+
+/* لـ ChatItem info */
+.chat-item-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.chat-last-modified {
+  font-size: 10px;
+  opacity: 0.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* زر المشاركة الجانبي */
+.share-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: rgba(255,255,255,0.4);
+  padding: 5px 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.chat-item-wrapper:hover .share-btn {
+  opacity: 1;
+}
+
+.share-btn:hover {
+  background-color: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.9);
+}
+
+/* نافذة المشاركة المنبثقة */
+.share-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+}
+
+.share-modal {
+  background: #1e1e2e;
+  border-radius: 16px;
+  padding: 20px;
+  min-width: 320px;
+  max-width: 90%;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 20px 35px rgba(0,0,0,0.5);
+}
+
+.share-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.share-modal-title {
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.share-modal-close {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.6);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.share-modal-desc {
+  font-size: 13px;
+  opacity: 0.6;
+  margin-bottom: 16px;
+}
+
+.share-modal-row {
+  display: flex;
+  gap: 8px;
+}
+
+.share-modal-input {
+  flex: 1;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #fff;
+  font-size: 12px;
+}
+
+.share-modal-copy {
+  background: rgba(79,142,247,0.2);
+  border: 1px solid rgba(79,142,247,0.4);
+  border-radius: 8px;
+  padding: 8px 16px;
+  color: #4f8ef7;
+  cursor: pointer;
+}

@@ -425,3 +425,227 @@
 .action-btn.active-dislike {
   color: #e55571;
 }
+
+/* ← أهم التعديلات */
+
+/* مسح التكرارات */
+.chatpage {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: row;
+  background-color: inherit;
+  overflow: hidden;
+}
+
+/* رأس الشات الجديد */
+.chat-header {
+  padding: 12px 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  background: inherit;
+}
+
+.chat-header-info {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.chat-header-title {
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.15s;
+}
+
+.chat-header-title:hover {
+  opacity: 0.8;
+}
+
+.edit-icon {
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+
+.chat-header-title:hover .edit-icon {
+  opacity: 1;
+}
+
+.chat-header-date {
+  font-size: 11px;
+  opacity: 0.45;
+}
+
+.chat-title-form {
+  display: inline-block;
+}
+
+.chat-title-input {
+  background: rgba(79,142,247,0.1);
+  border: 1px solid rgba(79,142,247,0.5);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  outline: none;
+}
+
+/* تحسين عرض الصور */
+.user-images {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.user-image-full {
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  border-radius: 12px;
+  object-fit: contain;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.user-image-full:hover {
+  transform: scale(1.02);
+}
+
+/* مؤشر الكتابة الديناميكي مع شعار متكسر */
+.typing-dynamic-logo {
+  width: 32px !important;
+  height: 32px !important;
+  position: relative;
+}
+
+.typing-dynamic-logo .spinner-logo {
+  animation: shatter-reform 2s infinite ease-in-out !important;
+}
+
+@keyframes shatter-reform {
+  0%, 100% { 
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); 
+    transform: scale(1) rotate(0deg); 
+    opacity: 1; 
+  }
+  25% { 
+    clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%); 
+    transform: scale(1.2) rotate(10deg); 
+    opacity: 0.8;
+  }
+  50% { 
+    clip-path: polygon(50% 0%, 50% 0%, 100% 50%, 100% 50%, 50% 100%, 50% 100%, 0% 50%, 0% 50%); 
+    transform: scale(0.2) rotate(45deg); 
+    opacity: 0.3; 
+  }
+  75% { 
+    clip-path: polygon(20% 20%, 80% 20%, 80% 80%, 20% 80%); 
+    transform: scale(0.8) rotate(-20deg); 
+    opacity: 0.7; 
+  }
+}
+
+/* أيقونات الإجراءات */
+.message-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.message-actions.assistant {
+  justify-content: flex-start;
+  padding-left: 8px;
+}
+
+.message-actions.user {
+  justify-content: flex-end;
+  padding-right: 8px;
+}
+
+.action-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  transition: all 0.2s;
+}
+
+.action-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.action-btn:hover {
+  background: rgba(255,255,255,0.08);
+  color: #e0e0e0;
+}
+
+.action-btn.active-like {
+  color: #4caf50;
+}
+
+.action-btn.active-dislike {
+  color: #f44336;
+}
+
+/* رسائل الـ streaming */
+.message.streaming {
+  opacity: 0.7;
+  transition: opacity 0.3s;
+}
+
+/* تحميل أولي */
+.global-logo-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f0f13;
+  z-index: 9999;
+}
+
+.logo-spinner-wrapper {
+  position: relative;
+  width: 60px;
+  height: 60px;
+}
+
+.spinner-ring {
+  position: absolute;
+  inset: 0;
+  border: 3px solid rgba(79,142,247,0.2);
+  border-top-color: #4f8ef7;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.spinner-logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

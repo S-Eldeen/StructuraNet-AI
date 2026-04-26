@@ -41,7 +41,65 @@ const DotsIcon = () => (
   </svg>
 );
 
-const ChatItem = ({ chat, onStar, onRename, onDelete }) => {
+const ShareIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="18" cy="5" r="3" />
+    <circle cx="6" cy="12" r="3" />
+    <circle cx="18" cy="19" r="3" />
+    <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+    <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+  </svg>
+);
+
+/* ── Helpers ── */
+const formatDate = (dateStr) => {
+  if (!dateStr) return null;
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now - date;
+  const mins = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+/* ── Share Modal ── */
+const ShareModal = ({ chatId, onClose }) => {
+  const link = `${window.location.origin}/dashboard/chats/${chatId}`;
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(link).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div className="share-modal-overlay" onMouseDown={onClose}>
+      <div className="share-modal" onMouseDown={(e) => e.stopPropagation()}>
+        <div className="share-modal-header">
+          <span className="share-modal-title">Share Chat</span>
+          <button className="share-modal-close" onClick={onClose}>✕</button>
+        </div>
+        <p className="share-modal-desc">Anyone with this link can view this chat.</p>
+        <div className="share-modal-row">
+          <input className="share-modal-input" value={link} readOnly />
+          <button className="share-modal-copy" onClick={handleCopy}>
+            {copied ? '✓ Copied' : 'Copy'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+/* ── Chat Item ── */
+const ChatItem = ({ chat, onStar, onRename, onDelete, onShareClick }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [newTitle, setNewTitle] = useState(chat.title);
@@ -50,32 +108,24 @@ const ChatItem = ({ chat, onStar, onRename, onDelete }) => {
 
   useEffect(() => {
     if (!menuOpen) return;
-
     const handler = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setMenuOpen(false);
-      }
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
     };
-
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [menuOpen]);
 
   useEffect(() => {
-    if (renaming && inputRef.current) {
-      inputRef.current.focus();
-    }
+    if (renaming && inputRef.current) inputRef.current.focus();
   }, [renaming]);
 
   const submitRename = (e) => {
     e?.preventDefault();
-
-    if (newTitle.trim() && newTitle.trim() !== chat.title) {
-      onRename(chat._id, newTitle.trim());
-    }
-
+    if (newTitle.trim() && newTitle.trim() !== chat.title) onRename(chat._id, newTitle.trim());
     setRenaming(false);
   };
+
+  const lastModified = formatDate(chat.updatedAt || chat.createdAt);
 
   if (renaming) {
     return (
@@ -96,16 +146,26 @@ const ChatItem = ({ chat, onStar, onRename, onDelete }) => {
     <div className={`chat-item-wrapper ${menuOpen ? "menu-open" : ""}`}>
       <Link to={`/dashboard/chats/${chat._id}`} className="chat-item">
         {chat.starred && <span className="star-dot">★</span>}
-        <span className="chat-title">{chat.title}</span>
+        <div className="chat-item-info">
+          <span className="chat-title">{chat.title}</span>
+          {lastModified && <span className="chat-last-modified">{lastModified}</span>}
+        </div>
       </Link>
 
+      {/* Share button */}
+      <button
+        className="share-btn"
+        title="Share chat"
+        onClick={(e) => { e.preventDefault(); onShareClick(chat._id); }}
+      >
+        <ShareIcon />
+      </button>
+
+      {/* Dots menu */}
       <div className="chat-item-menu" ref={menuRef}>
         <button
           className="dots-btn"
-          onClick={(e) => {
-            e.preventDefault();
-            setMenuOpen((o) => !o);
-          }}
+          onClick={(e) => { e.preventDefault(); setMenuOpen((o) => !o); }}
           title="More options"
         >
           <DotsIcon />
@@ -113,33 +173,16 @@ const ChatItem = ({ chat, onStar, onRename, onDelete }) => {
 
         {menuOpen && (
           <div className="dropdown-menu">
-            <button
-              className="dropdown-item"
-              onClick={() => {
-                onStar(chat._id, !chat.starred);
-                setMenuOpen(false);
-              }}
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
+            <button className="dropdown-item" onClick={() => { onStar(chat._id, !chat.starred); setMenuOpen(false); }}>
+              <svg width="14" height="14" viewBox="0 0 24 24"
                 fill={chat.starred ? "#f5c842" : "none"}
-                stroke={chat.starred ? "#f5c842" : "currentColor"}
-                strokeWidth="2"
-              >
+                stroke={chat.starred ? "#f5c842" : "currentColor"} strokeWidth="2">
                 <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
               </svg>
               <span>{chat.starred ? "Unstar" : "Star"}</span>
             </button>
 
-            <button
-              className="dropdown-item"
-              onClick={() => {
-                setRenaming(true);
-                setMenuOpen(false);
-              }}
-            >
+            <button className="dropdown-item" onClick={() => { setRenaming(true); setMenuOpen(false); }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
@@ -149,13 +192,7 @@ const ChatItem = ({ chat, onStar, onRename, onDelete }) => {
 
             <div className="dropdown-divider" />
 
-            <button
-              className="dropdown-item danger"
-              onClick={() => {
-                onDelete(chat._id);
-                setMenuOpen(false);
-              }}
-            >
+            <button className="dropdown-item danger" onClick={() => { onDelete(chat._id); setMenuOpen(false); }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                 <polyline points="3,6 5,6 21,6" />
                 <path d="M19,6l-1,14a2,2,0,0,1-2,2H8a2,2,0,0,1-2-2L5,6" />
@@ -171,29 +208,25 @@ const ChatItem = ({ chat, onStar, onRename, onDelete }) => {
   );
 };
 
+/* ── ChatList ── */
 const ChatList = () => {
   const { getToken, isLoaded } = useAuth();
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [collapsed, setCollapsed] = useState(false);
   const [plan, setPlan] = useState(localStorage.getItem("userPlan"));
+  const [shareModalChatId, setShareModalChatId] = useState(null);
   const navigate = useNavigate();
 
   const fetchChats = useCallback(async () => {
     if (!isLoaded) return;
-
     try {
       const token = await getToken({ skipCache: true });
       if (!token) return;
-
       const res = await fetch("http://localhost:3000/api/userchats", {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setChats(data.chats || []);
     } catch (err) {
@@ -206,87 +239,54 @@ const ChatList = () => {
   useEffect(() => {
     fetchChats();
     window.addEventListener("chat-created", fetchChats);
-
+    window.addEventListener("chat-renamed", fetchChats);
     return () => {
       window.removeEventListener("chat-created", fetchChats);
+      window.removeEventListener("chat-renamed", fetchChats);
     };
   }, [fetchChats]);
 
   useEffect(() => {
-    const updatePlan = () => {
-      setPlan(localStorage.getItem("userPlan"));
-    };
-
+    const updatePlan = () => setPlan(localStorage.getItem("userPlan"));
     updatePlan();
     window.addEventListener("plan-changed", updatePlan);
-
-    return () => {
-      window.removeEventListener("plan-changed", updatePlan);
-    };
+    return () => window.removeEventListener("plan-changed", updatePlan);
   }, []);
 
   const handleStar = async (chatId, starred) => {
-    setChats((prev) =>
-      prev.map((c) => (c._id === chatId ? { ...c, starred } : c))
-    );
-
+    setChats((prev) => prev.map((c) => (c._id === chatId ? { ...c, starred } : c)));
     try {
       const token = await getToken({ skipCache: true });
-
       await fetch(`http://localhost:3000/api/userchats/${chatId}/star`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ starred }),
       });
-    } catch (err) {
-      console.error("Error starring:", err);
-      fetchChats();
-    }
+    } catch (err) { console.error("Error starring:", err); fetchChats(); }
   };
 
   const handleRename = async (chatId, title) => {
-    setChats((prev) =>
-      prev.map((c) => (c._id === chatId ? { ...c, title } : c))
-    );
-
+    setChats((prev) => prev.map((c) => (c._id === chatId ? { ...c, title } : c)));
     try {
       const token = await getToken({ skipCache: true });
-
       await fetch(`http://localhost:3000/api/userchats/${chatId}/rename`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ title }),
       });
-    } catch (err) {
-      console.error("Error renaming:", err);
-      fetchChats();
-    }
+    } catch (err) { console.error("Error renaming:", err); fetchChats(); }
   };
 
   const handleDelete = async (chatId) => {
     setChats((prev) => prev.filter((c) => c._id !== chatId));
-
     try {
       const token = await getToken({ skipCache: true });
-
       await fetch(`http://localhost:3000/api/userchats/${chatId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (window.location.pathname.includes(chatId)) {
-        navigate("/dashboard");
-      }
-    } catch (err) {
-      console.error("Error deleting:", err);
-      fetchChats();
-    }
+      if (window.location.pathname.includes(chatId)) navigate("/dashboard");
+    } catch (err) { console.error("Error deleting:", err); fetchChats(); }
   };
 
   const sortedChats = [...chats].sort((a, b) => {
@@ -296,89 +296,73 @@ const ChatList = () => {
   });
 
   return (
-    <div className={`chatList ${collapsed ? "collapsed" : ""}`}>
-      <div className="chatList-header">
-        {!collapsed && (
-          <Link to="/" className="chatList-brand">
-            <NetworkIcon />
-            <span className="brand-name">Structranet</span>
-          </Link>
-        )}
-
-        <button
-          className="toggle-btn"
-          onClick={() => setCollapsed((c) => !c)}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          <ToggleIcon />
-        </button>
-      </div>
-
-      {!collapsed ? (
-        <Link to="/dashboard" className="new-chat-btn">
-          <NewChatIcon />
-          <span>New Chat</span>
-        </Link>
-      ) : (
-        <Link to="/dashboard" className="new-chat-icon-only" title="New Chat">
-          <NewChatIcon />
-        </Link>
+    <>
+      {shareModalChatId && (
+        <ShareModal chatId={shareModalChatId} onClose={() => setShareModalChatId(null)} />
       )}
 
-      {!collapsed && (
-        <>
-          <Link to="/about">Explore Structranet AI</Link>
-          <Link to="/">Contact</Link>
-
-          <hr />
-
-          <span className="title">RECENT CHATS</span>
-
-          <div className="list">
-            {loading ? (
-              <div className="loading-message">Loading...</div>
-            ) : sortedChats.length === 0 ? (
-              <div className="no-chats">No chats yet</div>
-            ) : (
-              sortedChats.map((chat) => (
-                <ChatItem
-                  key={chat._id}
-                  chat={chat}
-                  onStar={handleStar}
-                  onRename={handleRename}
-                  onDelete={handleDelete}
-                />
-              ))
-            )}
-          </div>
-
-          <hr />
-
-          {plan ? (
-            <div
-              className="upgrade current-plan-box"
-              onClick={() => navigate("/upgrade")}
-              role="button"
-              tabIndex={0}
-            >
+      <div className={`chatList ${collapsed ? "collapsed" : ""}`}>
+        <div className="chatList-header">
+          {!collapsed && (
+            <Link to="/" className="chatList-brand">
               <NetworkIcon />
-              <div className="texts">
-                <span className="plan-title">Current Plan: {plan.toUpperCase()}</span>
-                <span className="subtext">Click to change your plan</span>
-              </div>
-            </div>
-          ) : (
-            <Link to="/upgrade" className="upgrade">
-              <NetworkIcon />
-              <div className="texts">
-                <span className="plan-title">Upgrade to Structranet Pro</span>
-                <span className="subtext">Unlimited designs & priority support</span>
-              </div>
+              <span className="brand-name">Structranet</span>
             </Link>
           )}
-        </>
-      )}
-    </div>
+          <button className="toggle-btn" onClick={() => setCollapsed((c) => !c)}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
+            <ToggleIcon />
+          </button>
+        </div>
+
+        {!collapsed ? (
+          <Link to="/dashboard" className="new-chat-btn"><NewChatIcon /><span>New Chat</span></Link>
+        ) : (
+          <Link to="/dashboard" className="new-chat-icon-only" title="New Chat"><NewChatIcon /></Link>
+        )}
+
+        {!collapsed && (
+          <>
+            <Link to="/about">Explore Structranet AI</Link>
+            <Link to="/">Contact</Link>
+            <hr />
+            <span className="title">RECENT CHATS</span>
+            <div className="list">
+              {loading ? (
+                <div className="loading-message">Loading...</div>
+              ) : sortedChats.length === 0 ? (
+                <div className="no-chats">No chats yet</div>
+              ) : (
+                sortedChats.map((chat) => (
+                  <ChatItem key={chat._id} chat={chat}
+                    onStar={handleStar} onRename={handleRename}
+                    onDelete={handleDelete} onShareClick={(id) => setShareModalChatId(id)}
+                  />
+                ))
+              )}
+            </div>
+            <hr />
+            {plan ? (
+              <div className="upgrade current-plan-box" onClick={() => navigate("/upgrade")} role="button" tabIndex={0}>
+                <NetworkIcon />
+                <div className="texts">
+                  <span className="plan-title">Current Plan: {plan.toUpperCase()}</span>
+                  <span className="subtext">Click to change your plan</span>
+                </div>
+              </div>
+            ) : (
+              <Link to="/upgrade" className="upgrade">
+                <NetworkIcon />
+                <div className="texts">
+                  <span className="plan-title">Upgrade to Structranet Pro</span>
+                  <span className="subtext">Unlimited designs & priority support</span>
+                </div>
+              </Link>
+            )}
+          </>
+        )}
+      </div>
+    </>
   );
 };
 
