@@ -2,38 +2,40 @@ name: Slack Notification
 
 on:
   push:
-    branches:
-      - "**"
   pull_request:
-    branches:
-      - "**"
 
 jobs:
   notify:
     runs-on: ubuntu-latest
-
     steps:
-
-      # Notify on Push and Pull Request Events 
-      - name: Notify Push (All Branches Except Main)
-        if: github.event_name == 'push' && github.ref_name != 'main'
+      # =========================
+      # 🚀 PUSH EVENT HANDLER
+      # =========================
+      - name: Handle Push Events
+        if: github.event_name == 'push'
         run: |
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            MESSAGE="🚨 WARNING! Direct Push on MAIN 🚨
+          👤 User: ${{ github.actor }}
+          📦 Repo: ${{ github.repository }}
+          ❗ This is a protected branch. Please review immediately!"
+          else
+            MESSAGE="🚀 New Push
+          📦 Repo: ${{ github.repository }}
+          👤 User: ${{ github.actor }}
+          🌿 Branch: ${{ github.ref_name }}
+          👉 Pull latest changes:
+          git pull origin ${{ github.ref_name }}"
+          fi
+
           curl -X POST -H "Content-type: application/json" \
-          --data '{
-            "text": "🚀 New Push\n📦 Repo: ${{ github.repository }}\n👤 User: ${{ github.actor }}\n🌿 Branch: ${{ github.ref_name }}\n👉 Please pull the latest code:\n git pull origin ${{ github.ref_name }}"
-          }' \
+          --data "{\"text\": \"$MESSAGE\"}" \
           ${{ secrets.SLACK_WEBHOOK }}
 
-      - name: 🚨 Alert Push on MAIN
-        if: github.event_name == 'push' && github.ref_name == 'main'
-        run: |
-          curl -X POST -H "Content-type: application/json" \
-          --data '{
-            "text": "🚨 WARNING! Direct Push on MAIN 🚨\n👤 User: ${{ github.actor }}\n📦 Repo: ${{ github.repository }}\n❗ This is a protected branch. Please review immediately!"
-          }' \
-          ${{ secrets.SLACK_WEBHOOK }}
-
-      - name: Notify Pull Request
+      # =========================
+      # 🔁 PULL REQUEST HANDLER
+      # =========================
+      - name: Handle Pull Requests
         if: github.event_name == 'pull_request'
         run: |
           curl -X POST -H "Content-type: application/json" \
