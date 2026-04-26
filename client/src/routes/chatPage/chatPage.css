@@ -368,3 +368,60 @@
   object-fit: contain;
   background-color: #1a1a1a;
 }
+/* ---------- Message Wrapper & Action Icons ---------- */
+.message-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.message-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 1;
+}
+
+/* أيقونات رسائل المساعد (يسار) */
+.message-actions.assistant {
+  align-self: flex-start;
+  padding-left: 4px;
+}
+
+/* أيقونات رسائل المستخدم (يمين) */
+.message-actions.user {
+  align-self: flex-end;
+  padding-right: 4px;
+}
+
+.action-btn {
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  transition: color 0.2s, background 0.2s;
+  padding: 5px;
+}
+
+.action-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.action-btn:hover {
+  color: #e0e0e0;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.action-btn.active-like {
+  color: #4caf50;
+}
+
+.action-btn.active-dislike {
+  color: #e55571;
+}
