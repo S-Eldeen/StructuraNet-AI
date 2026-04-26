@@ -3,11 +3,82 @@ import { useParams } from 'react-router-dom';
 import './chatpage.css';
 import NewPrompt from '../../components/newPrompt/NewPrompt';
 import ChatList from '../../components/chatList/ChatList';
-import Markdown from 'react-markdown';
 import { useAuth } from '@clerk/clerk-react';
 import { askGeminiStream } from '../../lib/gemini';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import remarkGfm from 'remark-gfm';
+import ReactMarkdown from 'react-markdown';
 
 const urlEndpoint = import.meta.env.VITE_IMAGE_KIT_ENDPOINT;
+
+/* ── MarkdownRenderer مدمج ── */
+const MarkdownRenderer = ({ content }) => {
+  const copyToClipboard = (code) => {
+    navigator.clipboard.writeText(code);
+    alert('✅ تم نسخ الكود!');
+  };
+
+  return (
+    <div className="markdown-body">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          code({ node, inline, className, children, ...props }) {
+            const match = /language-(\w+)/.exec(className || '');
+            const codeString = String(children).replace(/\n$/, '');
+            
+            if (!inline && match) {
+              return (
+                <div style={{ position: 'relative', margin: '1rem 0' }}>
+                  <button
+                    onClick={() => copyToClipboard(codeString)}
+                    className="copy-code-btn"
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '10px',
+                      background: '#2d2d2d',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '6px 12px',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: '500',
+                      zIndex: 10,
+                      fontFamily: 'monospace',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => e.target.style.background = '#3c3c3c'}
+                    onMouseLeave={(e) => e.target.style.background = '#2d2d2d'}
+                  >
+                    📋 نسخ
+                  </button>
+                  <SyntaxHighlighter
+                    style={vscDarkPlus}
+                    language={match[1]}
+                    PreTag="div"
+                    {...props}
+                  >
+                    {codeString}
+                  </SyntaxHighlighter>
+                </div>
+              );
+            }
+            return (
+              <code className={className} {...props}>
+                {children}
+              </code>
+            );
+          },
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+};
 
 /* ── Helpers ── */
 const formatDate = (dateStr) => {
@@ -157,7 +228,6 @@ const Chatpage = () => {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ title: trimmed }),
       });
-      // يحدّث الـ ChatList في الـ sidebar
       window.dispatchEvent(new CustomEvent('chat-renamed'));
     } catch (err) {
       console.error('Error renaming:', err);
@@ -310,7 +380,7 @@ const Chatpage = () => {
                       ))}
                     </div>
                   )}
-                  {msg.content && <Markdown>{msg.content}</Markdown>}
+                  {msg.content && <MarkdownRenderer content={msg.content} />}
                 </div>
 
                 {!msg.streaming && msg.content && (

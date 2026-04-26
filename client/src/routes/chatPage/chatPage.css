@@ -649,3 +649,270 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* تنسيق الكود */
+.markdown-body pre {
+  background: #1e1e1e !important;
+  border-radius: 10px !important;
+  padding: 1rem !important;
+  overflow-x: auto !important;
+  position: relative !important;
+  margin: 0.5rem 0 !important;
+}
+
+.markdown-body code {
+  font-family: 'Fira Code', 'Cascadia Code', monospace !important;
+  font-size: 13px !important;
+  background: transparent !important;
+}
+
+/* تنسيق النص العادي */
+.markdown-body p {
+  line-height: 1.6;
+  margin: 0.5rem 0;
+}
+
+.markdown-body h1, .markdown-body h2, .markdown-body h3 {
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.markdown-body ul, .markdown-body ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+/* ──────────────────────────────────────────── */
+/* MarkdownRenderer Styles - تنسيق الكود والـ Markdown */
+/* ──────────────────────────────────────────── */
+
+.markdown-body {
+  width: 100%;
+  line-height: 1.6;
+}
+
+/* تنسيق النص العادي */
+.markdown-body p {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+/* تنسيق العناوين */
+.markdown-body h1 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin: 1.2rem 0 0.8rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.3rem;
+}
+
+.markdown-body h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 1rem 0 0.6rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.2rem;
+}
+
+.markdown-body h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 0.8rem 0 0.5rem;
+}
+
+.markdown-body h4, .markdown-body h5, .markdown-body h6 {
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin: 0.6rem 0 0.4rem;
+}
+
+/* تنسيق القوائم */
+.markdown-body ul, .markdown-body ol {
+  margin: 0.5rem 0;
+  padding-left: 1.8rem;
+}
+
+.markdown-body li {
+  margin: 0.2rem 0;
+  line-height: 1.5;
+}
+
+.markdown-body li > ul, 
+.markdown-body li > ol {
+  margin: 0.2rem 0;
+}
+
+/* تنسيق الكود داخل النص (inline code) */
+.markdown-body code:not(pre code) {
+  background: rgba(100, 100, 120, 0.3);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-family: 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 0.9em;
+  color: #e06c75;
+}
+
+/* تنسيق البلوك كود (block code) */
+.markdown-body pre {
+  background: #1e1e1e !important;
+  border-radius: 10px;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 0.8rem 0;
+  position: relative;
+}
+
+.markdown-body pre code {
+  font-family: 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  background: transparent;
+  padding: 0;
+  color: #d4d4d4;
+}
+
+/* تنسيق الجداول */
+.markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.8rem 0;
+  overflow-x: auto;
+  display: block;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.5rem 0.8rem;
+  text-align: left;
+}
+
+.markdown-body th {
+  background: rgba(100, 100, 120, 0.2);
+  font-weight: 600;
+}
+
+.markdown-body tr:nth-child(even) {
+  background: rgba(100, 100, 120, 0.1);
+}
+
+/* تنسيق الاقتباسات (blockquotes) */
+.markdown-body blockquote {
+  border-left: 3px solid #4f8ef7;
+  margin: 0.8rem 0;
+  padding: 0.5rem 1rem;
+  background: rgba(79, 142, 247, 0.1);
+  border-radius: 0 8px 8px 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.markdown-body blockquote p {
+  margin: 0;
+}
+
+/* تنسيق الروابط */
+.markdown-body a {
+  color: #4f8ef7;
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(79, 142, 247, 0.5);
+}
+
+.markdown-body a:hover {
+  color: #7eb3ff;
+  border-bottom: 1px solid #7eb3ff;
+}
+
+/* تنسيق الصور داخل الـ Markdown */
+.markdown-body img {
+  max-width: 100%;
+  border-radius: 8px;
+  margin: 0.5rem 0;
+}
+
+/* تنسيق الخط الفاصل */
+.markdown-body hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  margin: 1rem 0;
+}
+
+/* علامات الترقيم والتأكيد */
+.markdown-body strong {
+  font-weight: 700;
+  color: #f0f0f0;
+}
+
+.markdown-body em {
+  font-style: italic;
+}
+
+.markdown-body del {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+/* تنسيق مهمة القوائم (Task lists) */
+.markdown-body input[type="checkbox"] {
+  margin-right: 0.5rem;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+}
+
+/* للشاشات الصغيرة */
+@media (max-width: 768px) {
+  .markdown-body pre {
+    font-size: 12px;
+    padding: 0.8rem;
+  }
+  
+  .markdown-body code:not(pre code) {
+    font-size: 0.85em;
+  }
+  
+  .markdown-body h1 {
+    font-size: 1.5rem;
+  }
+  
+  .markdown-body h2 {
+    font-size: 1.3rem;
+  }
+  
+  .markdown-body h3 {
+    font-size: 1.1rem;
+  }
+}
+
+/* تنسيق زر النسخ (بيتعرف من الـ inline style لكن ممكن نضيف تنسيق إضافي) */
+.markdown-body pre .copy-btn {
+  transition: all 0.2s ease;
+}
+
+.markdown-body pre .copy-btn:hover {
+  transform: scale(1.05);
+}
+
+/* تنسيق زر نسخ الكود */
+.copy-code-btn {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  background: #2d2d2d;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  z-index: 10;
+  font-family: monospace;
+  transition: all 0.2s ease;
+}
+
+.copy-code-btn:hover {
+  background: #3c3c3c;
+  transform: scale(1.02);
+}
