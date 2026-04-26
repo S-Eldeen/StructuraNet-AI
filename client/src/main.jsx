@@ -14,6 +14,7 @@ import SignUpPage from "./routes/signUpPage/signUpPage";
 
 import UpgradePage from "./routes/upgradePage/UpgradePage";
 import CheckoutPage from "./routes/checkoutPage/CheckoutPage";
+import AboutPage from "./routes/aboutPage/AboutPage";
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -42,6 +43,12 @@ const router = createBrowserRouter([
       {
         path: '/upgrade',
         element: <UpgradePage />
+      },
+
+      // ✅ About page
+      {
+        path: '/about',
+        element: <AboutPage />
       },
 
       // ✅ Checkout pages

@@ -327,7 +327,7 @@ const ChatList = () => {
 
       {!collapsed && (
         <>
-          <Link to="/">Explore Structranet AI</Link>
+          <Link to="/about">Explore Structranet AI</Link>
           <Link to="/">Contact</Link>
 
           <hr />
