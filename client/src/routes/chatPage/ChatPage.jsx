@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import './chatpage.css';
 import NewPrompt from '../../components/newPrompt/NewPrompt';
-import ChatList from '../../components/chatList/ChatList';
 import { useAuth } from '@clerk/clerk-react';
 import { askGeminiStream } from '../../lib/gemini';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -12,7 +11,7 @@ import ReactMarkdown from 'react-markdown';
 
 const urlEndpoint = import.meta.env.VITE_IMAGE_KIT_ENDPOINT;
 
-/* ── MarkdownRenderer مدمج ── */
+/* ── MarkdownRenderer ── */
 const MarkdownRenderer = ({ content }) => {
   const copyToClipboard = (code) => {
     navigator.clipboard.writeText(code);
@@ -27,7 +26,6 @@ const MarkdownRenderer = ({ content }) => {
           code({ node, inline, className, children, ...props }) {
             const match = /language-(\w+)/.exec(className || '');
             const codeString = String(children).replace(/\n$/, '');
-            
             if (!inline && match) {
               return (
                 <div style={{ position: 'relative', margin: '1rem 0' }}>
@@ -35,42 +33,24 @@ const MarkdownRenderer = ({ content }) => {
                     onClick={() => copyToClipboard(codeString)}
                     className="copy-code-btn"
                     style={{
-                      position: 'absolute',
-                      right: '10px',
-                      top: '10px',
-                      background: '#2d2d2d',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '6px 12px',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      fontWeight: '500',
-                      zIndex: 10,
-                      fontFamily: 'monospace',
-                      transition: 'all 0.2s ease',
+                      position: 'absolute', right: '10px', top: '10px',
+                      background: '#2d2d2d', color: '#fff', border: 'none',
+                      borderRadius: '6px', padding: '6px 12px', cursor: 'pointer',
+                      fontSize: '12px', fontWeight: '500', zIndex: 10,
+                      fontFamily: 'monospace', transition: 'all 0.2s ease',
                     }}
                     onMouseEnter={(e) => e.target.style.background = '#3c3c3c'}
                     onMouseLeave={(e) => e.target.style.background = '#2d2d2d'}
                   >
                     📋 نسخ
                   </button>
-                  <SyntaxHighlighter
-                    style={vscDarkPlus}
-                    language={match[1]}
-                    PreTag="div"
-                    {...props}
-                  >
+                  <SyntaxHighlighter style={vscDarkPlus} language={match[1]} PreTag="div" {...props}>
                     {codeString}
                   </SyntaxHighlighter>
                 </div>
               );
             }
-            return (
-              <code className={className} {...props}>
-                {children}
-              </code>
-            );
+            return <code className={className} {...props}>{children}</code>;
           },
         }}
       >
@@ -98,10 +78,10 @@ const formatDate = (dateStr) => {
 
 /* ── Message Actions ── */
 const MessageActions = ({ msg, msgIndex, chatId, onRegenerate }) => {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied]         = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
-  const [liked, setLiked] = useState(false);
-  const [disliked, setDisliked] = useState(false);
+  const [liked, setLiked]           = useState(false);
+  const [disliked, setDisliked]     = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(msg.content || '');
@@ -109,8 +89,8 @@ const MessageActions = ({ msg, msgIndex, chatId, onRegenerate }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleLike = () => { setLiked((p) => !p); if (disliked) setDisliked(false); };
-  const handleDislike = () => { setDisliked((p) => !p); if (liked) setLiked(false); };
+  const handleLike    = () => { setLiked((p) => !p);    if (disliked) setDisliked(false); };
+  const handleDislike = () => { setDisliked((p) => !p); if (liked)    setLiked(false);    };
 
   const handleShare = () => {
     const link = `${window.location.origin}/chat/${chatId}#msg-${msgIndex}`;
@@ -121,9 +101,12 @@ const MessageActions = ({ msg, msgIndex, chatId, onRegenerate }) => {
 
   return (
     <div className={`message-actions ${msg.role}`}>
+      {/* Copy */}
       <button className="action-btn" onClick={handleCopy} title="نسخ">
         {copied ? (
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
         ) : (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
@@ -132,6 +115,7 @@ const MessageActions = ({ msg, msgIndex, chatId, onRegenerate }) => {
         )}
       </button>
 
+      {/* Like */}
       <button className={`action-btn ${liked ? 'active-like' : ''}`} onClick={handleLike} title="إعجاب">
         <svg viewBox="0 0 24 24" fill={liked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
           <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z" />
@@ -139,6 +123,7 @@ const MessageActions = ({ msg, msgIndex, chatId, onRegenerate }) => {
         </svg>
       </button>
 
+      {/* Dislike */}
       <button className={`action-btn ${disliked ? 'active-dislike' : ''}`} onClick={handleDislike} title="عدم إعجاب">
         <svg viewBox="0 0 24 24" fill={disliked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
           <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10z" />
@@ -146,9 +131,12 @@ const MessageActions = ({ msg, msgIndex, chatId, onRegenerate }) => {
         </svg>
       </button>
 
+      {/* Share */}
       <button className="action-btn" onClick={handleShare} title={linkCopied ? 'تم نسخ اللينك!' : 'نسخ لينك الرسالة'}>
         {linkCopied ? (
-          <svg viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#4caf50" strokeWidth="2">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
         ) : (
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
@@ -158,6 +146,7 @@ const MessageActions = ({ msg, msgIndex, chatId, onRegenerate }) => {
         )}
       </button>
 
+      {/* Regenerate */}
       <button className="action-btn" onClick={onRegenerate} title="إعادة التوليد">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <polyline points="23 4 23 10 17 10" />
@@ -170,25 +159,25 @@ const MessageActions = ({ msg, msgIndex, chatId, onRegenerate }) => {
 
 /* ── Main Chat Page ── */
 const Chatpage = () => {
-  const { id: chatId } = useParams();
-  const { getToken } = useAuth();
-  const [messages, setMessages] = useState([]);
-  const [isTyping, setIsTyping] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [chatTitle, setChatTitle] = useState('');
-  const [updatedAt, setUpdatedAt] = useState(null);
+  const { id: chatId }  = useParams();
+  const { getToken }    = useAuth();
+  const [messages, setMessages]     = useState([]);
+  const [isTyping, setIsTyping]     = useState(false);
+  const [loading, setLoading]       = useState(true);
+  const [chatTitle, setChatTitle]   = useState('');
+  const [updatedAt, setUpdatedAt]   = useState(null);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleInput, setTitleInput] = useState('');
   const titleInputRef = useRef(null);
+  const endRef        = useRef(null);
+  const wrapperRef    = useRef(null);
 
-  const endRef = useRef(null);
-  const wrapperRef = useRef(null);
-
+  /* ── Fetch chat ── */
   useEffect(() => {
     const fetchChat = async () => {
       if (!chatId) return;
       try {
-        const token = await getToken({ skipCache: true });
+        const token    = await getToken({ skipCache: true });
         const response = await fetch(`http://localhost:3000/api/chats/${chatId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -212,15 +201,13 @@ const Chatpage = () => {
     if (editingTitle && titleInputRef.current) titleInputRef.current.focus();
   }, [editingTitle]);
 
-  /* ── Rename handler ── */
+  /* ── Rename ── */
   const handleTitleSubmit = async (e) => {
     e?.preventDefault();
     const trimmed = titleInput.trim();
     if (!trimmed || trimmed === chatTitle) { setEditingTitle(false); return; }
-
     setChatTitle(trimmed);
     setEditingTitle(false);
-
     try {
       const token = await getToken({ skipCache: true });
       await fetch(`http://localhost:3000/api/userchats/${chatId}/rename`, {
@@ -234,6 +221,7 @@ const Chatpage = () => {
     }
   };
 
+  /* ── Save messages ── */
   const saveMessages = async (newMessages) => {
     if (!chatId) return;
     try {
@@ -249,6 +237,7 @@ const Chatpage = () => {
     }
   };
 
+  /* ── Add / update message ── */
   const addMessage = async (message, isUpdate = false) => {
     if (isUpdate && message.id) {
       setMessages((prev) =>
@@ -265,10 +254,12 @@ const Chatpage = () => {
     }
   };
 
+  /* ── Scroll ── */
   const scrollToBottom = () => endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   useEffect(() => { scrollToBottom(); }, [messages]);
   useEffect(() => { setTimeout(scrollToBottom, 100); }, []);
 
+  /* ── Scroll to anchor (share link) ── */
   useEffect(() => {
     if (loading) return;
     const hash = window.location.hash;
@@ -281,8 +272,11 @@ const Chatpage = () => {
     }, 400);
   }, [loading]);
 
+  /* ── Regenerate ── */
   const handleRegenerate = async (msgIndex) => {
-    const lastUserMsg = [...messages.slice(0, msgIndex + 1)].reverse().find((m) => m.role === 'user');
+    const lastUserMsg = [...messages.slice(0, msgIndex + 1)]
+      .reverse()
+      .find((m) => m.role === 'user');
     if (!lastUserMsg) return;
 
     setMessages((prev) => prev.slice(0, msgIndex));
@@ -292,16 +286,21 @@ const Chatpage = () => {
 
     try {
       let accumulatedText = '';
-      const conversation = messages.slice(0, msgIndex)
+      const conversation = messages
+        .slice(0, msgIndex)
         .filter((m) => m.content && !m.streaming)
         .map((m) => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.content }));
 
       await askGeminiStream(conversation, lastUserMsg.images || [], (partialText) => {
         accumulatedText = partialText;
-        setMessages((prev) => prev.map((m) => m.id === aiMessageId ? { ...m, content: accumulatedText, streaming: true } : m));
+        setMessages((prev) =>
+          prev.map((m) => m.id === aiMessageId ? { ...m, content: accumulatedText, streaming: true } : m)
+        );
       });
 
-      setMessages((prev) => prev.map((m) => m.id === aiMessageId ? { ...m, content: accumulatedText, streaming: false } : m));
+      setMessages((prev) =>
+        prev.map((m) => m.id === aiMessageId ? { ...m, content: accumulatedText, streaming: false } : m)
+      );
 
       if (chatId) {
         const token = await getToken({ skipCache: true });
@@ -313,12 +312,15 @@ const Chatpage = () => {
       }
     } catch (error) {
       console.error('Regenerate error:', error);
-      setMessages((prev) => prev.map((m) => m.id === aiMessageId ? { ...m, content: 'عذراً، حدث خطأ. حاول مرة أخرى.', streaming: false } : m));
+      setMessages((prev) =>
+        prev.map((m) => m.id === aiMessageId ? { ...m, content: 'عذراً، حدث خطأ. حاول مرة أخرى.', streaming: false } : m)
+      );
     } finally {
       setIsTyping(false);
     }
   };
 
+  /* ── Loading ── */
   if (loading) {
     return (
       <div className="global-logo-loader">
@@ -330,11 +332,12 @@ const Chatpage = () => {
     );
   }
 
+  /* ── Render ── */
   return (
     <div className="chatpage">
       <div className="content">
 
-        {/* ── Chat Header ── */}
+        {/* Chat Header */}
         <div className="chat-header">
           <div className="chat-header-info">
             {editingTitle ? (
@@ -349,11 +352,7 @@ const Chatpage = () => {
                 />
               </form>
             ) : (
-              <span
-                className="chat-header-title"
-                onClick={() => setEditingTitle(true)}
-                title="Click to rename"
-              >
+              <span className="chat-header-title" onClick={() => setEditingTitle(true)} title="Click to rename">
                 {chatTitle}
                 <svg className="edit-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -367,6 +366,7 @@ const Chatpage = () => {
           </div>
         </div>
 
+        {/* Messages */}
         <div className="wrapper" ref={wrapperRef}>
           <div className="chat">
             {messages.map((msg, index) => (
@@ -384,8 +384,12 @@ const Chatpage = () => {
                 </div>
 
                 {!msg.streaming && msg.content && (
-                  <MessageActions msg={msg} msgIndex={index} chatId={chatId}
-                    onRegenerate={() => handleRegenerate(index)} />
+                  <MessageActions
+                    msg={msg}
+                    msgIndex={index}
+                    chatId={chatId}
+                    onRegenerate={() => handleRegenerate(index)}
+                  />
                 )}
               </div>
             ))}
@@ -404,13 +408,15 @@ const Chatpage = () => {
           </div>
         </div>
 
+        {/* Prompt */}
         <div className="prompt-container">
-          <NewPrompt addMessage={addMessage} setIsTyping={setIsTyping} chatId={chatId} history={messages} />
+          <NewPrompt
+            addMessage={addMessage}
+            setIsTyping={setIsTyping}
+            chatId={chatId}
+            history={messages}
+          />
         </div>
-      </div>
-
-      <div className="chatList-container">
-        <ChatList />
       </div>
     </div>
   );
