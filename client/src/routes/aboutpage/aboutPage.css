@@ -3,11 +3,14 @@
 /* ── Reset & Base ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+html {
+  scroll-behavior: smooth;
+}
+
 .ap {
   background: #020810;
   color: #d0e4ff;
   font-family: 'DM Sans', sans-serif;
-  overflow-x: hidden;
 }
 
 /* ════════════════════════════════════════════
@@ -69,12 +72,12 @@
 /* Animated underline */
 .nav-underline {
   position: absolute;
-  bottom: 0;
-  height: 2px;
-  background: #4f8ef7;
+  bottom: -4px;
+  height: 3px;
+  background: linear-gradient(90deg, #4f8ef7, #7eb3ff, #4f8ef7);
   border-radius: 2px;
-  transition: left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 0 10px rgba(79,142,247,0.6);
+  transition: left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 0 16px rgba(79,142,247,0.8), 0 0 30px rgba(79,142,247,0.4);
   z-index: 1;
 }
 
@@ -318,8 +321,8 @@
 /* reveal animation */
 .reveal-target > * {
   opacity: 0;
-  transform: translateY(32px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
+  transform: translateY(48px);
+  transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .reveal-target > *.revealed {
   opacity: 1;
@@ -447,7 +450,6 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 18px;
-  scroll-behavior: smooth;
 }
 
 .step-card {
@@ -508,7 +510,6 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 14px;
-  scroll-behavior: smooth;
 }
 
 .feat-card {
@@ -558,7 +559,6 @@
   max-height: 500px;
   overflow-y: auto;
   padding-right: 12px;
-  scroll-behavior: smooth;
 }
 
 /* Use cases scrollbar */
@@ -651,11 +651,33 @@
 @keyframes fadeInUp {
   from { 
     opacity: 0; 
-    transform: translateY(40px);
+    transform: translateY(50px);
   }
   to { 
     opacity: 1; 
     transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
