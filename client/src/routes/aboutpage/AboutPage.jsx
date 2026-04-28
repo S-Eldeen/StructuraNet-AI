@@ -24,24 +24,56 @@ const AboutPage = () => {
       const sy = window.scrollY;
       setScrollY(sy);
       setNavSolid(sy > 80);
-      for (let i = SECTIONS.length - 1; i >= 0; i--) {
-        const el = document.getElementById(SECTIONS[i].id);
-        if (el && el.getBoundingClientRect().top <= 100) {
-          setActive(SECTIONS[i].id);
-          break;
-        }
-      }
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let bestId = null;
+        let bestRatio = -1;
+        
+        entries.forEach((entry) => {
+          if (entry.intersectionRatio > bestRatio) {
+            bestRatio = entry.intersectionRatio;
+            bestId = entry.target.id;
+          }
+        });
+        
+        if (bestId && bestRatio > 0.05) {
+          setActive(bestId);
+        }
+      },
+      {
+        rootMargin: '-20% 0px -40% 0px',
+        threshold: Array.from({ length: 21 }, (_, i) => i * 0.05),
+      }
+    );
+
+    SECTIONS.forEach((s) => {
+      const el = document.getElementById(s.id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     const io = new IntersectionObserver(
       (entries) => entries.forEach(e => {
-        if (e.isIntersecting) setVisible(v => ({ ...v, [e.target.id]: true }));
+        if (e.isIntersecting) {
+          setVisible(v => ({ ...v, [e.target.id]: true }));
+          // Trigger all children animations
+          const children = e.target.querySelectorAll('*');
+          children.forEach(child => {
+            if (child.classList.contains('reveal-target')) return;
+            child.classList.add('revealed');
+          });
+        }
       }),
-      { threshold: 0.1 }
+      { threshold: 0.15 }
     );
     document.querySelectorAll('.reveal-target').forEach(el => io.observe(el));
     return () => io.disconnect();
@@ -51,8 +83,7 @@ const AboutPage = () => {
   useEffect(() => {
     if (!navLinksRef.current) return;
     
-    // Use a small delay to ensure DOM is updated
-    const timer = setTimeout(() => {
+    const updateUnderline = () => {
       const activeButton = navLinksRef.current.querySelector(`.hn.hn-a`);
       if (activeButton) {
         const rect = activeButton.getBoundingClientRect();
@@ -62,9 +93,14 @@ const AboutPage = () => {
           width: rect.width
         });
       }
-    }, 0);
+    };
     
-    return () => clearTimeout(timer);
+    // Update immediately
+    updateUnderline();
+    
+    // Also use requestAnimationFrame for smoother updates
+    const rafId = requestAnimationFrame(updateUnderline);
+    return () => cancelAnimationFrame(rafId);
   }, [active]);
 
   // Set initial underline position on mount
