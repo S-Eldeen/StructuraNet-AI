@@ -1,151 +1,224 @@
-🚀 Structranet AI
-What is Structranet AI?
-Structranet AI is an intelligent assistant designed to help network engineers design, simulate, and document network architectures efficiently.
-It combines conversational AI (Google Gemini) with real-time network topology generation and planned integration with GNS3 automation, creating a powerful all-in-one platform for modern network design.
+# 🚀 Structranet AI
 
-🎯 Key Capabilities
+## 📌 Overview
+
+**Structranet AI** is an intelligent assistant designed to help network engineers **design, simulate, and document network architectures efficiently**.
+
+It combines **conversational AI (Google Gemini)** with **real-time network topology generation** and planned integration with **GNS3 automation**, creating a powerful all-in-one platform for modern network design.
+
+---
+
+## 🎯 Key Capabilities
+
 Structranet AI is built for network professionals who want to:
 
+* 🧠 Design complex network topologies using **natural language**
+* 📊 Generate **network diagrams, configurations, and images**
+* ⚙️ Automate deployment through **GNS3 integration** *(planned)*
+* 💬 Manage conversations and designs via a **modern web interface**
 
-Design complex network topologies using natural language
+---
 
+## 🛠️ Tech Stack
 
+| Layer           | Technologies                                                                          |
+| --------------- | ------------------------------------------------------------------------------------- |
+| **Frontend**    | React, Vite, React Router, Clerk (Authentication), React Markdown, ImageKit React SDK |
+| **Backend**     | Node.js, Express, MongoDB (Mongoose), ImageKit Node SDK, Clerk Backend SDK            |
+| **AI Services** | Google Gemini API (text + image generation), GNS3 Automation *(planned)*              |
+| **Styling**     | CSS Modules, Custom Animations                                                        |
 
+---
 
-Generate network diagrams, configurations, and images
+## 📋 Prerequisites
 
+Make sure you have the following installed:
 
-Automate deployment through GNS3 integration (planned)
+* Node.js (v18 or later)
+* npm (comes with Node.js)
+* MongoDB Atlas account (or local MongoDB)
+* Clerk account (authentication keys from [https://clerk.com](https://clerk.com))
+* ImageKit account ([https://imagekit.io](https://imagekit.io))
+* Google Gemini API key (Google AI Studio)
 
+---
 
+## 🧪 Getting Started (Local Development)
 
+### 1. Clone the Repository
 
-
-Manage conversations and designs via a modern web interface
-
-
-
-🛠️ Tech Stack
-LayerTechnologiesFrontendReact, Vite, React Router, Clerk (Authentication), React Markdown, ImageKit React SDKBackendNode.js, Express, MongoDB (Mongoose), ImageKit Node SDK, Clerk Backend SDKAI ServicesGoogle Gemini API (text + image generation), GNS3 Automation (planned)StylingCSS Modules, Custom Animations
-
-📋 Prerequisites
-Ensure you have the following installed:
-
-
-Node.js (v18 or later)
-
-
-npm (included with Node.js)
-
-
-MongoDB Atlas account (or local MongoDB)
-
-
-Clerk account (authentication keys from clerk.com)
-
-
-ImageKit account (imagekit.io)
-
-
-Google Gemini API key (Google AI Studio)
-
-
-
-🧪 Getting Started (Local Development)
-1. Clone the Repository
-git clone https://github.com:S-Eldeen/AutoTopology.git
+```bash
+git clone https://github.com/S-Eldeen/StructuraNet-AI.git
 cd structranet-ai
+```
 
-3. Open Two Terminals
-You’ll need:
+---
 
+### 2. Open Two Terminals
 
-One for the backend
+You will need two terminal windows:
 
+* **Terminal 1:** Backend
+* **Terminal 2:** Client
 
-One for the client
+---
 
+### 3. Install Dependencies
 
+**Backend**
 
-3. Install Dependencies
-Terminal 1 – Backend
-cd backendnpm install
-Terminal 2 – Client
-cd clientnpm install
+```bash
+cd backend
+npm install
+```
 
-⚠️ Important Notes
+**Client**
 
+```bash
+cd client
+npm install
+```
 
-Do not modify or delete existing .env or package.json files unless necessary
+---
 
+## ⚠️ Important Notes
 
-The project already includes working configurations for testing
+* Do **not modify or delete** existing `.env` or `package.json` files unless necessary
+* The project already includes working configurations for testing
 
+---
 
+## 🔐 Environment Variables
 
-🔐 Environment Variables
-Both backend and client folders include .env files.
-Backend .env
-MONGO=your_mongodb_uriCLERK_JWT_KEY=your_jwt_keyIMAGE_KIT_ENDPOINT=your_imagekit_endpointIMAGE_KIT_PUBLIC_KEY=your_imagekit_public_keyIMAGE_KIT_PRIVATE_KEY=your_imagekit_private_keyCLIENT_URL=http://localhost:5173
-Client .env
-VITE_IMAGE_KIT_ENDPOINT=your_imagekit_endpointVITE_IMAGE_KIT_PUBLIC_KEY=your_imagekit_public_keyVITE_GEMINI_PUBLIC_KEY=your_gemini_api_keyVITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
-⚠️ Never commit .env files — they are already included in .gitignore.
+Both `backend` and `client` folders include `.env` files.
 
-▶️ Running the Application
-Start Backend
+### Backend `.env`
+
+```env
+MONGO=your_mongodb_uri
+CLERK_JWT_KEY=your_jwt_key
+IMAGE_KIT_ENDPOINT=your_imagekit_endpoint
+IMAGE_KIT_PUBLIC_KEY=your_imagekit_public_key
+IMAGE_KIT_PRIVATE_KEY=your_imagekit_private_key
+CLIENT_URL=http://localhost:5173
+```
+
+### Client `.env`
+
+```env
+VITE_IMAGE_KIT_ENDPOINT=your_imagekit_endpoint
+VITE_IMAGE_KIT_PUBLIC_KEY=your_imagekit_public_key
+VITE_GEMINI_PUBLIC_KEY=your_gemini_api_key
+VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+```
+
+⚠️ **Never commit `.env` files** — they are already included in `.gitignore`.
+
+---
+
+## ▶️ Running the Application
+
+**Start Backend**
+
+```bash
 npm start
-Runs on: http://localhost:3000
-Start Client
+```
+
+Runs on: **[http://localhost:3000](http://localhost:3000)**
+
+**Start Client**
+
+```bash
 npm run dev
-Runs on: http://localhost:5173
+```
 
-🌐 Access the App
-Open your browser and go to:
+Runs on: **[http://localhost:5173](http://localhost:5173)**
+
+---
+
+## 🌐 Access the App
+
+Open your browser and visit:
+
+```
 http://localhost:5173
+```
 
-🧑‍💻 How to Use (Test Version)
+---
 
+## 🧑‍💻 How to Use (Test Version)
 
-Sign up / Sign in via Clerk (Google, GitHub, or email)
+1. Sign up / Sign in via **Clerk** (Google, GitHub, or email)
 
+2. Create a new chat from the dashboard
 
-Create a new chat from the dashboard
+3. Ask questions or request network designs
 
+   **Example:**
 
-Ask questions or request network designs
-Example:
-“Draw a simple network with 3 routers and 2 switches”
+   ```
+   Draw a simple network with 3 routers and 2 switches
+   ```
 
+4. Upload images for analysis
 
-Upload images for analysis
+5. View saved conversations (stored in MongoDB)
 
+---
 
-View saved conversations (stored in MongoDB)
+## 🔧 Troubleshooting
 
+| Issue                      | Solution                                                    |
+| -------------------------- | ----------------------------------------------------------- |
+| Missing publicKey          | Check ImageKit public key in `client/.env`                  |
+| Clerk authentication fails | Verify Clerk keys                                           |
+| MongoDB connection refused | Whitelist your IP & verify URI                              |
+| Failed to fetch            | Ensure both servers are running and `CLIENT_URL` is correct |
 
+---
 
-🔧 Troubleshooting
-IssueSolutionMissing publicKeyCheck ImageKit public key in client/.envClerk authentication failsVerify Clerk keysMongoDB connection refusedWhitelist IP & verify URIFailed to fetchEnsure both servers are running and CLIENT_URL is correct
+## 🤝 Contributing
 
-🤝 Contributing
-This is a test version.
-Feel free to:
+This is a **test version**. Contributions are welcome:
 
+* Open issues
+* Submit pull requests
+* Suggest improvements
 
-Open issues
+---
 
+Here’s a clean, professional **License section** you can drop directly into your README:
 
-Submit pull requests
+---
 
+## 📄 License
 
-Suggest improvements
+This project is developed as part of a **Graduation Project (2026)** at:
 
+**Faculty of Engineering, Tanta University**
+**Computer and Automatic Control Department**
 
+### 🔖 License Name: **E-TU License (Educational – Tanta University)**
 
-📄 License
-This project is intended for educational and evaluation purposes only.
-Not recommended for production without proper security hardening.
+This software is provided for **educational and evaluation purposes only**.
 
-🎉 Final Note
-You're now ready to explore the power of AI-driven network design.
-Structranet AI — built with ❤️ for network engineers everywhere.
+### 📌 Terms of Use
+
+* ✅ Free to use for **learning, research, and academic purposes**
+* ❌ Not permitted for **commercial use**
+* ❌ Redistribution or modification for production use is **not allowed without permission**
+* ⚠️ No warranty or guarantee is provided with this software
+
+### 👨‍🎓 Academic Attribution
+
+Any use of this project must include proper acknowledgment of:
+
+> *Structranet AI — Graduation Project (2026), Faculty of Engineering, Tanta University*
+
+---
+
+## 🎉 Final Note
+
+You're now ready to explore the power of **AI-driven network design**.
+
+**Structranet AI** — built with ❤️ for network engineers everywhere.
