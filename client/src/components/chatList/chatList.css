@@ -7,8 +7,8 @@
   min-width: 260px;
   transition: width 0.25s ease, min-width 0.25s ease;
   padding: 0 4px;
+  background-color: #1a1a1a; /* نفس لون الـ menu */
 }
-
 .chatList.collapsed {
   width: 56px;
   min-width: 56px;
@@ -464,4 +464,26 @@ a:hover {
   padding: 8px 16px;
   color: #4f8ef7;
   cursor: pointer;
+}
+
+/* تنسيق الـ User Profile */
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  margin: 8px 0 16px 0;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.user-profile.collapsed {
+  justify-content: center;
+  padding: 12px;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #e0e0e0;
 }

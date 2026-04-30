@@ -1,6 +1,6 @@
 import "./chatList.css";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth, UserButton } from "@clerk/clerk-react";
 import { useEffect, useState, useCallback, useRef } from "react";
 
 /* ── Icons ── */
@@ -306,13 +306,19 @@ const ChatList = () => {
           {!collapsed && (
             <Link to="/" className="chatList-brand">
               <NetworkIcon />
-              <span className="brand-name">Structranet</span>
+              <span className="brand-name">StructraNet AI</span>
             </Link>
           )}
           <button className="toggle-btn" onClick={() => setCollapsed((c) => !c)}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
             <ToggleIcon />
           </button>
+        </div>
+
+        {/* User Profile Section */}
+        <div className={`user-profile ${collapsed ? "collapsed" : ""}`}>
+          <UserButton afterSignOutUrl="/" />
+          {!collapsed && <span className="user-name">My Account</span>}
         </div>
 
         {!collapsed ? (
@@ -323,7 +329,7 @@ const ChatList = () => {
 
         {!collapsed && (
           <>
-            <Link to="/about">Explore Structranet AI</Link>
+            <Link to="/about">Explore StructraNet AI</Link>
             <Link to="/">Contact</Link>
             <hr />
             <span className="title">RECENT CHATS</span>
@@ -354,7 +360,7 @@ const ChatList = () => {
               <Link to="/upgrade" className="upgrade">
                 <NetworkIcon />
                 <div className="texts">
-                  <span className="plan-title">Upgrade to Structranet Pro</span>
+                  <span className="plan-title">Upgrade to StructraNet Pro</span>
                   <span className="subtext">Unlimited designs & priority support</span>
                 </div>
               </Link>
