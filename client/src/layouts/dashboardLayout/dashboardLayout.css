@@ -1,21 +1,37 @@
 .dashboardLayout {
-    display: flex;
-    gap: 0;
-    padding-top: 20px;
-    height: 100%;
+  display: flex;
+  height: 100%;
+  width: 100%;
+  background-color: #0d0d0d;
+  overflow: hidden;
+}
 
-    .menu {
-        /* width controlled by ChatList itself via its collapsed state */
-        flex-shrink: 0;
-        transition: width 0.25s ease;
-        padding-right: 16px;
-    }
+.menu {
+  flex-shrink: 0;
+  height: 100%;
+  overflow-y: auto;
+  background-color: #1a1a1a; /* لون أفتح شوية من الـ main */
+  transition: width 0.25s ease;
+  border-right: 1px solid rgba(255, 255, 255, 0.08); /* الفاصل */
+}
 
-    .content {
-        flex: 1;
-        min-width: 0;
-        background-color: rgb(19, 19, 29);
-        border-radius: 12px 0 0 0;
-        transition: all 0.25s ease;
-    }
+.menu::-webkit-scrollbar {
+  width: 4px;
+}
+
+.menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.menu::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  background-color: #0d0d0d; /* اللون الأغمق */
 }

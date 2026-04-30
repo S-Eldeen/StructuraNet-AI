@@ -7,11 +7,14 @@ const RootLayout = () => {
     const location = useLocation();
     const [isTransitioning, setIsTransitioning] = useState(false);
     
+    // تحديد إذا كنا في صفحة dashboard أو لا
+    const isDashboard = location.pathname.startsWith('/dashboard');
+    
     useEffect(() => {
         setIsTransitioning(true);
         const timer = setTimeout(() => {
             setIsTransitioning(false);
-        }, 500); // إظهار اللوجو لمدة نصف ثانية عند التنقل
+        }, 500);
         return () => clearTimeout(timer);
     }, [location.pathname]);
     
@@ -25,24 +28,30 @@ const RootLayout = () => {
                     </div>
                 </div>
             )}
-            <header>
-                <Link to="/" className="logo">
-                    <img src="/logo.png" alt="" />
-                    <span>Structra</span>
-                </Link>
-                <div className="user">
-                    <SignedIn>
-                        <UserButton afterSignOutUrl="/" />
-                    </SignedIn>
-                    <SignedOut>
-                        <Link to="/sign-in" className="sign-in-btn">Sign In</Link>
-                    </SignedOut>
-                </div>
-            </header>
+            
+            {/* الـ header يظهر بس لو مش في dashboard */}
+            {!isDashboard && (
+                <header>
+                    <Link to="/" className="logo">
+                        <img src="/logo.png" alt="" />
+                        <span>Structra</span>
+                    </Link>
+                    <div className="user">
+                        <SignedIn>
+                            <UserButton afterSignOutUrl="/" />
+                        </SignedIn>
+                        <SignedOut>
+                            <Link to="/sign-in" className="sign-in-btn">Sign In</Link>
+                        </SignedOut>
+                    </div>
+                </header>
+            )}
+            
             <main>
                 <Outlet />   
             </main>
         </div>
     );
 };
+
 export default RootLayout;

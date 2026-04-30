@@ -1,481 +1,320 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 .homepage {
-    display: flex;
-    align-items: center;
-    gap: 100px;
-    height: 600px;
-    position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 60px;
+  min-height: calc(100vh - 70px);
+  padding: 40px 80px;
+  position: relative;
+  background-color: #0d0d0d;
 
-    @media screen and (max-width :1024px) {
-        flex-direction: column;
-        gap:0px;
-    }
-}
+  @media screen and (max-width: 1200px) {
+    padding: 40px 60px;
+    gap: 40px;
+  }
 
-
-.left {
-    flex: 1;
-    display: flex;
+  @media screen and (max-width: 1024px) {
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 11px;
+    padding: 40px 30px;
+    gap: 50px;
     text-align: center;
+  }
 }
 
-.right {
-    flex: 1;
-    display: flex;
+/* القسم الأيسر - النصوص */
+.left {
+  flex: 1;
+  display: flex;
+flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 20px;
+  z-index: 10;
+
+  @media screen and (max-width: 1024px) {
     align-items: center;
-    justify-content: center;
-    height: 100%;
-
-    .imgContainer {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #140e2d;
-        border-radius: 50px;
-        width: 100%;
-        height: 80%;
-        position: relative;
-
-        .bgContainer {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            border-radius: 50px;  
-            top: 0;
-            left: 0;
-
-            .bg {
-                background-image: url("/bg.png");
-                opacity: 0.2;
-                width: 200%;
-                height: 100%;
-                background-size: auto 100%;
-                animation: 8s ease-in-out infinite alternate bgslide;
-            }
-        }
-
-        .bot {   
-            width: 80%;
-            height: 70%;
-            object-fit: contain;
-            animation: 3s ease-in-out infinite alternate botAnimation;
-        }
-
-        /* ===== عنصر الدردشة بعد التعديل ===== */
-        .chat {
-            position: absolute;
-            bottom: 10px;
-            right: -30px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            background-color: #060606;
-            border-radius: 30px;        /* فقاعة دردشة دائرية */
-            font-size: 13px;
-            color: white;
-            white-space: nowrap;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.1);
-            z-index: 10;
-            flex-direction: row;
-
-            @media screen and (max-width :1024px) {
-                display: flex;
-            }
-
-            @media screen and (max-width :1288px) {
-                right: 0;
-            }
-
-            img {
-                width: 24px;
-                height: 24px;
-                border-radius: 50%;
-                object-fit: cover;
-                border: 2px solid #217bfe;  
-            }
-
-            span {
-                line-height: 1;
-                font-weight: 400;
-                letter-spacing: 0.3px;
-            }
-        }
-    }
+    text-align: center;
+  }
 }
 
-h1 {
-    font-size: 64px;
-    background: linear-gradient(to right, #217bfe, #e55571);
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
+.left h1 {
+  font-size: 68px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #4f8ef7 0%, #a8ccff 50%, #4f8ef7 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  letter-spacing: -1px;
+  margin: 0;
 
-    @media screen and (max-width :1288px) {
-        font-size: 64px;
-    }
+  @media screen and (max-width: 1200px) {
+    font-size: 54px;
+  }
+
+  @media screen and (max-width: 768px) {
+    font-size: 40px;
+  }
 }
 
-h5 {
-    font-weight: 400;
-    max-width: 700;
-    @media screen and (max-width :1024px) {
-        max-width: 100%;
-    }
+.left h2 {
+  font-size: 28px;
+  font-weight: 500;
+  color: #e0e0e0;
+  margin: 0;
+
+  @media screen and (max-width: 768px) {
+    font-size: 22px;
+  }
 }
 
-a {
-    text-decoration: none;
-    color: inherit;
-    outline: none;
-    border: none;
-    transition: color 0.3s ease;
+.description {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-a:hover {
-    color: #217bfe;
-    outline: none;
+.description h5 {
+  font-size: 18px;
+  font-weight: 400;
+  color: #a0a0a0;
+  line-height: 1.5;
+  margin: 0;
+
+  @media screen and (max-width: 768px) {
+    font-size: 16px;
+  }
 }
 
 .get-started-btn {
-    padding: 15px 25px;
-    background-color: #217bfe;
-    color: white;
-    border-radius: 20px;
-    font-size: 14px;
-    margin-top: 20px;
-    display: inline-block;
-    transition: background-color 0.3s ease, color 0.3s ease;
+  padding: 14px 32px;
+  background: linear-gradient(135deg, #4f8ef7, #2a5cc0);
+  color: white;
+  border-radius: 40px;
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 10px;
+  display: inline-block;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(79, 142, 247, 0.3);
 }
 
 .get-started-btn:hover {
-    background-color: white;
-    color: #217bfe;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(79, 142, 247, 0.4);
+  background: linear-gradient(135deg, #5a9aff, #3a6cd0);
 }
 
-.logo-link,
-.logo-link:hover,
-.logo-link:focus,
-.logo-link:active {
-    text-decoration: none;
-    outline: none;
-    border: none;
-    background-color: transparent;
-    color: inherit;
-    box-shadow: none;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: bold;
-}
-
-.orbital {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    opacity: 0.05;
-    animation: 100s linear infinite rotateOrbital;
-    pointer-events: none;
-    z-index: -1;
-    
-    
-    .terms{
-    position: absolute;
-    bottom :2%;
-    left :50%;
-    transform: translateX(-50%);
-    display:flex;
-    flex-direction: column;
-    align-items :center;
-    gap:20px;
-
-    img{
-        width: 30px;.homepage {
-    display: flex;
-    align-items: center;
-    gap: 100px;
-    height: 600px;
-    position: relative;
-    padding-bottom: 60px; /* مساحة للـ terms في الأسفل */
-
-    @media screen and (max-width :1024px) {
-        flex-direction: column;
-        gap:0px;
-        height: auto;
-        padding-bottom: 80px;
-    }
-}
-
-.left {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 11px;
-    text-align: center;
-}
-
+/* القسم الأيمن - الصورة والدردشة */
 .right {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 500px;
 
-    .imgContainer {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #140e2d;
-        border-radius: 50px;
-        width: 100%;
-        height: 80%;
-        position: relative;
-
-        .bgContainer {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            border-radius: 50px;  
-            top: 0;
-            left: 0;
-
-            .bg {
-                background-image: url("/bg.png");
-                opacity: 0.2;
-                width: 200%;
-                height: 100%;
-                background-size: auto 100%;
-                animation: 8s ease-in-out infinite alternate bgslide;
-            }
-        }
-
-        .bot {   
-            width: 80%;
-            height: 70%;
-            object-fit: contain;
-            animation: 3s ease-in-out infinite alternate botAnimation;
-        }
-
-        .chat {
-            position: absolute;
-            bottom: 10px;
-            right: -30px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            background-color: #060606;
-            border-radius: 30px;
-            font-size: 13px;
-            color: white;
-            white-space: nowrap;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.1);
-            z-index: 10;
-            flex-direction: row;
-
-            @media screen and (max-width :1024px) {
-                display: flex;
-                right: 0;
-                bottom: -20px;
-            }
-
-            @media screen and (max-width :1288px) {
-                right: 0;
-            }
-
-            img {
-                width: 24px;
-                height: 24px;
-                border-radius: 50%;
-                object-fit: cover;
-                border: 2px solid #217bfe;  
-            }
-
-            span {
-                line-height: 1;
-                font-weight: 400;
-                letter-spacing: 0.3px;
-            }
-        }
-    }
+  @media screen and (max-width: 1024px) {
+    min-height: 400px;
+    width: 100%;
+  }
 }
 
-h1 {
-    font-size: 64px;
-    background: linear-gradient(to right, #217bfe, #e55571);
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-    margin: 0;
+.imgContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+  border-radius: 60px;
+  width: 100%;
+  max-width: 500px;
+  height: 450px;
+  position: relative;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
 
-    @media screen and (max-width :1288px) {
-        font-size: 48px;
-    }
+  @media screen and (max-width: 768px) {
+    height: 350px;
+    border-radius: 40px;
+  }
 }
 
-h5 {
-    font-weight: 400;
-    max-width: 700;
-    @media screen and (max-width :1024px) {
-        max-width: 100%;
-    }
+.bgContainer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  top: 0;
+  left: 0;
 }
 
-a {
-    text-decoration: none;
-    color: inherit;
-    outline: none;
-    border: none;
-    transition: color 0.3s ease;
+.bg {
+  background-image: url("/bg.png");
+  opacity: 0.15;
+  width: 200%;
+  height: 100%;
+  background-size: auto 100%;
+  background-repeat: repeat-x;
+  animation: 8s ease-in-out infinite alternate bgslide;
 }
 
-a:hover {
-    color: #217bfe;
-    outline: none;
+.bot {
+  width: 75%;
+  height: auto;
+  max-height: 80%;
+  object-fit: contain;
+  animation: 3s ease-in-out infinite alternate botAnimation;
+  z-index: 5;
+  position: relative;
 }
 
-.get-started-btn {
-    padding: 15px 25px;
-    background-color: #217bfe;
-    color: white;
-    border-radius: 20px;
-    font-size: 14px;
-    margin-top: 20px;
-    display: inline-block;
-    transition: background-color 0.3s ease, color 0.3s ease;
-}
+/* فقاعة الدردشة */
+.chat {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  background: rgba(6, 6, 6, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 50px;
+  font-size: 13px;
+  color: white;
+  white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  z-index: 10;
+  max-width: 90%;
 
-.get-started-btn:hover {
-    background-color: white;
-    color: #217bfe;
-}
-
-.logo-link,
-.logo-link:hover,
-.logo-link:focus,
-.logo-link:active {
-    text-decoration: none;
-    outline: none;
-    border: none;
-    background-color: transparent;
-    color: inherit;
-    box-shadow: none;
-    display: flex;
-    align-items: center;
+  @media screen and (max-width: 768px) {
+    bottom: 15px;
+    padding: 8px 14px;
+    font-size: 11px;
     gap: 8px;
-    font-weight: bold;
+  }
 }
 
+.chat img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #4f8ef7;
+
+  @media screen and (max-width: 768px) {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.chat span {
+  line-height: 1;
+  font-weight: 400;
+  letter-spacing: 0.3px;
+  color: #e0e0e0;
+}
+
+/* الخلفية المدارة */
 .orbital {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    opacity: 0.05;
-    animation: 100s linear infinite rotateOrbital;
-    pointer-events: none;
-    z-index: -1;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.03;
+  animation: 100s linear infinite rotateOrbital;
+  pointer-events: none;
+  z-index: 0;
+  object-fit: cover;
 }
 
-/* ===== قسم الشروط والأحكام (أسفل الصفحة) ===== */
+/* قسم الشروط في الأسفل (إن وجد) */
 .terms {
-    position: absolute;
-    bottom: 10px;               /* اقتراب من الحافة السفلية */
-    left: 50%;
-    transform: translateX(-50%);
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #555;
+  z-index: 10;
+
+  img {
+    width: 24px;
+    height: 24px;
+    opacity: 0.5;
+  }
+
+  .links {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;                   /* مسافة صغيرة بين العناصر */
-    font-size: 10px;
-    color: #888;
-    white-space: nowrap;
-    z-index: 20;
+    gap: 15px;
 
-    img {
-        width: 20px;
-        height: 20px;
-        opacity: 0.8;
+    a {
+      color: #777;
+      text-decoration: none;
+      transition: color 0.2s;
+
+      &:hover {
+        color: #4f8ef7;
+      }
     }
-
-    .links {
-        display: flex;
-        gap: 5px;
-        font-size: 9px;
-        color: #aaa;
-
-        a {
-            color: #aaa;
-            transition: color 0.2s;
-
-            &:hover {
-                color: #217bfe;
-            }
-        }
-
-        span {
-            color: #555;
-        }
-    }
+  }
 }
 
-*:focus {
-    outline: none !important;
-    box-shadow: none !important;
-}
-
+/* الحركات */
 @keyframes rotateOrbital {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(60deg); }
+  0% { transform: rotate(0deg) scale(1); }
+  100% { transform: rotate(360deg) scale(1.2); }
 }
 
 @keyframes botAnimation {
-    0% { transform: scale(1) rotate(0deg); }
-    100% { transform: scale(1.1) rotate(20deg); }
+  0% { 
+    transform: scale(1) translateY(0px) rotate(0deg); 
+  }
+  100% { 
+    transform: scale(1.05) translateY(-8px) rotate(5deg); 
+  }
 }
 
 @keyframes bgslide {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
-}
-        height: 30px;
-    }
-
-    .links{
-        display:flex;
-        gap: 10px;
-        color :bisque;
-        font-size: 10px;
-
-
-    }
-}
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-25%); }
 }
 
-*:focus {
-    outline: none !important;
-    box-shadow: none !important;
-}
+/* Responsive */
+@media screen and (max-width: 768px) {
+  .homepage {
+    padding: 30px 20px;
+  }
 
-@keyframes rotateOrbital {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(60deg); }
-}
+  .left h1 {
+    font-size: 36px;
+  }
 
-@keyframes botAnimation {
-    0% { transform: scale(1) rotate(0deg); }
-    100% { transform: scale(1.1) rotate(20deg); }
-}
+  .left h2 {
+    font-size: 20px;
+  }
 
-@keyframes bgslide {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
+  .description h5 {
+    font-size: 14px;
+  }
+
+  .get-started-btn {
+    padding: 12px 28px;
+    font-size: 14px;
+  }
 }

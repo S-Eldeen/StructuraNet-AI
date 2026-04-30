@@ -1,10 +1,10 @@
-/* ---------- التخطيط العام ---------- */
+/* ---------- التخطيط العام للشات ---------- */
 .chatpage {
-  height: 100vh;
-  width: 100vw;
+  height: 100%;
+  width: 100%;
   display: flex;
-  flex-direction: row;
-  background-color: inherit;
+  flex-direction: column;
+  background-color: #0d0d0d;
   overflow: hidden;
 }
 
@@ -14,14 +14,7 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-}
-
-.chatList-container {
-  width: 280px;
-  height: 100%;
-  border-left: 1px solid #333;
-  overflow-y: auto;
-  scrollbar-width: none;
+  background-color: #0d0d0d;
 }
 
 /* ---------- منطقة الرسائل ---------- */
@@ -31,207 +24,56 @@
   padding: 20px;
   display: flex;
   justify-content: center;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+}
+
+.wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+
+.wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.wrapper::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
 }
 
 .chat {
-  width: 100%;
-  max-width: 900px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* أنماط الرسائل الأساسية */
-.message {
-  padding: 12px 18px;
-  max-width: 70%;
-  word-wrap: break-word;
-  line-height: 1.6;
-  font-size: 16px;
-  border-radius: 20px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-/* رسالة المستخدم (يمين، بارزة) */
-.message.user {
-  align-self: flex-end;
-  background: linear-gradient(135deg, #1e3c72, #2a5298);
-  color: white;
-  font-weight: 600;
-  border-bottom-right-radius: 4px;
-  border-bottom-left-radius: 20px;
-}
-
-/* رسالة المساعد (يسار، عادية) */
-.message.ai {
-  align-self: flex-start;
-  background-color: #2d2d2d;
-  color: #e0e0e0;
-  font-weight: 400;
-  border-bottom-left-radius: 4px;
-  border-bottom-right-radius: 20px;
-  box-shadow: none;
-  border: none;
-  outline: none;
-}
-
-/* معرض الصور داخل رسالة المستخدم */
-.user-images {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.user-images .user-image {
-  max-width: 200px;
-  max-height: 200px;
-  border-radius: 8px;
-  object-fit: cover;
-}
-
-/* إزالة الخلفية للرسائل التي تحتوي على صور فقط */
-.message.image-message {
-  background: none !important;
-  padding: 0 !important;
-  max-width: 100% !important;
-}
-
-/* تنسيق Markdown داخل رسائل المساعد */
-.markdown p {
-  margin: 0 0 8px 0;
-}
-.markdown code {
-  background-color: #333;
-  padding: 2px 4px;
-  border-radius: 4px;
-}
-
-/* ---------- مؤشر الكتابة (ثلاث نقاط) ---------- */
-.typing-indicator {
-  display: flex;
-  gap: 4px;
-  padding: 12px 18px;
-  background-color: #2d2d2d;
-  border-radius: 20px;
-  border-bottom-left-radius: 4px;
-  border-bottom-right-radius: 20px;
-  align-self: flex-start;
-  max-width: fit-content;
-}
-
-.typing-indicator span {
-  width: 8px;
-  height: 8px;
-  background-color: #aaa;
-  border-radius: 50%;
-  animation: bounce 1.4s infinite ease-in-out;
-}
-.typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-.typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
-
-@keyframes bounce {
-  0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1); }
-}
-
-/* ---------- مربع الإدخال ---------- */
-.prompt-container {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  padding: 10px 20px;
-  background-color: inherit;
-  margin-bottom: 5px;
-}
-
-.prompt-container > * {
   width: 100%;
   max-width: 800px;
-  transform: scale(0.95);
-}
-
-/* (ملاحظة: تنسيقات .endChat و .newForm و .input-area و .previews-container
-   موجودة في newPrompt.css ولا حاجة لتكرارها هنا) *//* (احتفظ بالمحتوى السابق وأضف في النهاية) */
-
-.user-images {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.user-images .user-image {
-  max-width: 200px;
-  max-height: 200px;
-  border-radius: 8px;
-  object-fit: cover;
-}.chatpage {
-  height: 100vh;
-  width: 100vw;
-  display: flex;
-  flex-direction: row;
-  background-color: inherit;
-  overflow: hidden;
-}
-
-.content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  overflow: hidden;
-}
-
-.chatList-container {
-  width: 280px;
-  height: 100%;
-  border-left: 1px solid #333;
-  overflow-y: auto;
-  scrollbar-width: none;
-}
-
-.wrapper {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-  display: flex;
-  justify-content: center;
-  scrollbar-width: none;
-}
-
-.chat {
-  width: 100%;
-  max-width: 900px;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
+/* أنماط الرسائل الأساسية */
 .message {
   padding: 12px 18px;
+  width: auto;
   max-width: 80%;
   word-wrap: break-word;
   line-height: 1.6;
   font-size: 16px;
-  border-radius: 20px;
 }
 
-/* رسالة المستخدم (يمين، بخلفية زرقاء) */
+/* رسالة المستخدم (يمين، أزرق) */
 .message.user {
   align-self: flex-end;
   background: linear-gradient(135deg, #1e3c72, #2a5298);
   color: white;
+  border-radius: 20px;
   border-bottom-right-radius: 4px;
   border-bottom-left-radius: 20px;
 }
 
-/* رسالة المساعد (يسار، بدون خلفية) */
+/* رسالة المساعد (يسار، شفاف - نفس لون الخلفية) */
 .message.ai {
   align-self: flex-start;
   background-color: transparent !important;
   color: #e0e0e0;
+  border-radius: 20px;
   border-bottom-left-radius: 4px;
   border-bottom-right-radius: 20px;
   box-shadow: none;
@@ -243,206 +85,32 @@
 .user-images {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
-/* الصورة full screen داخل الرسالة */
 .user-image-full {
   width: 100%;
-  max-width: 100%;
+  max-width: 400px;
   height: auto;
   border-radius: 12px;
   object-fit: contain;
-  background-color: #1a1a1a; /* خلفية داكنة للصور الشفافة */
-  border: 2px solid #444;
-}
-
-/* إزالة الخلفية من رسالة الصورة (إذا استُخدمت) */
-.message.image-message {
-  background: none !important;
-  padding: 0 !important;
-  max-width: 100% !important;
-}
-
-/* تنسيق Markdown داخل رسائل المساعد */
-.markdown p {
-  margin: 0 0 8px 0;
-}
-.markdown code {
-  background-color: #333;
-  padding: 2px 4px;
-  border-radius: 4px;
-}
-
-.typing-indicator {
-  display: flex;
-  gap: 4px;
-  padding: 12px 18px;
-  background-color: transparent !important;
-  border-radius: 20px;
-  border-bottom-left-radius: 4px;
-  border-bottom-right-radius: 20px;
-  align-self: flex-start;
-  max-width: fit-content;
-}
-
-/* التنسيق الجديد لمؤشر الكتابة الديناميكي (مكسور ويرجع يتكون) */
-.typing-dynamic-logo {
-  width: 10px !important;
-  height: 10px !important;
-  /* نزيل حركة bounce القديمة من الغلاف لنطبق الكسر على اللوجو مباشرة */
-}
-
-/* حركة التكسر وإعادة التكوين */
-.typing-dynamic-logo .spinner-logo {
-  animation: shatter-reform 2s infinite ease-in-out !important;
-}
-
-@keyframes shatter-reform {
-  0%, 100% { 
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); 
-    transform: scale(1) rotate(0deg); 
-    opacity: 1; 
-  }
-  20% { 
-    clip-path: polygon(10% 10%, 40% 30%, 90% 5%, 70% 50%, 95% 90%, 50% 70%, 5% 95%, 20% 40%); 
-    transform: scale(1.3) rotate(15deg); 
-    opacity: 0.8;
-  }
-  40% { 
-    clip-path: polygon(50% 50%, 50% 50%, 50% 50%, 50% 50%); 
-    transform: scale(0) rotate(90deg); 
-    opacity: 0; 
-  }
-  60% { 
-    clip-path: polygon(25% 25%, 75% 20%, 80% 80%, 20% 75%); 
-    transform: scale(0.6) rotate(-45deg); 
-    opacity: 0.5; 
-  }
-  80% { 
-    clip-path: polygon(0 5%, 95% 0, 100% 95%, 5% 100%); 
-    transform: scale(1.1) rotate(5deg); 
-    opacity: 0.9; 
-  }
-}
-
-.typing-indicator span {
-  width: 8px;
-  height: 8px;
-  background-color: #aaa;
-  border-radius: 50%;
-  animation: bounce 1.4s infinite ease-in-out;
-}
-.typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
-.typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
-
-@keyframes bounce {
-  0%, 80%, 100% { transform: scale(0); }
-  40% { transform: scale(1); }
-}
-
-/* مربع الإدخال (من NewPrompt، لكن هنا فقط لتحديد مكانه) */
-.prompt-container {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  padding: 10px 20px;
-  background-color: inherit;
-}
-.message.streaming {
-  opacity: 0.8;
-  transition: opacity 0.2s;
-}
-.message-images {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.message-image {
-  max-width: 100%;
-  max-height: 300px;
-  border-radius: 12px;
-  object-fit: contain;
   background-color: #1a1a1a;
-}
-/* ---------- Message Wrapper & Action Icons ---------- */
-.message-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.message-actions {
-  display: flex;
-  gap: 4px;
-  opacity: 1;
-}
-
-/* أيقونات رسائل المساعد (يسار) */
-.message-actions.assistant {
-  align-self: flex-start;
-  padding-left: 4px;
-}
-
-/* أيقونات رسائل المستخدم (يمين) */
-.message-actions.user {
-  align-self: flex-end;
-  padding-right: 4px;
-}
-
-.action-btn {
-  width: 30px;
-  height: 30px;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #888;
-  transition: color 0.2s, background 0.2s;
-  padding: 5px;
+  transition: transform 0.2s;
 }
 
-.action-btn svg {
-  width: 16px;
-  height: 16px;
+.user-image-full:hover {
+  transform: scale(1.02);
 }
 
-.action-btn:hover {
-  color: #e0e0e0;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.action-btn.active-like {
-  color: #4caf50;
-}
-
-.action-btn.active-dislike {
-  color: #e55571;
-}
-
-/* ← أهم التعديلات */
-
-/* مسح التكرارات */
-.chatpage {
-  height: 100vh;
-  width: 100vw;
-  display: flex;
-  flex-direction: row;
-  background-color: inherit;
-  overflow: hidden;
-}
-
-/* رأس الشات الجديد */
+/* ---------- رأس الشات ---------- */
 .chat-header {
-  padding: 12px 24px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  background: inherit;
+  padding: 12px 20px;
+  background-color: #0d0d0d;
+  flex-shrink: 0;
+  border-bottom: none;
 }
 
 .chat-header-info {
@@ -453,13 +121,14 @@
 }
 
 .chat-header-title {
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 500;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   transition: opacity 0.15s;
+  color: #e0e0e0;
 }
 
 .chat-header-title:hover {
@@ -478,6 +147,7 @@
 .chat-header-date {
   font-size: 11px;
   opacity: 0.45;
+  color: #888;
 }
 
 .chat-title-form {
@@ -485,41 +155,81 @@
 }
 
 .chat-title-input {
-  background: rgba(79,142,247,0.1);
-  border: 1px solid rgba(79,142,247,0.5);
+  background: rgba(79, 142, 247, 0.1);
+  border: 1px solid rgba(79, 142, 247, 0.5);
   border-radius: 6px;
   padding: 4px 8px;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 500;
   color: #fff;
   outline: none;
 }
 
-/* تحسين عرض الصور */
-.user-images {
+/* ---------- أزرار الإجراءات ---------- */
+.message-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 12px;
 }
 
-.user-image-full {
-  width: 100%;
-  max-width: 400px;
-  height: auto;
-  border-radius: 12px;
-  object-fit: contain;
-  background: #1a1a1a;
-  border: 1px solid #444;
+.message-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 0 16px;
+}
+
+.message-actions.assistant {
+  justify-content: flex-start;
+  padding-left: 16px;
+}
+
+.message-actions.user {
+  justify-content: flex-end;
+  padding-right: 16px;
+}
+
+.action-btn {
+  background: transparent;
+  border: none;
   cursor: pointer;
-  transition: transform 0.2s;
+  padding: 6px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  transition: all 0.2s;
 }
 
-.user-image-full:hover {
-  transform: scale(1.02);
+.action-btn svg {
+  width: 16px;
+  height: 16px;
 }
 
-/* مؤشر الكتابة الديناميكي مع شعار متكسر */
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #e0e0e0;
+}
+
+.action-btn.active-like {
+  color: #4caf50;
+}
+
+.action-btn.active-dislike {
+  color: #f44336;
+}
+
+/* ---------- مؤشر الكتابة ---------- */
+.typing-indicator {
+  padding: 12px 18px;
+  background-color: transparent !important;
+  border-radius: 20px;
+  border-bottom-left-radius: 4px;
+  border-bottom-right-radius: 20px;
+  align-self: flex-start;
+  max-width: fit-content;
+}
+
 .typing-dynamic-logo {
   width: 32px !important;
   height: 32px !important;
@@ -532,79 +242,183 @@
 
 @keyframes shatter-reform {
   0%, 100% { 
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); 
     transform: scale(1) rotate(0deg); 
     opacity: 1; 
   }
   25% { 
-    clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%); 
     transform: scale(1.2) rotate(10deg); 
     opacity: 0.8;
   }
   50% { 
-    clip-path: polygon(50% 0%, 50% 0%, 100% 50%, 100% 50%, 50% 100%, 50% 100%, 0% 50%, 0% 50%); 
     transform: scale(0.2) rotate(45deg); 
     opacity: 0.3; 
   }
   75% { 
-    clip-path: polygon(20% 20%, 80% 20%, 80% 80%, 20% 80%); 
     transform: scale(0.8) rotate(-20deg); 
     opacity: 0.7; 
   }
 }
 
-/* أيقونات الإجراءات */
-.message-actions {
+/* ---------- مربع الإدخال ---------- */
+.prompt-container {
+  width: 100%;
   display: flex;
-  gap: 6px;
-  margin-top: 4px;
-}
-
-.message-actions.assistant {
-  justify-content: flex-start;
-  padding-left: 8px;
-}
-
-.message-actions.user {
-  justify-content: flex-end;
-  padding-right: 8px;
-}
-
-.action-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
   justify-content: center;
-  color: #888;
-  transition: all 0.2s;
+  padding: 16px 20px 24px;
+  background-color: #0d0d0d;
+  flex-shrink: 0;
+  border-top: none;
 }
 
-.action-btn svg {
-  width: 16px;
-  height: 16px;
+.prompt-container > * {
+  width: 100%;
+  max-width: 800px;
 }
 
-.action-btn:hover {
-  background: rgba(255,255,255,0.08);
-  color: #e0e0e0;
-}
-
-.action-btn.active-like {
-  color: #4caf50;
-}
-
-.action-btn.active-dislike {
-  color: #f44336;
-}
-
-/* رسائل الـ streaming */
 .message.streaming {
-  opacity: 0.7;
+  opacity: 0.8;
   transition: opacity 0.3s;
+}
+
+/* ---------- تنسيق Markdown والكود ---------- */
+.markdown-body {
+  width: 100%;
+  line-height: 1.6;
+}
+
+.markdown-body p {
+  margin: 0 0 12px 0;
+}
+
+.markdown-body p:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body code:not(pre code) {
+  background: rgba(100, 100, 120, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.9em;
+  color: #e06c75;
+}
+
+.markdown-body pre {
+  background: #1a1a1a !important;
+  border-radius: 10px;
+  padding: 16px !important;
+  overflow-x: auto;
+  margin: 12px 0;
+  position: relative;
+}
+
+.markdown-body pre code {
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  background: transparent;
+  padding: 0;
+  color: #d4d4d4;
+}
+
+.markdown-body h1 {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin: 20px 0 12px;
+  color: #f0f0f0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+}
+
+.markdown-body h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 16px 0 10px;
+  color: #f0f0f0;
+}
+
+.markdown-body h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 14px 0 8px;
+  color: #f0f0f0;
+}
+
+.markdown-body ul, 
+.markdown-body ol {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+
+.markdown-body li {
+  margin: 4px 0;
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 12px 0;
+  overflow-x: auto;
+  display: block;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.markdown-body th {
+  background: rgba(100, 100, 120, 0.2);
+  font-weight: 600;
+}
+
+.markdown-body blockquote {
+  border-left: 3px solid #4f8ef7;
+  margin: 12px 0;
+  padding: 4px 16px;
+  background: rgba(79, 142, 247, 0.05);
+  border-radius: 0 8px 8px 0;
+}
+
+.markdown-body a {
+  color: #4f8ef7;
+  text-decoration: none;
+}
+
+.markdown-body a:hover {
+  text-decoration: underline;
+}
+
+.markdown-body hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  margin: 16px 0;
+}
+
+/* تنسيق زر نسخ الكود */
+.copy-code-btn {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  background: #2d2d2d;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  z-index: 10;
+  font-family: monospace;
+  transition: all 0.2s ease;
+}
+
+.copy-code-btn:hover {
+  background: #4f8ef7;
+  transform: scale(1.02);
 }
 
 /* تحميل أولي */
@@ -617,7 +431,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #0f0f13;
+  background: #0d0d0d;
   z-index: 9999;
 }
 
@@ -630,7 +444,7 @@
 .spinner-ring {
   position: absolute;
   inset: 0;
-  border: 3px solid rgba(79,142,247,0.2);
+  border: 3px solid rgba(79, 142, 247, 0.2);
   border-top-color: #4f8ef7;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -650,269 +464,47 @@
   to { transform: rotate(360deg); }
 }
 
-/* تنسيق الكود */
-.markdown-body pre {
-  background: #1e1e1e !important;
-  border-radius: 10px !important;
-  padding: 1rem !important;
-  overflow-x: auto !important;
-  position: relative !important;
-  margin: 0.5rem 0 !important;
-}
-
-.markdown-body code {
-  font-family: 'Fira Code', 'Cascadia Code', monospace !important;
-  font-size: 13px !important;
-  background: transparent !important;
-}
-
-/* تنسيق النص العادي */
-.markdown-body p {
-  line-height: 1.6;
-  margin: 0.5rem 0;
-}
-
-.markdown-body h1, .markdown-body h2, .markdown-body h3 {
-  margin-top: 1rem;
-  margin-bottom: 0.5rem;
-}
-
-.markdown-body ul, .markdown-body ol {
-  margin: 0.5rem 0;
-  padding-left: 1.5rem;
-}
-
-/* ──────────────────────────────────────────── */
-/* MarkdownRenderer Styles - تنسيق الكود والـ Markdown */
-/* ──────────────────────────────────────────── */
-
-.markdown-body {
-  width: 100%;
-  line-height: 1.6;
-}
-
-/* تنسيق النص العادي */
-.markdown-body p {
-  margin: 0.5rem 0;
-  line-height: 1.6;
-}
-
-/* تنسيق العناوين */
-.markdown-body h1 {
-  font-size: 1.8rem;
-  font-weight: 600;
-  margin: 1.2rem 0 0.8rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 0.3rem;
-}
-
-.markdown-body h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 1rem 0 0.6rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 0.2rem;
-}
-
-.markdown-body h3 {
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin: 0.8rem 0 0.5rem;
-}
-
-.markdown-body h4, .markdown-body h5, .markdown-body h6 {
-  font-size: 1.1rem;
-  font-weight: 500;
-  margin: 0.6rem 0 0.4rem;
-}
-
-/* تنسيق القوائم */
-.markdown-body ul, .markdown-body ol {
-  margin: 0.5rem 0;
-  padding-left: 1.8rem;
-}
-
-.markdown-body li {
-  margin: 0.2rem 0;
-  line-height: 1.5;
-}
-
-.markdown-body li > ul, 
-.markdown-body li > ol {
-  margin: 0.2rem 0;
-}
-
-/* تنسيق الكود داخل النص (inline code) */
-.markdown-body code:not(pre code) {
-  background: rgba(100, 100, 120, 0.3);
-  padding: 0.2rem 0.4rem;
-  border-radius: 4px;
-  font-family: 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
-  font-size: 0.9em;
-  color: #e06c75;
-}
-
-/* تنسيق البلوك كود (block code) */
-.markdown-body pre {
-  background: #1e1e1e !important;
-  border-radius: 10px;
-  padding: 1rem;
-  overflow-x: auto;
-  margin: 0.8rem 0;
-  position: relative;
-}
-
-.markdown-body pre code {
-  font-family: 'Fira Code', 'Cascadia Code', 'Courier New', monospace;
-  font-size: 13px;
-  line-height: 1.5;
-  background: transparent;
-  padding: 0;
-  color: #d4d4d4;
-}
-
-/* تنسيق الجداول */
-.markdown-body table {
-  border-collapse: collapse;
-  width: 100%;
-  margin: 0.8rem 0;
-  overflow-x: auto;
-  display: block;
-}
-
-.markdown-body th,
-.markdown-body td {
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 0.5rem 0.8rem;
-  text-align: left;
-}
-
-.markdown-body th {
-  background: rgba(100, 100, 120, 0.2);
-  font-weight: 600;
-}
-
-.markdown-body tr:nth-child(even) {
-  background: rgba(100, 100, 120, 0.1);
-}
-
-/* تنسيق الاقتباسات (blockquotes) */
-.markdown-body blockquote {
-  border-left: 3px solid #4f8ef7;
-  margin: 0.8rem 0;
-  padding: 0.5rem 1rem;
-  background: rgba(79, 142, 247, 0.1);
-  border-radius: 0 8px 8px 0;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.markdown-body blockquote p {
-  margin: 0;
-}
-
-/* تنسيق الروابط */
-.markdown-body a {
-  color: #4f8ef7;
-  text-decoration: none;
-  border-bottom: 1px dotted rgba(79, 142, 247, 0.5);
-}
-
-.markdown-body a:hover {
-  color: #7eb3ff;
-  border-bottom: 1px solid #7eb3ff;
-}
-
-/* تنسيق الصور داخل الـ Markdown */
-.markdown-body img {
-  max-width: 100%;
-  border-radius: 8px;
-  margin: 0.5rem 0;
-}
-
-/* تنسيق الخط الفاصل */
-.markdown-body hr {
-  border: none;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-  margin: 1rem 0;
-}
-
-/* علامات الترقيم والتأكيد */
-.markdown-body strong {
-  font-weight: 700;
-  color: #f0f0f0;
-}
-
-.markdown-body em {
-  font-style: italic;
-}
-
-.markdown-body del {
-  text-decoration: line-through;
-  opacity: 0.7;
-}
-
-/* تنسيق مهمة القوائم (Task lists) */
-.markdown-body input[type="checkbox"] {
-  margin-right: 0.5rem;
-  cursor: pointer;
-  width: 16px;
-  height: 16px;
-  vertical-align: middle;
-}
-
 /* للشاشات الصغيرة */
 @media (max-width: 768px) {
   .markdown-body pre {
     font-size: 12px;
-    padding: 0.8rem;
-  }
-  
-  .markdown-body code:not(pre code) {
-    font-size: 0.85em;
+    padding: 12px !important;
   }
   
   .markdown-body h1 {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
   }
   
-  .markdown-body h2 {
-    font-size: 1.3rem;
+  .message {
+    padding: 10px 14px;
+    max-width: 90%;
   }
   
-  .markdown-body h3 {
-    font-size: 1.1rem;
+  .prompt-container {
+    padding: 12px 16px 20px;
+  }
+  
+  .wrapper {
+    padding: 12px;
   }
 }
 
-/* تنسيق زر النسخ (بيتعرف من الـ inline style لكن ممكن نضيف تنسيق إضافي) */
-.markdown-body pre .copy-btn {
-  transition: all 0.2s ease;
+/* تأكد من إن مفيش حاجة بتظهر غلط */
+.message-wrapper {
+  position: relative;
 }
 
-.markdown-body pre .copy-btn:hover {
-  transform: scale(1.05);
+.message-actions {
+  position: relative;
+  z-index: 5;
 }
 
-/* تنسيق زر نسخ الكود */
-.copy-code-btn {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  background: #2d2d2d;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 12px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
-  z-index: 10;
-  font-family: monospace;
-  transition: all 0.2s ease;
+/* لو فيه اسم user بيظهر بشكل غلط */
+.user-name-display {
+  display: none;
 }
 
-.copy-code-btn:hover {
-  background: #3c3c3c;
-  transform: scale(1.02);
+/* تأكد من إن header مش بيظهر في الـ dashboard */
+.dashboard-layout .global-header {
+  display: none;
 }
