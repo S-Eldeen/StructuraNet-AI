@@ -1,44 +1,41 @@
-import { useState } from 'react';
-import { useAuth } from '@clerk/clerk-react';
-import Upload from '../upload/Upload';
-import { askGeminiStream } from '../../lib/gemini';
-import './newPrompt.css';
+import { useState } from "react";
+import { askGeminiStream } from "../../lib/gemini";
+import "./newPrompt.css";
 
 const NewPrompt = ({ addMessage, setIsTyping, chatId, history = [] }) => {
-  const [text, setText] = useState('');
+  const [text, setText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [images, setImages] = useState([]);
   const [isListening, setIsListening] = useState(false);
-  const { getToken } = useAuth();
 
-  const handleUploadStart = (file) => {
-    const previewUrl = URL.createObjectURL(file);
-    setImages((prev) => [...prev, { file, filePath: null, progress: 0, previewUrl }]);
-  };
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
 
-  const handleUploadProgress = (percent) => {
-    setImages((prev) => {
-      const lastIndex = prev.length - 1;
-      if (lastIndex < 0) return prev;
+      reader.onload = () => {
+        const result = reader.result;
 
-      const last = prev[lastIndex];
-      if (last.filePath) return prev;
+        resolve({
+          data: result.split(",")[1],
+          mimeType: file.type || "image/jpeg",
+          preview: result,
+        });
+      };
 
-      const updated = [...prev];
-      updated[lastIndex] = { ...last, progress: percent };
-      return updated;
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
     });
   };
 
-  const handleUploadSuccess = (filePath) => {
-    setImages((prev) => {
-      const lastIndex = prev.length - 1;
-      if (lastIndex < 0) return prev;
+  const handleFileChange = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
-      const updated = [...prev];
-      updated[lastIndex] = { ...updated[lastIndex], filePath, progress: 100 };
-      return updated;
-    });
+    const convertedImages = await Promise.all(files.map(fileToBase64));
+
+    setImages((prev) => [...prev, ...convertedImages]);
+
+    e.target.value = "";
   };
 
   const removeImage = (index) => {
@@ -50,12 +47,12 @@ const NewPrompt = ({ addMessage, setIsTyping, chatId, history = [] }) => {
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert('المتصفح لا يدعم التعرف على الصوت. يرجى استخدام Chrome أو Edge.');
+      alert("المتصفح لا يدعم التعرف على الصوت. يرجى استخدام Chrome أو Edge.");
       return;
     }
 
     const recognition = new SpeechRecognition();
-    recognition.lang = 'ar-EG';
+    recognition.lang = "ar-EG";
     recognition.continuous = false;
     recognition.interimResults = false;
 
@@ -63,14 +60,13 @@ const NewPrompt = ({ addMessage, setIsTyping, chatId, history = [] }) => {
 
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
-      setText((prev) => prev + (prev ? ' ' : '') + transcript);
+      setText((prev) => prev + (prev ? " " : "") + transcript);
       setIsListening(false);
     };
 
-    recognition.onerror = (event) => {
-      console.error('Speech recognition error:', event.error);
+    recognition.onerror = () => {
       setIsListening(false);
-      alert('حدث خطأ أثناء التعرف على الصوت. حاول مرة أخرى.');
+      alert("حدث خطأ أثناء التعرف على الصوت. حاول مرة أخرى.");
     };
 
     recognition.onend = () => {
@@ -82,26 +78,39 @@ const NewPrompt = ({ addMessage, setIsTyping, chatId, history = [] }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (isLoading) return;
 
-    const completedImages = images
-      .filter((img) => img.filePath)
-      .map((img) => img.filePath);
+    const token = localStorage.getItem("token");
 
-    const hasText = text.trim() !== '';
-    const hasImages = completedImages.length > 0;
+    if (!token) {
+      window.location.href = "/sign-in";
+      return;
+    }
+
+    const hasText = text.trim() !== "";
+    const hasImages = images.length > 0;
 
     if (!hasText && !hasImages) return;
 
+    const dbImages = images.map((img) => ({
+      data: img.data,
+      mimeType: img.mimeType,
+    }));
+
+    const imageBase64Only = images.map((img) => img.data);
+
     const userMessage = {
-      role: 'user',
+      role: "user",
       content: text,
-      images: completedImages,
+      images: dbImages,
     };
 
     addMessage(userMessage);
 
-    setText('');
+    const currentText = text;
+
+    setText("");
     setImages([]);
     setIsLoading(true);
     setIsTyping(true);
@@ -109,78 +118,83 @@ const NewPrompt = ({ addMessage, setIsTyping, chatId, history = [] }) => {
     const aiMessageId = Date.now() + Math.random();
 
     addMessage({
-      role: 'assistant',
-      content: '',
+      role: "assistant",
+      content: "",
       id: aiMessageId,
       streaming: true,
+      images: [],
     });
 
     try {
-      let accumulatedText = '';
+      let accumulatedText = "";
 
       const conversation = [
         ...history
           .filter((msg) => msg.content && !msg.streaming)
           .map((msg) => ({
-            role: msg.role === 'user' ? 'user' : 'assistant',
+            role: msg.role === "user" ? "user" : "assistant",
             content: msg.content,
           })),
         {
-          role: 'user',
-          content: text,
+          role: "user",
+          content: currentText || "Describe this image.",
         },
       ];
 
-      await askGeminiStream(conversation, completedImages, (partialText) => {
+      await askGeminiStream(conversation, imageBase64Only, (partialText) => {
         accumulatedText = partialText;
 
         addMessage(
           {
-            role: 'assistant',
+            role: "assistant",
             content: accumulatedText,
             id: aiMessageId,
             streaming: true,
+            images: [],
           },
           true
         );
       });
 
-      addMessage(
-        {
-          role: 'assistant',
-          content: accumulatedText,
-          id: aiMessageId,
-          streaming: false,
-        },
-        true
-      );
+      const assistantMessage = {
+        role: "assistant",
+        content: accumulatedText,
+        id: aiMessageId,
+        streaming: false,
+        images: [],
+      };
+
+      addMessage(assistantMessage, true);
 
       if (chatId) {
-        const token = await getToken({ skipCache: true });
-
         await fetch(`http://localhost:3000/api/chats/${chatId}/messages`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             messages: [
               userMessage,
-              { role: 'assistant', content: accumulatedText },
+              {
+                role: "assistant",
+                content: accumulatedText,
+                images: [],
+              },
             ],
           }),
         });
       }
     } catch (error) {
-      console.error('AI Error:', error);
+      console.error("AI Error:", error);
 
       addMessage(
         {
-          role: 'assistant',
-          content: 'عذراً، حدث خطأ. حاول مرة أخرى.',
+          role: "assistant",
+          content: "عذراً، حدث خطأ. حاول مرة أخرى.",
           id: aiMessageId,
           streaming: false,
+          images: [],
         },
         true
       );
@@ -197,39 +211,36 @@ const NewPrompt = ({ addMessage, setIsTyping, chatId, history = [] }) => {
           <div className="previews-row">
             {images.map((img, idx) => (
               <div key={idx} className="preview-item large">
-                <img src={img.previewUrl} alt="preview" />
+                <img src={img.preview} alt="preview" />
 
-                {!img.filePath && (
-                  <div className="progress-overlay">
-                    <span>{Math.round(img.progress)}%</span>
-                  </div>
-                )}
-
-                {img.filePath && (
-                  <button
-                    type="button"
-                    className="remove-preview"
-                    onClick={() => removeImage(idx)}
-                  >
-                    ✕
-                  </button>
-                )}
+                <button
+                  type="button"
+                  className="remove-preview"
+                  onClick={() => removeImage(idx)}
+                >
+                  ✕
+                </button>
               </div>
             ))}
           </div>
         )}
 
         <div className="input-row">
-          <Upload
-            onStart={handleUploadStart}
-            onProgress={handleUploadProgress}
-            onSuccess={handleUploadSuccess}
-          />
+          <label className="upload-btn">
+            <img src="/attachment.png" alt="upload" />
+            <input
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={handleFileChange}
+              hidden
+            />
+          </label>
 
           <input
             type="text"
             className="text-input"
-            placeholder={isLoading ? 'Thinking...' : 'Ask Structranet AI'}
+            placeholder={isLoading ? "Thinking..." : "Ask Structranet AI"}
             value={text}
             onChange={(e) => setText(e.target.value)}
             disabled={isLoading}
@@ -237,7 +248,7 @@ const NewPrompt = ({ addMessage, setIsTyping, chatId, history = [] }) => {
 
           <button
             type="button"
-            className={`mic-btn ${isListening ? 'listening' : ''}`}
+            className={`mic-btn ${isListening ? "listening" : ""}`}
             onClick={startListening}
             disabled={isLoading}
             title="إدخال صوتي"
@@ -248,10 +259,7 @@ const NewPrompt = ({ addMessage, setIsTyping, chatId, history = [] }) => {
           <button
             type="submit"
             className="send-btn"
-            disabled={
-              isLoading ||
-              (!text.trim() && images.filter((img) => img.filePath).length === 0)
-            }
+            disabled={isLoading || (!text.trim() && images.length === 0)}
           >
             <img src="/arrow.png" alt="send" />
           </button>

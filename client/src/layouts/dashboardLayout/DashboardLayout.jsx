@@ -1,38 +1,46 @@
-import { Outlet, useNavigate } from 'react-router-dom';
-import './dashboardLayout.css';
+import { Outlet, useNavigate } from "react-router-dom";
+import "./dashboardLayout.css";
 import ChatList from "../../components/chatList/ChatList";
-import { useAuth } from '@clerk/clerk-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from "react";
 
 const DashboardLayout = () => {
-    const { userId, isLoaded } = useAuth();
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const token = localStorage.getItem("token");
 
-    useEffect(() => {
-        if (isLoaded && !userId) {
-            navigate('/sign-in');
-        }
-    }, [isLoaded, userId, navigate]);
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem("theme") || "dark";
+  });
 
-    if (!isLoaded) return (
-        <div className="global-logo-loader">
-            <div className="logo-spinner-wrapper">
-                <div className="spinner-ring"></div>
-                <img src="/logo.png" alt="Loading" className="spinner-logo" />
-            </div>
-        </div>
-    );
+  useEffect(() => {
+    if (!token) {
+      navigate("/sign-in");
+    }
+  }, [token, navigate]);
 
-    return (
-        <div className='dashboardLayout'>
-            <div className="menu">
-                <ChatList />
-            </div>
-            <div className="content">
-                <Outlet />
-            </div>
-        </div>
-    );
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  };
+
+  return (
+    <div className="dashboardLayout">
+      <div className="menu">
+        <ChatList />
+      </div>
+
+      <div className="content">
+        <button className="theme-toggle" onClick={toggleTheme}>
+          {theme === "dark" ? "☀️" : "🌙"}
+        </button>
+
+        <Outlet />
+      </div>
+    </div>
+  );
 };
 
 export default DashboardLayout;

@@ -12,19 +12,16 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@clerk/backend": "^3.2.0",
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "imagekit": "^6.0.0",
+    "jsonwebtoken": "^9.0.2",
     "mongodb": "^7.1.0",
-
-    "mongoose": "^9.3.0",
-
     "mongoose": "^9.3.0"
   },
   "devDependencies": {
-
     "nodemon": "^3.1.14"
   }
 }

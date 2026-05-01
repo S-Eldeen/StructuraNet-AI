@@ -1,17 +1,15 @@
-import './dashboardPage.css';
-import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import { useAuth } from '@clerk/clerk-react';
-import Upload from '../../components/upload/Upload';
-import { askGemini } from '../../lib/gemini';
+import "./dashboardPage.css";
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import Upload from "../../components/upload/Upload";
+import { askGemini } from "../../lib/gemini";
 
 const DashboardPage = () => {
-  const [text, setText] = useState('');
+  const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const [images, setImages] = useState([]);
   const [isListening, setIsListening] = useState(false);
 
-  const { getToken } = useAuth();
   const navigate = useNavigate();
 
   const handleUploadStart = (file) => {
@@ -61,12 +59,12 @@ const DashboardPage = () => {
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert('المتصفح لا يدعم التعرف على الصوت. يرجى استخدام Chrome أو Edge.');
+      alert("المتصفح لا يدعم التعرف على الصوت. يرجى استخدام Chrome أو Edge.");
       return;
     }
 
     const recognition = new SpeechRecognition();
-    recognition.lang = 'ar-EG';
+    recognition.lang = "ar-EG";
     recognition.continuous = false;
     recognition.interimResults = false;
 
@@ -74,14 +72,14 @@ const DashboardPage = () => {
 
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
-      setText((prev) => prev + (prev ? ' ' : '') + transcript);
+      setText((prev) => prev + (prev ? " " : "") + transcript);
       setIsListening(false);
     };
 
     recognition.onerror = (event) => {
-      console.error('Speech recognition error:', event.error);
+      console.error("Speech recognition error:", event.error);
       setIsListening(false);
-      alert('حدث خطأ أثناء التعرف على الصوت. حاول مرة أخرى.');
+      alert("حدث خطأ أثناء التعرف على الصوت. حاول مرة أخرى.");
     };
 
     recognition.onend = () => {
@@ -99,7 +97,7 @@ const DashboardPage = () => {
       .filter((img) => img.filePath)
       .map((img) => img.filePath);
 
-    const hasText = text.trim() !== '';
+    const hasText = text.trim() !== "";
     const hasImages = completedImages.length > 0;
 
     if (!hasText && !hasImages) return;
@@ -107,17 +105,17 @@ const DashboardPage = () => {
     setLoading(true);
 
     try {
-      const token = await getToken({ skipCache: true });
+      const token = localStorage.getItem("token");
 
       if (!token) {
-        alert('Session expired, please login again');
+        navigate("/sign-in");
         return;
       }
 
-      const createResponse = await fetch('http://localhost:3000/api/chats', {
-        method: 'POST',
+      const createResponse = await fetch("http://localhost:3000/api/chats", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
@@ -132,28 +130,28 @@ const DashboardPage = () => {
 
       const chat = await createResponse.json();
 
-      window.dispatchEvent(new CustomEvent('chat-created'));
+      window.dispatchEvent(new CustomEvent("chat-created"));
 
       const reply = await askGemini(text, completedImages);
 
       await fetch(`http://localhost:3000/api/chats/${chat._id}/messages`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          messages: [{ role: 'assistant', content: reply }],
+          messages: [{ role: "assistant", content: reply }],
         }),
       });
 
       navigate(`/dashboard/chats/${chat._id}`);
     } catch (error) {
-      console.error('❌ Error:', error);
-      alert('Failed to create chat');
+      console.error("❌ Error:", error);
+      alert("Failed to create chat");
     } finally {
       setLoading(false);
-      setText('');
+      setText("");
       setImages([]);
     }
   };
@@ -216,7 +214,7 @@ const DashboardPage = () => {
 
             <input
               type="text"
-              placeholder={loading ? 'Thinking...' : 'Ask me anything ...'}
+              placeholder={loading ? "Thinking..." : "Ask me anything ..."}
               value={text}
               onChange={(e) => setText(e.target.value)}
               disabled={loading}
@@ -224,7 +222,7 @@ const DashboardPage = () => {
 
             <button
               type="button"
-              className={`mic-btn ${isListening ? 'listening' : ''}`}
+              className={`mic-btn ${isListening ? "listening" : ""}`}
               onClick={startListening}
               disabled={loading}
               title="إدخال صوتي"

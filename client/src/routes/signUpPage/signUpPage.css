@@ -1,8 +1,84 @@
 .signUpPage {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    width: 100%;
-    background-color: inherit;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-main);
+  color: var(--text-main);
+  position: relative;
+  z-index: 1;
+}
+
+.signUpForm {
+  width: 420px;
+  padding: 36px;
+  border-radius: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.signUpForm h2 {
+  font-size: 30px;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.signUpForm input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-sidebar-item);
+  color: var(--text-main);
+  outline: none;
+  font-size: 15px;
+}
+
+.signUpForm input::placeholder {
+  color: var(--sidebar-muted);
+}
+
+.signUpForm input:focus {
+  border-color: #6c63ff;
+}
+
+.signUpForm button {
+  padding: 14px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #605bff, #8f5cff);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.signUpForm button:hover {
+  opacity: 0.9;
+}
+
+.error {
+  color: #ff6b6b;
+  text-align: center;
+  font-size: 14px;
+}
+
+.authSwitch {
+  text-align: center;
+  font-size: 14px;
+  color: var(--sidebar-muted);
+}
+
+.authSwitch span {
+  color: #8f5cff;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.authSwitch span:hover {
+  text-decoration: underline;
 }
