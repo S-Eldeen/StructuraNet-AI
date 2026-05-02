@@ -1,83 +1,55 @@
-
 import './homepage.css';
 import { Link } from "react-router-dom";
-import { TypeAnimation } from 'react-type-animation';
-import { useState, useRef } from "react";
 
 const Homepage = () => {
-    const [showContent, setShowContent] = useState(false);
-    const audioRef = useRef(null);
 
     return (
-        <div className="homepage">
-            <img src="/orbital.png" alt="Orbital Background" className='orbital' />
-            {/* Background Glow */}
-            <div className="bg-glow"></div>
-
-            {/* INTRO */}
-            <div className={`intro ${showContent ? "hide" : ""}`}>
-
-                <div className="bot-wrapper">
-
-                    <img
-                        src="/robot.gif"
-                        alt="AI Robot"
-                        className="intro-bot"
-                    />
-
-                    {/* Chat Bubble */}
-                    <div className="chat-bubble">
-                        <TypeAnimation
-                            sequence={[
-                                () => {
-                                    audioRef.current?.play().catch(() => { });
-                                },
-
-                                "Hello 👋",
-                                900,
-
-                                "I am Structa 🤖",
-                                1200,
-
-                                "Your Network AI Assistant",
-                                1500,
-
-                                "Let’s build something amazing 🚀",
-                                1500,
-
-                                () => {
-                                    audioRef.current?.pause();
-                                    setShowContent(true);
-                                }
-                            ]}
-                            speed={50}
-                            cursor={true}
-                        />
-                    </div>
-
-                </div>
+        <div className='homepage'>
+            <div className="hero-bg">
+                <div className="hero-bg-img"></div>
+                <div className="hero-bg-overlay"></div>
             </div>
 
-            {/* typing sound (اختياري) */}
-            {/* <audio ref={audioRef} src="/typing.mp3" loop /> */}
+            <div className="left">
+                <div className="badge">
+                    <span className="badge-dot"></span>
+                    Powered by GNS3 + Generative AI
+                </div>
 
-            {/* MAIN CONTENT */}
-            <div className={`main ${showContent ? "show" : ""}`}>
-
-                <h1>Structranet AI</h1>
-
+                <h1>StructraNet AI</h1>
                 <h2>Design. Simulate. Deploy.</h2>
 
                 <div className="description">
                     <h5>Design complex network topologies with ease.</h5>
-                    <h5>Validate and deploy them automatically.</h5>
+                    <h5>Validate and deploy them automatically with StructraNet.</h5>
                 </div>
 
-                <Link to="/dashboard" className="get-started-btn">
-                    Get Started
-                </Link>
+                <div className="features">
+                    <div className="feature-item">
+                        <span className="feature-title">GNS3</span>
+                        <span className="feature-sub">Native Integration</span>
+                    </div>
+                    <div className="feature-divider"></div>
+                    <div className="feature-item">
+                        <span className="feature-title">AI</span>
+                        <span className="feature-sub">Topology Advisor</span>
+                    </div>
+                    <div className="feature-divider"></div>
+                    <div className="feature-item">
+                        <span className="feature-title">1-Click</span>
+                        <span className="feature-sub">Auto Deploy</span>
+                    </div>
+                </div>
 
+                <Link to="/dashboard" className="get-started-btn">✨ Get Started</Link>
+
+                <div className="tags">
+                    {["OSPF", "BGP", "VLAN", "MPLS", "VPN", "SDN"].map(tag => (
+                        <span key={tag} className="tag">{tag}</span>
+                    ))}
+                </div>
             </div>
+
 
         </div>
     );
