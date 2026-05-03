@@ -1,7 +1,18 @@
 import './homepage.css';
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 const Homepage = () => {
+    const title = "StructraNet AI";
+    const [waving, setWaving] = useState(false);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setWaving(true);
+            setTimeout(() => setWaving(false), 1500);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, []);
 
     return (
         <div className='homepage'>
@@ -16,7 +27,18 @@ const Homepage = () => {
                     Powered by GNS3 + Generative AI
                 </div>
 
-                <h1>StructraNet AI</h1>
+                <h1 className="animated-title">
+                    {title.split("").map((char, i) => (
+                        <span
+                            key={i}
+                            className={`title-char ${waving ? "waving" : ""}`}
+                            style={{ animationDelay: `${i * 0.06}s` }}
+                        >
+                            {char === " " ? "\u00A0" : char}
+                        </span>
+                    ))}
+                </h1>
+
                 <h2>Design. Simulate. Deploy.</h2>
 
                 <div className="description">
@@ -49,8 +71,6 @@ const Homepage = () => {
                     ))}
                 </div>
             </div>
-
-
         </div>
     );
 };
