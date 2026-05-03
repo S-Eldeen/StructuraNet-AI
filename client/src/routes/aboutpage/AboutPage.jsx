@@ -24,7 +24,6 @@ const AboutPage = () => {
   const touchStartY   = useRef(null);
   const lastWheelTime = useRef(0);
 
-  /* ── underline: measure active button ── */
   const updateUnderline = useCallback((id) => {
     if (!navLinksRef.current) return;
     const btn = navLinksRef.current.querySelector(`[data-id="${id}"]`);
@@ -34,7 +33,6 @@ const AboutPage = () => {
     setUnderlinePos({ left: bRect.left - cRect.left, width: bRect.width });
   }, []);
 
-  /* ── go to a specific section index ── */
   const goTo = useCallback((idx) => {
     if (isAnimating || idx < 0 || idx >= SECTIONS.length) return;
     setIsAnimating(true);
@@ -42,12 +40,10 @@ const AboutPage = () => {
     setActive(SECTIONS[idx].id);
     setNavSolid(idx > 0);
     updateUnderline(SECTIONS[idx].id);
-    // hero section parallax reset
     if (idx === 0) setScrollY(0);
     setTimeout(() => setIsAnimating(false), 700);
   }, [isAnimating, updateUnderline]);
 
-  /* ── wheel navigation ── */
   useEffect(() => {
     const onWheel = (e) => {
       e.preventDefault();
@@ -62,7 +58,6 @@ const AboutPage = () => {
     return () => { if (el) el.removeEventListener('wheel', onWheel); };
   }, [currentIdx, goTo]);
 
-  /* ── touch navigation ── */
   useEffect(() => {
     const onTouchStart = (e) => { touchStartY.current = e.touches[0].clientY; };
     const onTouchEnd   = (e) => {
@@ -87,7 +82,6 @@ const AboutPage = () => {
     };
   }, [currentIdx, goTo]);
 
-  /* ── keyboard navigation ── */
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'ArrowDown' || e.key === 'PageDown') goTo(currentIdx + 1);
@@ -97,7 +91,6 @@ const AboutPage = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [currentIdx, goTo]);
 
-  /* ── initial underline on mount + resize ── */
   useEffect(() => {
     const update = () => updateUnderline(active);
     update();
@@ -105,13 +98,11 @@ const AboutPage = () => {
     return () => window.removeEventListener('resize', update);
   }, [active, updateUnderline]);
 
-  /* ── nav click ── */
   const navClick = (id) => {
     const idx = SECTIONS.findIndex(s => s.id === id);
     goTo(idx);
   };
 
-  /* ─────────── DATA ─────────── */
   const features = [
     { icon: '🧠', title: 'AI Topology Generation',   desc: 'Describe your network in plain English and the AI generates a complete, labeled diagram with routers, switches, firewalls, and links in seconds. No diagramming tools, no manual placement — just type and see your network come to life instantly.' },
     { icon: '🔁', title: 'Iterative Refinement',      desc: 'Not satisfied with the first result? Ask for changes in plain language. Add redundancy, adjust layers, swap vendors, rename devices — the diagram updates instantly while the AI explains every decision it makes along the way.' },
@@ -141,11 +132,9 @@ const AboutPage = () => {
     { icon: '🏥', title: 'Critical Infrastructure', desc: 'Hospitals, power utilities, financial institutions, and government agencies rely on StructraNet AI to design and validate highly available, segmented, and auditable network architectures.' },
   ];
 
-  /* ─────────── RENDER ─────────── */
   return (
     <div className="ap" ref={containerRef}>
 
-      {/* ══ STICKY NAV ══ */}
       <nav className={`sticky-nav ${navSolid ? 'solid' : ''}`}>
         <div className="sticky-nav-inner">
           <div className="sticky-nav-links" ref={navLinksRef}>
@@ -164,17 +153,15 @@ const AboutPage = () => {
               style={{ left: `${underlinePos.left}px`, width: `${underlinePos.width}px` }}
             />
           </div>
-          <Link to="/sign-up" className="hn-enroll">Enroll</Link>
+          <Link to="/dashboard" className="hn-enroll">Enroll</Link>
         </div>
       </nav>
 
-      {/* ══ SECTIONS WRAPPER ══ */}
       <div
         className="sections-wrapper"
         style={{ transform: `translateY(calc(-${currentIdx * 100}vh))` }}
       >
 
-        {/* ── SLIDE 0: HERO / INTRO ── */}
         <section className="slide" id="intro">
           <div className="hero-bg">
             <div className="stars s1" /><div className="stars s2" /><div className="stars s3" />
@@ -337,7 +324,6 @@ const AboutPage = () => {
           </div>
         </section>
 
-        {/* ── SLIDE 1: WHAT WE DO ── */}
         <section className="slide slide-dark" id="what">
           <div className="slide-inner">
             <div className="slide-content scrollable">
@@ -371,7 +357,6 @@ const AboutPage = () => {
           </div>
         </section>
 
-        {/* ── SLIDE 2: HOW IT WORKS ── */}
         <section className="slide" id="how">
           <div className="slide-inner">
             <div className="slide-content scrollable">
@@ -394,7 +379,6 @@ const AboutPage = () => {
           </div>
         </section>
 
-        {/* ── SLIDE 3: FEATURES ── */}
         <section className="slide slide-dark" id="features">
           <div className="slide-inner">
             <div className="slide-content scrollable">
@@ -417,7 +401,6 @@ const AboutPage = () => {
           </div>
         </section>
 
-        {/* ── SLIDE 4: USE CASES ── */}
         <section className="slide" id="usecases">
           <div className="slide-inner">
             <div className="slide-content scrollable">
@@ -442,7 +425,6 @@ const AboutPage = () => {
           </div>
         </section>
 
-        {/* ── SLIDE 5: MISSION ── */}
         <section className="slide slide-dark" id="mission">
           <div className="slide-inner">
             <div className="slide-content">
@@ -462,9 +444,8 @@ const AboutPage = () => {
           </div>
         </section>
 
-      </div>{/* end sections-wrapper */}
+      </div>
 
-      {/* ══ SIDE DOTS ══ */}
       <div className="side-dots">
         {SECTIONS.map((s, i) => (
           <button
