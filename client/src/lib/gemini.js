@@ -7,17 +7,33 @@ const ai = GEMINI_KEY ? new GoogleGenAI({ apiKey: GEMINI_KEY }) : null;
 
 const GEMINI_MODEL = "gemini-2.0-flash";
 
-// Vision model عشان يفهم الصور
+// ✅ أضمن اختيار للموديلات المجانية بدل 404
 const OPENROUTER_MODEL = "openrouter/free";
+
+const OPENROUTER_TIMEOUT = 20000;
 
 const systemInstruction = `
 You are StructraNet AI, an intelligent assistant specialized in networking and network design.
 Answer clearly and helpfully.
 `;
 
+const timeoutFetch = async (url, options, timeout = OPENROUTER_TIMEOUT) => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
 async function callOpenRouter(conversation, imageBase64 = []) {
   if (!OPENROUTER_KEY) {
-    return "حاليًا لا يمكن إنشاء رد.";
+    return "حاليًا لا يمكن إنشاء رد لأن مفتاح OpenRouter غير موجود.";
   }
 
   try {
@@ -55,7 +71,7 @@ async function callOpenRouter(conversation, imageBase64 = []) {
       }),
     ];
 
-    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const res = await timeoutFetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${OPENROUTER_KEY}`,
@@ -66,6 +82,8 @@ async function callOpenRouter(conversation, imageBase64 = []) {
       body: JSON.stringify({
         model: OPENROUTER_MODEL,
         messages,
+        temperature: 0.7,
+        max_tokens: 800,
       }),
     });
 
@@ -73,17 +91,36 @@ async function callOpenRouter(conversation, imageBase64 = []) {
 
     if (!res.ok) {
       console.error("OpenRouter error:", data);
-      return "حاليًا لا يمكن إنشاء رد.";
+
+      if (res.status === 429) {
+        return "الضغط عالي حاليًا على OpenRouter، حاول بعد قليل.";
+      }
+
+      return "حاليًا لا يمكن إنشاء رد من OpenRouter.";
     }
 
-    return data?.choices?.[0]?.message?.content || "تعذر الحصول على رد.";
+    return (
+      data?.choices?.[0]?.message?.content ||
+      "لم يصل رد واضح من OpenRouter، حاول مرة أخرى."
+    );
   } catch (err) {
     console.error("OpenRouter fetch error:", err);
-    return "حاليًا لا يمكن إنشاء رد.";
+
+    if (err.name === "AbortError") {
+      return "OpenRouter استغرق وقت طويل، حاول مرة أخرى.";
+    }
+
+    return "حدث خطأ أثناء الاتصال بـ OpenRouter.";
   }
 }
 
-export async function askGeminiStream(conversation, imageBase64 = [], onChunk) {
+export async function askGeminiStream(
+  conversation,
+  imageBase64 = [],
+  onChunk = () => {}
+) {
+  const safeOnChunk = typeof onChunk === "function" ? onChunk : () => {};
+
   const contents = conversation.map((msg) => ({
     role: msg.role === "user" ? "user" : "model",
     parts: [{ text: msg.content || "" }],
@@ -119,19 +156,24 @@ export async function askGeminiStream(conversation, imageBase64 = [], onChunk) {
 
     for await (const chunk of stream) {
       const text = chunk.text;
+
       if (text) {
         fullText += text;
-        onChunk(fullText);
+        safeOnChunk(fullText);
       }
+    }
+
+    if (!fullText.trim()) {
+      throw new Error("Empty Gemini response");
     }
 
     return fullText;
   } catch (error) {
-    console.warn("Gemini failed → switching to OpenRouter");
+    console.warn("Gemini failed → switching to OpenRouter", error);
 
     const fallback = await callOpenRouter(conversation, imageBase64);
 
-    onChunk(fallback);
+    safeOnChunk(fallback);
     return fallback;
   }
 }

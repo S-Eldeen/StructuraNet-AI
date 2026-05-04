@@ -28,7 +28,9 @@ const SignInPage = () => {
         return setError(data.error || "Login failed");
       }
 
+      // ✅ تخزين التوكن + بيانات اليوزر
       localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
       navigate("/dashboard");
     } catch (err) {
@@ -61,7 +63,6 @@ const SignInPage = () => {
 
         {error && <p className="error">{error}</p>}
 
-        {/* ✅ هنا المكان الصح */}
         <p className="authSwitch">
           New here?{" "}
           <span onClick={() => navigate("/sign-up")}>

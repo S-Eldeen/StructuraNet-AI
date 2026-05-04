@@ -50,6 +50,7 @@ const ShareIcon = () => (
 
 const formatDate = (dateStr) => {
   if (!dateStr) return null;
+
   const date = new Date(dateStr);
   const now = new Date();
   const diff = now - date;
@@ -67,6 +68,39 @@ const formatDate = (dateStr) => {
 
 const getLocalToken = () => localStorage.getItem("token");
 
+const getUserFromToken = () => {
+  const token = getLocalToken();
+  if (!token) return null;
+
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload;
+  } catch (err) {
+    console.error("Invalid token payload:", err);
+    return null;
+  }
+};
+
+const getDisplayName = (user) => {
+  if (!user) return "My Account";
+
+  return (
+    user.name ||
+    user.fullName ||
+    user.username ||
+    user.email ||
+    user.userName ||
+    "My Account"
+  );
+};
+
+const getAvatarLetter = (user) => {
+  const displayName = getDisplayName(user);
+  return displayName && displayName !== "My Account"
+    ? displayName.charAt(0).toUpperCase()
+    : "A";
+};
+
 const ShareModal = ({ chatId, onClose }) => {
   const link = `${window.location.origin}/dashboard/chats/${chatId}`;
   const [copied, setCopied] = useState(false);
@@ -83,9 +117,13 @@ const ShareModal = ({ chatId, onClose }) => {
       <div className="share-modal" onMouseDown={(e) => e.stopPropagation()}>
         <div className="share-modal-header">
           <span className="share-modal-title">Share Chat</span>
-          <button className="share-modal-close" onClick={onClose}>✕</button>
+          <button className="share-modal-close" onClick={onClose}>
+            ✕
+          </button>
         </div>
+
         <p className="share-modal-desc">Anyone with this link can view this chat.</p>
+
         <div className="share-modal-row">
           <input className="share-modal-input" value={link} readOnly />
           <button className="share-modal-copy" onClick={handleCopy}>
@@ -106,9 +144,13 @@ const ChatItem = ({ chat, onStar, onRename, onDelete, onShareClick }) => {
 
   useEffect(() => {
     if (!menuOpen) return;
+
     const handler = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
     };
+
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [menuOpen]);
@@ -119,9 +161,11 @@ const ChatItem = ({ chat, onStar, onRename, onDelete, onShareClick }) => {
 
   const submitRename = (e) => {
     e?.preventDefault();
+
     if (newTitle.trim() && newTitle.trim() !== chat.title) {
       onRename(chat._id, newTitle.trim());
     }
+
     setRenaming(false);
   };
 
@@ -146,6 +190,7 @@ const ChatItem = ({ chat, onStar, onRename, onDelete, onShareClick }) => {
     <div className={`chat-item-wrapper ${menuOpen ? "menu-open" : ""}`}>
       <Link to={`/dashboard/chats/${chat._id}`} className="chat-item">
         {chat.starred && <span className="star-dot">★</span>}
+
         <div className="chat-item-info">
           <span className="chat-title">{chat.title}</span>
           {lastModified && <span className="chat-last-modified">{lastModified}</span>}
@@ -221,6 +266,8 @@ const ChatList = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [plan, setPlan] = useState(localStorage.getItem("userPlan"));
   const [shareModalChatId, setShareModalChatId] = useState(null);
+  const [user, setUser] = useState(null);
+
   const navigate = useNavigate();
 
   const fetchChats = useCallback(async () => {
@@ -250,7 +297,11 @@ const ChatList = () => {
     }
   }, [navigate]);
 
-  // جلب أولي وأحداث إنشاء شات جديد
+  useEffect(() => {
+    const userData = getUserFromToken();
+    setUser(userData);
+  }, []);
+
   useEffect(() => {
     fetchChats();
     window.addEventListener("chat-created", fetchChats);
@@ -260,10 +311,10 @@ const ChatList = () => {
     };
   }, [fetchChats]);
 
-  // تحديث محلي عند تغيير اسم الشات من ChatPage
   useEffect(() => {
     const handleChatRenamed = (event) => {
       const { chatId, newTitle } = event.detail;
+
       if (chatId && newTitle) {
         setChats((prevChats) =>
           prevChats.map((chat) =>
@@ -271,7 +322,6 @@ const ChatList = () => {
           )
         );
       } else {
-        // fallback: إعادة جلب كامل إذا لم تأتِ البيانات المطلوبة
         fetchChats();
       }
     };
@@ -297,7 +347,9 @@ const ChatList = () => {
     const token = getLocalToken();
     if (!token) return navigate("/sign-in");
 
-    setChats((prev) => prev.map((c) => (c._id === chatId ? { ...c, starred } : c)));
+    setChats((prev) =>
+      prev.map((c) => (c._id === chatId ? { ...c, starred } : c))
+    );
 
     try {
       await fetch(`http://localhost:3000/api/userchats/${chatId}/star`, {
@@ -318,7 +370,9 @@ const ChatList = () => {
     const token = getLocalToken();
     if (!token) return navigate("/sign-in");
 
-    setChats((prev) => prev.map((c) => (c._id === chatId ? { ...c, title } : c)));
+    setChats((prev) =>
+      prev.map((c) => (c._id === chatId ? { ...c, title } : c))
+    );
 
     try {
       await fetch(`http://localhost:3000/api/userchats/${chatId}/rename`, {
@@ -362,10 +416,16 @@ const ChatList = () => {
     return new Date(b.createdAt) - new Date(a.createdAt);
   });
 
+  const displayName = getDisplayName(user);
+  const avatarLetter = getAvatarLetter(user);
+
   return (
     <>
       {shareModalChatId && (
-        <ShareModal chatId={shareModalChatId} onClose={() => setShareModalChatId(null)} />
+        <ShareModal
+          chatId={shareModalChatId}
+          onClose={() => setShareModalChatId(null)}
+        />
       )}
 
       <div className={`chatList ${collapsed ? "collapsed" : ""}`}>
@@ -387,8 +447,8 @@ const ChatList = () => {
         </div>
 
         <div className={`user-profile ${collapsed ? "collapsed" : ""}`}>
-          <div className="local-user-avatar">A</div>
-          {!collapsed && <span className="user-name">My Account</span>}
+          <div className="local-user-avatar">{avatarLetter}</div>
+          {!collapsed && <span className="user-name">{displayName}</span>}
         </div>
 
         {!collapsed ? (
@@ -444,17 +504,23 @@ const ChatList = () => {
                 tabIndex={0}
               >
                 <NetworkIcon />
+
                 <div className="texts">
-                  <span className="plan-title">Current Plan: {plan.toUpperCase()}</span>
+                  <span className="plan-title">
+                    Current Plan: {plan.toUpperCase()}
+                  </span>
                   <span className="subtext">Click to change your plan</span>
                 </div>
               </div>
             ) : (
               <Link to="/upgrade" className="upgrade">
                 <NetworkIcon />
+
                 <div className="texts">
                   <span className="plan-title">Upgrade to StructraNet Pro</span>
-                  <span className="subtext">Unlimited designs & priority support</span>
+                  <span className="subtext">
+                    Unlimited designs & priority support
+                  </span>
                 </div>
               </Link>
             )}
