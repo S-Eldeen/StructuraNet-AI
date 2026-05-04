@@ -28,3 +28,4 @@ client/node_modules/
 *.njsproj
 *.sln
 *.sw?
+StructuraNet-AI\client\.env
