@@ -27,11 +27,83 @@
   outline: none;
 }
 
-.text-input::placeholder {
-  color: #b8b4c8;
+.text-input::placeholder { color: #b8b4c8; }
+
+/* ── Upload wrapper & button ── */
+.upload-wrapper {
+  position: relative;
+  flex-shrink: 0;
 }
 
-.upload-btn,
+.upload-btn {
+  width: 46px;
+  height: 46px;
+  min-width: 46px;
+  border-radius: 50%;
+  border: 2px dashed rgba(255, 255, 255, 0.35);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.upload-btn:hover {
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.upload-btn img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+/* ── Upload dropdown menu ── */
+.upload-menu {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 0;
+  background: #1e1e2e;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 148px;
+  z-index: 999;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+  animation: menuUp 0.15s ease;
+}
+
+@keyframes menuUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.upload-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  color: #d1d5db;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, color 0.12s;
+}
+
+.upload-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+/* ── Mic & Send ── */
 .mic-btn,
 .send-btn {
   width: 46px;
@@ -45,56 +117,99 @@
   cursor: pointer;
 }
 
-.upload-btn {
-  border: 2px dashed rgba(255, 255, 255, 0.35);
-  background: transparent;
-}
+.mic-btn { background: rgba(255, 255, 255, 0.08); }
+.send-btn { background: #605e68; }
+.send-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
-.upload-btn img,
 .mic-icon,
-.send-btn img {
-  width: 22px;
-  height: 22px;
-  object-fit: contain;
+.send-btn img { width: 22px; height: 22px; object-fit: contain; }
+
+/* ── Previews ── */
+.previews-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 2px;
 }
 
-.mic-btn {
+.preview-item {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.preview-item.large { width: 80px; height: 80px; }
+
+.preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+/* File preview */
+.file-preview {
+  width: 100%;
+  height: 100%;
   background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #d1d5db;
+  padding: 6px;
 }
 
-.send-btn {
-  background: #605e68;
+.file-name {
+  font-size: 9px;
+  text-align: center;
+  word-break: break-all;
+  line-height: 1.2;
+  opacity: 0.8;
 }
 
-.send-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
+.remove-preview {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  border: none;
+  color: #fff;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* LIGHT MODE */
+/* ── Light Mode ── */
 [data-theme="light"] .newPrompt {
   background: #f8fbff !important;
   border: 1px solid #d7e1f2 !important;
   box-shadow: 0 14px 35px rgba(30, 64, 175, 0.1) !important;
 }
 
-[data-theme="light"] .text-input {
-  color: #111827 !important;
-}
-
-[data-theme="light"] .text-input::placeholder {
-  color: #7b8494 !important;
-}
+[data-theme="light"] .text-input { color: #111827 !important; }
+[data-theme="light"] .text-input::placeholder { color: #7b8494 !important; }
 
 [data-theme="light"] .upload-btn {
   border-color: #cbd5e1 !important;
   background: #ffffff !important;
 }
 
-[data-theme="light"] .mic-btn {
-  background: #eef3ff !important;
+[data-theme="light"] .upload-menu {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
-[data-theme="light"] .send-btn {
-  background: #dbe7ff !important;
-}
+[data-theme="light"] .upload-menu-item { color: #374151; }
+[data-theme="light"] .upload-menu-item:hover { background: #f3f4f6; color: #111827; }
+
+[data-theme="light"] .mic-btn { background: #eef3ff !important; }
+[data-theme="light"] .send-btn { background: #dbe7ff !important; }

@@ -250,15 +250,34 @@ const ChatList = () => {
     }
   }, [navigate]);
 
+  // جلب أولي وأحداث إنشاء شات جديد
   useEffect(() => {
     fetchChats();
     window.addEventListener("chat-created", fetchChats);
-    window.addEventListener("chat-renamed", fetchChats);
 
     return () => {
       window.removeEventListener("chat-created", fetchChats);
-      window.removeEventListener("chat-renamed", fetchChats);
     };
+  }, [fetchChats]);
+
+  // تحديث محلي عند تغيير اسم الشات من ChatPage
+  useEffect(() => {
+    const handleChatRenamed = (event) => {
+      const { chatId, newTitle } = event.detail;
+      if (chatId && newTitle) {
+        setChats((prevChats) =>
+          prevChats.map((chat) =>
+            chat._id === chatId ? { ...chat, title: newTitle } : chat
+          )
+        );
+      } else {
+        // fallback: إعادة جلب كامل إذا لم تأتِ البيانات المطلوبة
+        fetchChats();
+      }
+    };
+
+    window.addEventListener("chat-renamed", handleChatRenamed);
+    return () => window.removeEventListener("chat-renamed", handleChatRenamed);
   }, [fetchChats]);
 
   useEffect(() => {
