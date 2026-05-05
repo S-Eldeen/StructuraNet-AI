@@ -2,5 +2,4 @@ structranet_env/
 __pycache__/
 .env
 *.pyc
-.venv
-strut_env/
+
