@@ -56,8 +56,10 @@ def parse_args():
                         help="GNS3 server port")
     parser.add_argument("--overwrite", action="store_true",
                         help="Overwrite existing GNS3 project")
-    parser.add_argument("--start", action="store_true",
-                        help="Start nodes after deployment")
+    parser.add_argument("--start", action="store_true", default=True,
+                        help="Start nodes after deployment (default: True)")
+    parser.add_argument("--no-start", action="store_false", dest="start",
+                        help="Don't start nodes after deployment")
     parser.add_argument("--deploy-only", type=str, default=None, metavar="JSON_FILE",
                         help="Deploy an existing JSON file (skip steps 1-6)")
     parser.add_argument("--no-deploy", action="store_true",

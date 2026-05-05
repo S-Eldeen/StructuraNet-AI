@@ -346,14 +346,15 @@ def deploy_hybrid_topology(client: GNS3Client, data: dict, args, inventory: list
                 #
                 # GNS3 merges provided properties with template defaults.
                 # The name is included directly — no separate PUT needed.
-                payload = {"x": x, "y": y, "compute_id": compute_id, "name": name , "properties" : {}}
+                payload = {"x": x, "y": y, "compute_id": compute_id, "name": name, "properties": {}}
                 result = client.post(f"/projects/{project_id}/templates/{tid}", payload)
                 uuid = result["node_id"]
 
                 # Apply custom properties via PUT (template creation only accepts x/y/name/compute_id)
                 if n.get("properties"):
                     try:
-                        client.put(f"/projects/{project_id}/nodes/{uuid}", {"properties": n["properties"]})                    
+                        client.put(f"/projects/{project_id}/nodes/{uuid}",
+                                   {"properties": n["properties"]})
                     except Exception as e:
                         WARN(f"Failed to apply properties to '{name}': {e}")
             else:
@@ -371,7 +372,7 @@ def deploy_hybrid_topology(client: GNS3Client, data: dict, args, inventory: list
                     "compute_id": compute_id,
                     "x": x,
                     "y": y,
-                    "properties" : {}
+                    "properties": {}
                 }
                 if n.get("properties"):
                     payload["properties"] = n["properties"]
@@ -555,7 +556,10 @@ if __name__ == "__main__":
     parser.add_argument("--host", default="localhost")
     parser.add_argument("--port", default=3080, type=int)
     parser.add_argument("--overwrite", action="store_true")
-    parser.add_argument("--start", action="store_true")
+    parser.add_argument("--start", action="store_true", default=True,
+                        help="Start nodes after deployment (default: True)")
+    parser.add_argument("--no-start", action="store_false", dest="start",
+                        help="Don't start nodes after deployment")
     parser.add_argument("--inventory", default=None, metavar="JSON_FILE",
                         help="GNS3 inventory JSON (from gns3_fetcher). "
                              "Without this, template_id resolution and "
