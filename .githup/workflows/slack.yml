@@ -1,0 +1,19 @@
+name: Slack Notification
+
+on:
+  push:
+    branches:
+      - "**"
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send Slack Notification
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data "{
+          \"text\": \"🚀 New Push on Repo : ${{ github.repository }} \n👤 User : ${{ github.actor }} \n🌿 Branch: ${{ github.ref_name }}\"
+          }" \
+          ${{ secrets.SLACK_WEBHOOK }}
