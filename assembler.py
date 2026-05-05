@@ -346,7 +346,7 @@ def deploy_hybrid_topology(client: GNS3Client, data: dict, args, inventory: list
                 #
                 # GNS3 merges provided properties with template defaults.
                 # The name is included directly — no separate PUT needed.
-                payload = {"x": x, "y": y, "compute_id": compute_id, "name": name, "properties": {}}
+                payload = {"x": x, "y": y, "compute_id": compute_id, "name": name}
                 result = client.post(f"/projects/{project_id}/templates/{tid}", payload)
                 uuid = result["node_id"]
 
@@ -372,7 +372,6 @@ def deploy_hybrid_topology(client: GNS3Client, data: dict, args, inventory: list
                     "compute_id": compute_id,
                     "x": x,
                     "y": y,
-                    "properties": {}
                 }
                 if n.get("properties"):
                     payload["properties"] = n["properties"]
