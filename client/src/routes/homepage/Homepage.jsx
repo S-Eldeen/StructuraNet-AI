@@ -1,6 +1,7 @@
 import './homepage.css';
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
+import ChatBubble from "../../components/ChatBubble/Chatbubble";
 
 const Homepage = () => {
     const title = "StructraNet AI";
@@ -22,6 +23,7 @@ const Homepage = () => {
             </div>
 
             <div className="left">
+                {/* ... all left content remains the same ... */}
                 <div className="badge">
                     <span className="badge-dot"></span>
                     Powered by GNS3 + Generative AI
@@ -71,6 +73,9 @@ const Homepage = () => {
                     ))}
                 </div>
             </div>
+
+            {/* The bubble is now placed outside .left and .right, at the bottom */}
+            <ChatBubble />
         </div>
     );
 };
