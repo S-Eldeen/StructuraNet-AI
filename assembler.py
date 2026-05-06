@@ -450,7 +450,7 @@ def deploy_hybrid_topology(client: GNS3Client, data: dict, args, inventory: list
                     "x": x, "y": y,
                     "compute_id": compute_id,
                     "name": name,
-                    "properties": {},
+                    # "properties": {},
                 }
                 result = client.post(
                     f"/projects/{project_id}/templates/{tid}", payload
