@@ -653,6 +653,55 @@ def generate_brief(topology: dict) -> str:
             lines.append(f"  {ntype} -> No config needed (Layer 1/2)")
     lines.append("")
 
+    # ── ARCHITECTURAL ADVICE section ──
+    lines.append("ARCHITECTURAL ADVICE:")
+
+    # Count access switches: any ethernet_switch whose name does NOT
+    # contain "Core" (case-insensitive).  Access switches serve end-devices
+    # in distinct departments/floors/zones and SHOULD be on separate
+    # broadcast domains.  Core switches are L2 concentrators that
+    # interconnect access switches and the router.
+    access_switches = [
+        n for n in nodes
+        if n.get("node_type") == "ethernet_switch"
+        and "core" not in n.get("name", "").lower()
+    ]
+    access_count = len(access_switches)
+
+    if access_count > 1:
+        # Multi-department topology — requires L3 segmentation
+        access_names = ", ".join(n.get("name", n.get("node_id", "?")) for n in access_switches)
+        lines.append(
+            f"  This is a MULTI-DEPARTMENT network with {access_count} access "
+            f"switch(es): [{access_names}]."
+        )
+        lines.append(
+            "  You MUST implement Router-on-a-Stick (802.1Q sub-interfaces) "
+            "so each access switch operates in its OWN VLAN with its OWN "
+            "unique subnet."
+        )
+        lines.append(
+            "  Pattern: Router sub-if N → VLAN N → Access Switch N → "
+            "end-devices in VLAN N's subnet."
+        )
+        lines.append(
+            "  NEVER place all access switches / end-devices in a single "
+            "flat subnet — that defeats the purpose of having separate "
+            "switches per department."
+        )
+    elif access_count == 1:
+        lines.append(
+            "  This is a simple single-department network. A flat subnet "
+            "is acceptable."
+        )
+    else:
+        # No access switches at all (only core, or no switches)
+        lines.append(
+            "  No access switches detected. Assign one subnet per segment "
+            "as usual."
+        )
+    lines.append("")
+
     # ── TASK section ──
     lines.append("TASK:")
     lines.append("  1. Assign one subnet per segment (no overlaps).")

@@ -54,38 +54,18 @@ _client: Optional[OpenAI] = None
 #   start_command           → docker                (container entrypoint)
 #   environment             → docker                (env vars dict)
 SOFTWARE_CONFIG_KEYS: FrozenSet[str] = frozenset([
-    # ── IOS config (dynamips, iou, qemu) ──
     "startup_config_content",
-    "private_config_content",
-    # ── VPCS config ──
     "startup_script",
-    # ── Docker config ──
     "start_command",
     "environment",
-    "extra_hosts",
-    "extra_volumes",
-    # ── QEMU config ──
-    "kernel_command_line",
-    # ── Metadata (all types) ──
-    "usage",
 ])
 
 # Allowed value types per config key (Gate 3)
 ALLOWED_VALUE_TYPES: Dict[str, tuple] = {
-    # ── IOS config ──
     "startup_config_content": (str,),
-    "private_config_content": (str,),
-    # ── VPCS config ──
     "startup_script":         (str,),
-    # ── Docker config ──
     "start_command":          (str,),
-    "environment":            (str,),       # GNS3 stores as multiline string, NOT dict
-    "extra_hosts":            (str,),
-    "extra_volumes":          (list,),      # Array of directory path strings
-    # ── QEMU config ──
-    "kernel_command_line":    (str,),
-    # ── Metadata ──
-    "usage":                  (str,),
+    "environment":            (dict, str),  # dict preferred, str accepted for flexibility
 }
 
 
@@ -142,13 +122,13 @@ Return a JSON object where:
   - Values are objects containing ONLY software config properties
   - Do NOT include nodes that need no config (switches, hubs, NAT, cloud)
 
-Example output:
+Example output (Router-on-a-Stick with 3 VLANs):
 {{
   "R1": {{
-    "startup_config_content": "hostname R1\\n!\\ninterface FastEthernet0/0\\n ip address 10.0.0.1 255.255.255.0\\n no shutdown\\n!"
+    "startup_config_content": "hostname R1\\n!\\ninterface FastEthernet0/0.10\\n encapsulation dot1Q 10\\n ip address 10.0.10.1 255.255.255.0\\n!\\ninterface FastEthernet0/0.20\\n encapsulation dot1Q 20\\n ip address 10.0.20.1 255.255.255.0\\n!\\ninterface FastEthernet0/0.30\\n encapsulation dot1Q 30\\n ip address 10.0.30.1 255.255.255.0\\n!\\nrouter ospf 1\\n network 10.0.0.0 0.0.255.255 area 0\\n!"
   }},
   "PC1": {{
-    "startup_script": "ip 10.0.0.10/24 10.0.0.1\\nsave\\n"
+    "startup_script": "ip 10.0.10.10/24 10.0.10.1\\nsave\\n"
   }}
 }}
 
@@ -156,6 +136,50 @@ CONFIG KEY RULES (use EXACTLY these property names):
   - dynamips / iou / qemu routers → "startup_config_content" (Cisco IOS string)
   - vpcs hosts                     → "startup_script" (NOT startup_script_content!)
   - docker containers              → "start_command" + "environment"
+
+══════════════════════════════════════════════════════════════
+  GENERALIZED L3 ARCHITECTURE RULES
+══════════════════════════════════════════════════════════════
+
+Rule A — ONE SUBNET PER BROADCAST DOMAIN / ACCESS SWITCH
+  Every distinct access switch in the topology MUST be assigned its own
+  unique VLAN and its own unique /24 subnet.  NEVER place two access
+  switches or their end-devices in the same subnet.
+  Example: Admin-SW → VLAN 10 → 10.0.10.0/24
+           F1-SW    → VLAN 20 → 10.0.20.0/24
+           F2-SW    → VLAN 30 → 10.0.30.0/24
+
+Rule B — ROUTER-ON-A-STICK (802.1Q SUB-INTERFACES)
+  When a single router connects to multiple access switches through a
+  core switch, you MUST configure 802.1Q sub-interfaces on the router's
+  physical interface.  Each sub-interface maps to exactly one VLAN:
+    interface FastEthernet0/0.10
+      encapsulation dot1Q 10
+      ip address 10.0.10.1 255.255.255.0
+  The sub-interface number SHOULD match the VLAN ID for clarity
+  (e.g., Fa0/0.10 = VLAN 10, Fa0/0.20 = VLAN 20).
+
+Rule C — VPCS GATEWAYS MUST MATCH THEIR VLAN'S SUB-INTERFACE
+  Every VPCS host must use the IP of the router sub-interface for its
+  VLAN as the default gateway.  Example:
+    PC on VLAN 10 → gateway 10.0.10.1 (matches Fa0/0.10)
+    PC on VLAN 20 → gateway 10.0.20.1 (matches Fa0/0.20)
+  NEVER use the same gateway for hosts on different VLANs.
+
+Rule D — SUBNET ALLOCATION SCHEME
+  Use a structured allocation scheme derived from VLAN IDs:
+    VLAN 10 → 10.0.10.0/24  (third octet = VLAN ID)
+    VLAN 20 → 10.0.20.0/24
+    VLAN 30 → 10.0.30.0/24
+  Router sub-interface IPs are always .1 in each subnet.
+  Host IPs start from .10 upward (.10, .11, .12, ...).
+
+Rule E — SIMPLE NETWORK EXCEPTION
+  If the brief states this is a "simple single-department network" or
+  there is only ONE access switch, a flat subnet is acceptable and
+  Router-on-a-Stick is NOT required.
+
+══════════════════════════════════════════════════════════════
 
 STRICT RULES:
 1. ONLY use the config keys listed above. Any other key will be REJECTED.
@@ -170,15 +194,11 @@ STRICT RULES:
     hosts + router interface) MUST share the SAME subnet and SAME mask.
     A router interface on a /24 segment MUST be /24 — NEVER assign /30
     to a router interface that serves hosts through a switch.
-5b. NEVER assign overlapping subnets. Each segment must have a unique,
-    non-overlapping subnet. Use 10.X.Y.0/24 for multi-access and
-    10.X.Y.Z/30 for point-to-point, incrementing the third octet for
-    each new segment. Example: Segment 1 = 10.0.1.0/24, Segment 2 =
-    10.0.2.0/24, P2P link = 10.0.99.0/30.
 6. Include routing protocols (OSPF or static routes) for multi-segment routers.
 7. Do NOT include markdown code fences. Return ONLY raw JSON.
 8. The JSON must start with '{{' and end with '}}'.
 9. Skip switches, hubs, NAT, and cloud nodes — they need no IP config."""
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  JSON Extraction
