@@ -26,6 +26,9 @@ Source: GNS3 server v2 source code (github.com/GNS3/gns3-server)
 import logging
 from typing import Any, Dict, List, Optional
 
+from context_builder import _identify_platform, DYNAMIPS_BUILTIN_INTERFACES
+from schema import Topology
+
 logger = logging.getLogger("structranet.hw_config")
 
 
@@ -53,11 +56,18 @@ MAX_ADAPTERS: Dict[str, int] = {
 # Ref: gns3server/compute/dynamips/nodes/c7200.py et al.
 DYNAMIPS_SLOT_MODULES: Dict[str, Dict[str, Any]] = {
     # ── c7200 series: Port Adapters ──
+    # IMPORTANT: PA-8E provides 8 ports but is very heavy on the emulated
+    # PCI bus. Injecting more than 1 PA-8E will cause the c7200 to crash
+    # in GNS3/Dynamips (all ports go down). We use PA-FE-TX (1 port per
+    # adapter) instead — it's lighter on the PCI bus and matches the
+    # practical link limit of 3 (1 builtin + 1 PA-FE-TX + 1 spare).
+    # If you need >3 links on c7200, use the Core-SW hierarchical pattern
+    # instead of injecting more PA cards (see ai_agent Rule 18).
     "c7200": {
-        "module": "PA-8E",             # 8 Ethernet ports per PA
-        "ports_per_module": 8,
+        "module": "PA-FE-TX",         # 1 Fast Ethernet port per PA (PCI-safe)
+        "ports_per_module": 1,
         "first_configurable": 1,       # slot0 is NPE built-in
-        "max_slots": 6,                # slot1–slot6
+        "max_slots": 2,                # slot1–slot2 (conservative; max 6 but unsafe)
     },
     # ── c3700 series: Network Modules ──
     "c3745": {
@@ -113,29 +123,18 @@ DYNAMIPS_SLOT_MODULES: Dict[str, Dict[str, Any]] = {
 }
 
 # Fallback for any unrecognised Dynamips platform
+# Uses 1-port module for safety (matches conservative PCI-safe approach)
 DYNAMIPS_FALLBACK: Dict[str, Any] = {
-    "module": "PA-8E",
-    "ports_per_module": 8,
+    "module": "PA-FE-TX",
+    "ports_per_module": 1,
     "first_configurable": 1,
-    "max_slots": 4,
+    "max_slots": 2,
 }
 
-# Built-in Ethernet interfaces that ship with each Dynamips platform
-# (integrated ports on the NPE / motherboard, NOT in a slot).
-# Conservative: under-estimating here is safe (extra slot is harmless);
-#               over-estimating would be dangerous (missing a needed slot).
-DYNAMIPS_BUILTIN_PORTS: Dict[str, int] = {
-    "c7200": 1,   # FastEthernet0/0 on NPE
-    "c3745": 2,   # FastEthernet0/0, FastEthernet0/1
-    "c3725": 2,
-    "c3660": 1,
-    "c3640": 0,   # NM-only, no built-in Ethernet
-    "c3620": 0,
-    "c2691": 2,
-    "c2600": 1,
-    "c1700": 1,
-}
-DYNAMIPS_BUILTIN_DEFAULT = 1  # assume at least 1 if platform unknown
+# DYNAMIPS_BUILTIN_PORTS has been replaced by context_builder.DYNAMIPS_BUILTIN_INTERFACES
+# (canonical source of truth — DRY principle). The count is derived from:
+#   builtin_count = DYNAMIPS_BUILTIN_INTERFACES[platform]["count"]
+DYNAMIPS_BUILTIN_FALLBACK = {"prefix": "FastEthernet", "count": 1}
 
 # ── Tier 1a: IOU slot configuration ─────────────────────────────────────────
 # IOU slot values are image-dependent.  For L3 IOU images, integer module IDs
@@ -154,15 +153,10 @@ IOU_BUILTIN_PORTS = 4            # slot0 typically provides 4 interfaces
 SWITCH_HUB_DEFAULT_PORTS = 8
 
 # ── Tier 2: Immutable single-port nodes ─────────────────────────────────────
-# Source: gns3server/compute/vpcs/vpcs_vm.py       → EthernetAdapter() × 1
-#         gns3server/compute/traceng/traceng_vm.py   → EthernetAdapter() × 1
-#         gns3server/compute/builtin/nodes/nat.py    → 1 port, setter = pass
-IMMUTABLE_PORT_COUNT: Dict[str, int] = {
-    "vpcs": 1,
-    "traceng": 1,
-    "nat": 1,
-}
-IMMUTABLE_TYPES = frozenset(IMMUTABLE_PORT_COUNT.keys())
+# IMMUTABLE_PORT_COUNT has been replaced by schema.Topology.SINGLE_PORT_TYPES
+# (canonical source of truth — DRY principle). Access via Topology.SINGLE_PORT_TYPES.
+# For membership checks: node_type in Topology.SINGLE_PORT_TYPES
+# For port count:        Topology.SINGLE_PORT_TYPES[node_type]
 
 # ── Tier 3: Mapping-based nodes ─────────────────────────────────────────────
 # frame_relay_switch uses  {"1:101": "2:202"}  (port:dlci → port:dlci)
@@ -273,29 +267,10 @@ def _inject_slots(node: Dict[str, Any], required_ports: int, min_adapter_slots: 
 
 
 
-def _identify_dynamips_platform(
-    node: Dict[str, Any], properties: Dict[str, Any]
-) -> str:
-    """Best-effort identification of the Dynamips platform model.
-
-    Checks, in order:
-      1. ``properties.platform``  (explicit)
-      2. ``node["template_name"]`` (e.g. "c7200")
-      3. Fallback: "c7200" (most common in GNS3 topologies)
-    """
-    platform = properties.get("platform")
-    if platform:
-        return str(platform).lower()
-
-    template_name = node.get("template_name", "")
-    if template_name:
-        return str(template_name).lower()
-
-    logger.debug(
-        "Node %s: could not determine dynamips platform, defaulting to c7200",
-        node.get("node_id"),
-    )
-    return "c7200"
+# _identify_dynamips_platform() has been replaced by
+# context_builder._identify_platform(node) — canonical source (DRY principle).
+# The context_builder version has the same logic but takes just the node dict
+# (it extracts properties internally).
 
 
 def _inject_dynamips_slots(
@@ -312,7 +287,7 @@ def _inject_dynamips_slots(
          but only slot1 gets injected (enough ports by count, but
          adapter 3 doesn't physically exist on the router).
     """
-    platform = _identify_dynamips_platform(node, properties)
+    platform = _identify_platform(node)
     config = DYNAMIPS_SLOT_MODULES.get(platform, DYNAMIPS_FALLBACK)
 
     module_name = config["module"]
@@ -321,7 +296,8 @@ def _inject_dynamips_slots(
     max_slots = config["max_slots"]
 
     # How many built-in ports does this platform have?
-    builtin = DYNAMIPS_BUILTIN_PORTS.get(platform, DYNAMIPS_BUILTIN_DEFAULT)
+    builtin_info = DYNAMIPS_BUILTIN_INTERFACES.get(platform, DYNAMIPS_BUILTIN_FALLBACK)
+    builtin = builtin_info["count"]
 
     remaining = max(0, required_ports - builtin)
 
@@ -675,8 +651,8 @@ def inject_hardware_config(topology_dict: Dict[str, Any]) -> Dict[str, Any]:
 
         # ── Tier 2: Immutable single-port nodes ────────────────────────
 
-        elif node_type in IMMUTABLE_TYPES:
-            max_ports = IMMUTABLE_PORT_COUNT[node_type]
+        elif node_type in Topology.SINGLE_PORT_TYPES:
+            max_ports = Topology.SINGLE_PORT_TYPES[node_type]
             if required > max_ports:
                 logger.warning(
                     "Node %s (%s): %d links requested but %s is "

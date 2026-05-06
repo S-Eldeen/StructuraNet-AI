@@ -69,10 +69,10 @@ def _build_prompt(devices: list[dict]) -> str:
             # additional link — it CANNOT stack multiple ports on adapter 0.
             #
             # Concrete assignment table (LLM must follow this EXACTLY):
-            #   Link #1 → adapter=0, port=0   (built-in)
-            #   Link #2 → adapter=1, port=0   (slot 1 module)
-            #   Link #3 → adapter=2, port=0   (slot 2 module)
-            #   Link #4 → adapter=3, port=0   (slot 3 module)
+            #   Link #1 -> adapter=0, port=0   (built-in)
+            #   Link #2 -> adapter=1, port=0   (slot 1 module)
+            #   Link #3 -> adapter=2, port=0   (slot 2 module)
+            #   Link #4 -> adapter=3, port=0   (slot 3 module)
             #   ...and so on. ALWAYS port=0 on each new adapter.
             port_lines.append(
                 f"  - {d['name']} (dynamips): EACH ADAPTER HAS 1 PORT "
@@ -144,9 +144,9 @@ RULES:
 5. Every link needs two distinct endpoints with adapter_number and port_number.
 6. Don't reuse the same (adapter, port) pair on one node across different links.
 7. If a requested device isn't available, substitute with the closest match.
-8. CRITICAL: You MUST output ONLY valid JSON.
+8. CRITICAL: You MUST output a <thought_process> block FIRST, then the JSON.
 9. CRITICAL: Do NOT wrap the JSON in markdown code blocks (no ```json).
-10. CRITICAL: Do NOT include any conversational text, greetings, or explanations before or after the JSON.
+10. CRITICAL: Do NOT include any conversational text outside the <thought_process> block and the JSON.
 11. CRITICAL: The JSON must start exactly with '{{' and end exactly with '}}'.
 12. Do NOT create more than one link between the same pair of nodes. Each pair of nodes must have at most one direct link between them.
 13. DYNAMIPS ADAPTER RULE (CRITICAL — MOST COMMON ERROR):
@@ -191,14 +191,13 @@ RULES:
 16. NETWORK SEGMENTATION (LAYER 3 BOUNDARIES):
     - If the user asks for separate groups, floors, or departments,
       each group MUST be on a separate subnet — NO exceptions.
-    - DEFAULT: Connect each group's switch DIRECTLY to the router
-      with a dedicated link (one router interface per switch).
-      This guarantees physical segmentation with no VLAN config.
-    - COLLAPSED CORE is allowed when the user explicitly requests it
-      (e.g., "core switch", "VLANs", "trunk"). If you choose this:
-        * Assign a unique VLAN ID per segment (VLAN 10, 20, 30...)
-        * Set the router-switch link as an 802.1Q trunk
-        * Use one router subinterface per VLAN
+    - HIERARCHICAL DESIGN (DEFAULT for multi-subnet): When the router needs
+      more than 3 links, use the Core-SW + Router-on-a-Stick pattern (Rule 18).
+      This is the preferred approach for any topology with 2+ subnet switches.
+    - DIRECT LINKS (only for ≤3 subnets): When the router can handle all
+      subnet switches within its 3-link limit, you MAY connect each group's
+      switch DIRECTLY to the router with a dedicated link. This guarantees
+      physical segmentation with no VLAN config.
     - INVARIANT: A router with only ONE interface on ONE flat subnet
       serving multiple groups is architecturally wrong — there is no
       L3 boundary, and the router serves no purpose.
@@ -210,13 +209,74 @@ SINGLE-LINK DEVICES (HARD LIMIT — never exceed 1 link on these):
 If a VPCS/TraceNG/NAT node needs multiple connections, you MUST insert a
 switch between it and the rest of the network. Do NOT attach >1 link directly.
 
+17. HARDWARE AWARENESS — GNS3 PCI BUS CONSTRAINT (CRITICAL):
+    Dynamips routers in GNS3 emulate a PCI bus. If you force too many Port
+    Adapters (PA-8E on c7200) or too many active physical links, the emulated
+    PCI bus bandwidth is EXCEEDED and the router CRASHES — all ports shut down.
+
+    PRACTICAL SAFE LIMITS (derived from GNS3/Dynamips testing):
+      c7200:  max 3 links   ← Most restrictive! 1 builtin + 1 PA-8E only
+      c3745:  max 6 links   c3725:  max 6 links   c2691:  max 6 links
+      c3660:  max 5 links   c3640:  max 4 links   c3620:  max 4 links
+      c2600:  max 2 links   c1700:  max 2 links
+    IOU: max 8 links      QEMU: max 8 links     Docker: max 8 links
+    Ethernet switch/hub: max 128 ports
+
+    ⚠️ The c7200 can ONLY handle 3 links safely! If your topology needs the
+    router to connect to more than 3 subnets, you MUST use the hierarchical
+    design pattern described in Rule 18 below.
+
+18. HIERARCHICAL DESIGN PATTERN (MANDATORY for multi-subnet topologies):
+    When the user requests a network with multiple subnets/groups/floors and
+    the total number of subnet switches exceeds the router's practical link
+    limit (3 for c7200), you MUST use this architecture:
+
+    ┌─────────────────────────────────────────────────────────┐
+    │  HIERARCHICAL PATTERN: Core Switch + Router-on-a-Stick  │
+    │                                                         │
+    │  Router (R1)                                            │
+    │    │                                                    │
+    │    └─── 1 physical link (802.1Q trunk) ─── Core-SW      │
+    │              │          │          │                     │
+    │           F1-SW     F2-SW     Admin-SW                  │
+    │           │││       │││       │││                        │
+    │          hosts     hosts     hosts                      │
+    └─────────────────────────────────────────────────────────┘
+
+    HOW IT WORKS:
+    a) Create ONE "Core-SW" (ethernet_switch) as the distribution layer
+    b) Connect the Router to Core-SW with a SINGLE physical link
+    c) Connect ALL subnet switches (F1-SW, F2-SW, Admin-SW) to Core-SW
+    d) Each subnet switch connects its end-devices (VPCS, etc.)
+    e) Layer 3 segmentation is achieved via 802.1Q VLANs on the
+       Router-Core-SW trunk link (one subinterface per VLAN)
+
+    ADVANTAGES:
+    - Router only needs 1 physical link regardless of subnet count
+    - No PCI bus crash risk
+    - All subnets remain L3-separated via VLANs
+    - Scales to dozens of subnets without changing the router config
+
+    WHEN TO USE THIS PATTERN:
+    - If the router needs >3 links -> USE THIS PATTERN (mandatory)
+    - If the router needs <=3 links -> direct links are fine
+    - If unsure -> use this pattern anyway (it's always safe)
+
+    VLAN ASSIGNMENT RULE for this pattern:
+    - Assign VLAN IDs starting from 10, incrementing by 10:
+      VLAN 10 = first subnet, VLAN 20 = second subnet, etc.
+    - The Router-Core-SW link is an 802.1Q trunk carrying all VLANs
+    - Each subnet switch's uplink to Core-SW is an access port in that
+      subnet's VLAN
+    - The router uses one subinterface per VLAN (e.g., Fa0/0.10, Fa0/0.20)
+
 NAMING-TO-SWITCH ASSIGNMENT RULE:
   - If a node name starts with a prefix followed by a dash (e.g., 'F1-Class1',
     'F2-Teacher3', 'Admin-PC2'), the prefix identifies the switch it MUST
     connect to. Examples:
-      * 'F1-Class1' → MUST connect to the switch named 'F1-SW'
-      * 'F2-Teacher3' → MUST connect to the switch named 'F2-SW'
-      * 'Admin-PC2' → MUST connect to the switch named 'Admin-SW'
+      * 'F1-Class1' -> MUST connect to the switch named 'F1-SW'
+      * 'F2-Teacher3' -> MUST connect to the switch named 'F2-SW'
+      * 'Admin-PC2' -> MUST connect to the switch named 'Admin-SW'
   - This means you must plan switch assignments FIRST: decide which switch
     each group of end-devices connects to, then name those devices with the
     matching prefix.
@@ -236,15 +296,47 @@ PROPERTIES RULE (PHASE 1):
     will be handled in Phase 2 by a separate agent.
 
 WORKED EXAMPLE — Correct link assignments for R1 (dynamips) connected to 4 switches:
-  R1 ↔ SW-Admin: R1 side adapter=0, port=0 | SW-Admin side adapter=0, port=0
-  R1 ↔ SW-F1:    R1 side adapter=1, port=0 | SW-F1 side    adapter=0, port=0
-  R1 ↔ SW-F2:    R1 side adapter=2, port=0 | SW-F2 side    adapter=0, port=0
-  R1 ↔ SW-F3:    R1 side adapter=3, port=0 | SW-F3 side    adapter=0, port=0
-  Notice: R1 increments adapter (0,1,2,3), always port=0.
-  Notice: Every switch uses adapter=0, port increments only if the switch
-          has multiple links (e.g., switch with 5 hosts: adapter=0, port=0..4).
+  R1 <-> SW-Admin: R1 side adapter=0, port=0 | SW-Admin side adapter=0, port=0
+  R1 <-> SW-F1:    R1 side adapter=1, port=0 | SW-F1 side    adapter=0, port=0
+  R1 <-> SW-F2:    R1 side adapter=2, port=0 | SW-F2 side    adapter=0, port=0
+  R1 <-> SW-F3:    R1 side adapter=3, port=0 | SW-F3 side    adapter=0, port=0
+  ⚠️ BUT WAIT — c7200 with 4 links (3 PA-8E cards) will CRASH due to PCI bus!
+  ✅ CORRECT APPROACH: Use Core-SW + Router-on-a-Stick (Rule 18) instead:
+    R1 <-> Core-SW: R1 adapter=0,port=0 | Core-SW adapter=0,port=0 (trunk)
+    Core-SW <-> F1-SW: Core-SW adapter=0,port=1 | F1-SW adapter=0,port=0
+    Core-SW <-> F2-SW: Core-SW adapter=0,port=2 | F2-SW adapter=0,port=0
+    Core-SW <-> Admin-SW: Core-SW adapter=0,port=3 | Admin-SW adapter=0,port=0
+    ...each subnet switch connects its hosts
+  This uses only 1 router link — no PCI bus crash!
 
-Output ONLY the JSON object. No markdown, no explanation."""
+OUTPUT FORMAT (MANDATORY):
+  You MUST output your response in TWO parts:
+
+  PART 1: <thought_process>
+    Before generating the JSON, reason step-by-step inside this block:
+    1. How many total subnets/switches are needed for this request?
+    2. Will connecting all these switches directly to the Router violate
+       the Router's PCI bus hardware constraint (max 3 links for c7200)?
+    3. If yes, deduce the correct hierarchical design (Core-SW + router-on-a-stick)
+       that connects all subnets using only 1 physical router link.
+    4. List the exact nodes and links you will create.
+  </thought_process>
+
+  PART 2: The JSON topology object (as specified by the schema).
+
+  Example output structure:
+    <thought_process>
+    1. Subnets needed: F1 (4 classrooms + teachers), F2 (4 classrooms + teachers),
+       Admin (10 PCs). Total: 3 subnet switches.
+    2. Router (c7200) can only handle 3 links safely. With 3 subnet switches
+       plus possible other connections, this is at the boundary.
+    3. Decision: Use hierarchical design with Core-SW. Router connects to Core-SW
+       via 1 trunk link. All 3 subnet switches connect to Core-SW.
+    4. Nodes: R1, Core-SW, F1-SW, F2-SW, Admin-SW, + VPCS hosts
+       Links: R1<->Core-SW, Core-SW<->F1-SW, Core-SW<->F2-SW, Core-SW<->Admin-SW,
+              F1-SW<->hosts, F2-SW<->hosts, Admin-SW<->hosts
+    </thought_process>
+    {{"name": "...", "topology": {{...}}}}"""
 
 def _call_with_retry(func, max_retries: int = 2):
     """Call an OpenAI API function with retry on transient errors."""
@@ -265,13 +357,17 @@ def _call_with_retry(func, max_retries: int = 2):
 def _extract_json(text: str) -> str:
     """Extract JSON from potentially messy LLM output.
 
-    Handles three cases:
+    Handles four cases:
       1. Clean JSON (starts with '{', ends with '}')
-      2. JSON wrapped in markdown code fences (```json ... ```)
-      3. JSON buried inside conversational text (regex extraction)
+      2. <thought_process> block before the JSON (strip it)
+      3. JSON wrapped in markdown code fences (```json ... ```)
+      4. JSON buried inside conversational text (regex extraction)
     """
+    # Strip <thought_process>...</thought_process> blocks
+    cleaned = re.sub(r'<thought_process>.*?</thought_process>', '', text.strip(), flags=re.DOTALL)
+
     # Strip markdown code fences
-    cleaned = re.sub(r'^```\w*\n?', '', text.strip()).rstrip('`').strip()
+    cleaned = re.sub(r'^```\w*\n?', '', cleaned.strip()).rstrip('`').strip()
 
     # If it already looks like clean JSON, return as-is
     if cleaned.startswith('{') and cleaned.endswith('}'):
@@ -368,7 +464,7 @@ def process_and_save_topology(raw_topology: GNS3Project, output_file: str) -> Op
     """Run hardware injection on a validated topology and save to disk.
 
     Steps:
-      1. Convert Pydantic model → dict
+      1. Convert Pydantic model -> dict
       2. Call inject_hardware_config() to expand ports/adapters/slots
       3. Re-validate through Pydantic (catches any corruption from injection)
       4. Save the final JSON to output_file

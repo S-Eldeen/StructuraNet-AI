@@ -390,6 +390,110 @@ class Topology(BaseModel):
                     )
         return self
 
+    # ── Practical GNS3 port limits per node type ──────────────────────────
+    # These are the SAFE maximum number of Ethernet links a node can
+    # support in actual GNS3/Dynamips emulation — NOT theoretical slot math.
+    #
+    # Theoretical limits (e.g., c7200 = 1 builtin + 6×8 PA-8E = 49 ports)
+    # are WRONG for GNS3 because Dynamips emulates a PCI bus that crashes
+    # when too many Port Adapters are active simultaneously.  The c7200
+    # will hard-crash (all ports go down) if you inject more than 2 PA-8E
+    # cards.  Other platforms use smaller NM modules and are more stable.
+    #
+    # These practical limits are derived from GNS3 community testing and
+    # the Dynamips PCI bus bandwidth model.  They are deliberately
+    # conservative to guarantee stable simulation.
+    _MAX_EXPANDABLE_PORTS: ClassVar[dict[str, int]] = {
+        "dynamips": 3,   # conservative default (most platforms handle ~3-5)
+        "iou": 8,        # practical limit (4 builtin + 1 slot is safe)
+        "qemu": 8,       # practical limit for stable simulation
+        "docker": 8,     # practical limit for stable simulation
+        "virtualbox": 8,
+        "vmware": 10,
+        "ethernet_switch": 128,
+        "ethernet_hub": 128,
+    }
+
+    # Per-platform dynamips PRACTICAL limits in GNS3.
+    # Key: c7200 crashes with >2 PA-8E cards active → max 3 links safe.
+    # Platforms using NM-4E (4 ports per module, lower PCI load) can handle more.
+    _DYNAMIPS_MAX_PORTS: ClassVar[dict[str, int]] = {
+        "c7200": 3,    # PCI bus crash with >2 PA-8E; safe = 1 builtin + 1 PA
+        "c3745": 6,    # NM-4E is lighter; safe = 2 builtin + 1 NM-4E (6 ports)
+        "c3725": 6,    # Same NM-4E; safe = 2 builtin + 1 NM-4E (6 ports)
+        "c3660": 5,    # 1 builtin + 1 NM-4E (5 ports)
+        "c3640": 4,    # No builtin eth + 1 NM-4E (4 ports)
+        "c3620": 4,    # Same as c3640
+        "c2691": 6,    # 2 builtin + 1 NM-4E (6 ports)
+        "c2600": 2,    # 1 builtin + 1 NM-1E (2 ports)
+        "c1700": 2,    # 1 builtin + 1 NM-1E (2 ports)
+    }
+
+    @model_validator(mode="after")
+    def link_count_must_not_exceed_max_ports(self):
+        """Validate that total links per node do not exceed the maximum
+        expandable port count for that node type.
+
+        This catches topologies where the AI assigns more links to a node
+        than its hardware can physically support — even after hw_config.py
+        injects the maximum number of expansion slots/adapters.  Without
+        this check, such topologies pass schema validation but fail at
+        deployment with "No available port" errors.
+
+        Tier 2 single-port devices (vpcs, traceng, nat) are already
+        validated by single_port_nodes_must_not_exceed_one_link(), so
+        they are excluded here to avoid duplicate error messages.
+
+        For dynamips nodes, the check uses per-platform limits derived
+        from the slot module catalogue (see hw_config.DYNAMIPS_SLOT_MODULES).
+        The platform is extracted from node.properties or template_name.
+        """
+        # Count links per node
+        link_counts: dict[str, int] = {}
+        for link in self.links:
+            for ep in link.nodes:
+                link_counts[ep.node_id] = link_counts.get(ep.node_id, 0) + 1
+
+        node_map = {n.node_id: n for n in self.nodes}
+
+        for node in self.nodes:
+            nid = node.node_id
+            actual = link_counts.get(nid, 0)
+            ntype = node.node_type
+
+            # Skip single-port types (already validated separately)
+            if ntype in self.SINGLE_PORT_TYPES:
+                continue
+
+            # Determine max ports for this node
+            max_ports = self._MAX_EXPANDABLE_PORTS.get(ntype)
+
+            # For dynamips, use per-platform limit if identifiable
+            if ntype == "dynamips":
+                platform = ""
+                props = node.properties or {}
+                if "platform" in props:
+                    platform = str(props["platform"]).lower()
+                elif node.template_name:
+                    platform = str(node.template_name).lower()
+                if platform in self._DYNAMIPS_MAX_PORTS:
+                    max_ports = self._DYNAMIPS_MAX_PORTS[platform]
+
+            # Skip unknown types (cloud, frame_relay, atm — not port-count-based)
+            if max_ports is None:
+                continue
+
+            if actual > max_ports:
+                type_detail = f"/{platform}" if ntype == "dynamips" and platform else ""
+                raise ValueError(
+                    f"Node '{nid}' (type={ntype}{type_detail})"
+                    f" has {actual} links but the maximum expandable port count "
+                    f"is {max_ports}. Reduce the number of links to this node, "
+                    f"or insert an intermediate switch to distribute the connections."
+                )
+
+        return self
+
     @model_validator(mode="after")
     def port_assignments_must_be_within_bounds(self):
         """Validate port_number against platform built-in port counts.
@@ -543,6 +647,7 @@ class Topology(BaseModel):
                 f"Every node must have a path to every other node."
             )
         return self
+
 
     @model_validator(mode="after")
     def naming_switch_consistency(self):

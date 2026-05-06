@@ -54,18 +54,38 @@ _client: Optional[OpenAI] = None
 #   start_command           → docker                (container entrypoint)
 #   environment             → docker                (env vars dict)
 SOFTWARE_CONFIG_KEYS: FrozenSet[str] = frozenset([
+    # ── IOS config (dynamips, iou, qemu) ──
     "startup_config_content",
+    "private_config_content",
+    # ── VPCS config ──
     "startup_script",
+    # ── Docker config ──
     "start_command",
     "environment",
+    "extra_hosts",
+    "extra_volumes",
+    # ── QEMU config ──
+    "kernel_command_line",
+    # ── Metadata (all types) ──
+    "usage",
 ])
 
 # Allowed value types per config key (Gate 3)
 ALLOWED_VALUE_TYPES: Dict[str, tuple] = {
+    # ── IOS config ──
     "startup_config_content": (str,),
+    "private_config_content": (str,),
+    # ── VPCS config ──
     "startup_script":         (str,),
+    # ── Docker config ──
     "start_command":          (str,),
-    "environment":            (dict, str),  # dict preferred, str accepted for flexibility
+    "environment":            (str,),       # GNS3 stores as multiline string, NOT dict
+    "extra_hosts":            (str,),
+    "extra_volumes":          (list,),      # Array of directory path strings
+    # ── QEMU config ──
+    "kernel_command_line":    (str,),
+    # ── Metadata ──
+    "usage":                  (str,),
 }
 
 

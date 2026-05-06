@@ -12,13 +12,25 @@ GNS3 API v2 endpoints used:
   POST   /v2/projects/{pid}/templates/{tid}        → Create node from template (Path A)
   POST   /v2/projects/{pid}/nodes                  → Create node directly (Path B fallback)
   GET    /v2/projects/{pid}/nodes                  → List nodes / poll status
+  PUT    /v2/projects/{pid}/nodes/{nid}            → Update node properties (merge semantics)
+  POST   /v2/projects/{pid}/nodes/{nid}/files/{path} → Write file to node's virtual FS
   POST   /v2/projects/{pid}/nodes/start            → Start all nodes
   POST   /v2/projects/{pid}/links                  → Create link
   POST   /v2/projects/{pid}/drawings               → Add drawing (title)
 
 Path A (template-based) is preferred — it merges `properties` with template
-defaults, so hardware modules (slot1, adapters, ports_mapping) AND software
-configs (startup_config_content, startup_script) are applied at creation time.
+defaults, so hardware modules (slot1, adapters, ports_mapping) are applied
+at creation time.
+
+CRITICAL — Software config injection uses TWO channels:
+  1. Properties PUT:  start_command, environment, extra_hosts, extra_volumes,
+     kernel_command_line, usage  →  accepted by the properties endpoint.
+  2. Files API POST:  startup_config_content, private_config_content,
+     startup_script  →  REJECTED by the properties endpoint (400 Bad Request).
+     Must be pushed directly to the node's virtual filesystem via:
+       Dynamips/IOU/QEMU: POST .../nodes/{uuid}/files/startup-config.cfg
+       Dynamips/IOU:      POST .../nodes/{uuid}/files/private-config.cfg
+       VPCS:              POST .../nodes/{uuid}/files/startup.vpc
 
 Path B (direct creation) is a fallback for built-in types only (ethernet_switch,
 ethernet_hub, vpcs, cloud, nat). It will NOT work for template-dependent types
@@ -113,6 +125,23 @@ class GNS3Client:
             raise last_err
         raise DeploymentError(f"Request to {url} failed (retries={self.retries})")
 
+    def post_raw(self, path: str, content: str, timeout: int = 15):
+        """POST raw (non-JSON) string content to the GNS3 API.
+
+        Used for the Files API endpoints which accept plain text bodies,
+        not JSON.  The standard post() method sends json=data which would
+        double-encode string content.
+
+        Args:
+            path: API path (e.g. "/projects/{pid}/nodes/{uuid}/files/startup-config.cfg")
+            content: Raw string content to write.
+            timeout: Request timeout in seconds.
+        """
+        url = self.base + path
+        r = self.session.post(url, data=content, timeout=timeout)
+        r.raise_for_status()
+        return r.text if r.content else ""
+    
     def get(self, path):    return self._request("GET", path)
     def post(self, path, data=None): return self._request("POST", path, data)
     def put(self, path, data=None):  return self._request("PUT", path, data)
@@ -139,6 +168,70 @@ def _build_lookup(inventory: list) -> dict:
         if dev["name"] not in lookup:
             lookup[dev["name"]] = tid
     return lookup
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  File-Based Software Config → GNS3 Virtual Filesystem Mapping
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# GNS3 rejects startup_config_content, private_config_content, and
+# startup_script from the properties PUT endpoint entirely (400 Bad Request).
+# The ONLY way to inject these is via the Files API, which writes directly
+# to the node's virtual filesystem.
+#
+# Source: gns3server/controller/node.py — parse_node_response() deletes
+# these keys from self._properties after forwarding; the compute-level
+# schemas do not accept them via the properties dict.
+#
+# Mapping: (software_key, node_type) → virtual filesystem path
+_FILE_CONFIG_PATHS: dict[tuple[str, str], str] = {
+    # ── IOS startup-config (dynamips, iou, qemu IOS images) ──
+    ("startup_config_content", "dynamips"): "startup-config.cfg",
+    ("startup_config_content", "iou"):      "startup-config.cfg",
+    ("startup_config_content", "qemu"):     "startup-config.cfg",
+    # ── IOS private-config (dynamips, iou) ──
+    ("private_config_content", "dynamips"): "private-config.cfg",
+    ("private_config_content", "iou"):      "private-config.cfg",
+    # ── VPCS startup script ──
+    ("startup_script", "vpcs"):             "startup.vpc",
+}
+
+
+def _push_file_configs(
+    client: GNS3Client,
+    project_id: str,
+    node_uuid: str,
+    node_type: str,
+    file_configs: dict,
+    node_name: str,
+) -> None:
+    """Push file-based software configs to a node via the GNS3 Files API.
+
+    GNS3 strictly rejects startup_config_content and startup_script from
+    the properties PUT endpoint.  The Files API writes directly to the
+    node's virtual filesystem, which the emulator reads on startup.
+
+    Endpoints:
+      Dynamips/IOU/QEMU: POST .../nodes/{uuid}/files/startup-config.cfg
+      Dynamips/IOU:      POST .../nodes/{uuid}/files/private-config.cfg
+      VPCS:              POST .../nodes/{uuid}/files/startup.vpc
+    """
+    for key, content in file_configs.items():
+        file_path = _FILE_CONFIG_PATHS.get((key, node_type))
+
+        if file_path is None:
+            WARN(f"No file mapping for '{key}' on {node_type} node "
+                 f"'{node_name}' — config dropped")
+            continue
+
+        try:
+            client.post_raw(
+                f"/projects/{project_id}/nodes/{node_uuid}/files/{file_path}",
+                content=content,
+            )
+            OK(f"Pushed {key} → '{node_name}' via Files API "
+               f"({file_path}, {len(content)} chars)")
+        except Exception as e:
+            WARN(f"Failed to push {key} to '{node_name}' via Files API: {e}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -336,35 +429,83 @@ def deploy_hybrid_topology(client: GNS3Client, data: dict, args, inventory: list
                 ntype = inv_dev["gns3_type"]
 
         try:
+            # ── Extract file-based software configs BEFORE any API calls ──
+            # GNS3 rejects these from the properties PUT endpoint (400).
+            # They must be pushed via the Files API instead.
+            # pop() removes them from n["properties"] in-place so they
+            # are NOT sent via PUT in the next step.
+            file_configs: dict = {}
+            for key in ("startup_config_content",
+                        "private_config_content",
+                        "startup_script"):
+                value = n.get("properties", {}).pop(key, None)
+                if value is not None:
+                    file_configs[key] = value
+
             if tid:
                 # ── Path A: Template-based creation (preferred) ──────────
-                # POST /projects/{pid}/templates/{tid}
-                #
-                # CRITICAL: Properties MUST be forwarded so GNS3 applies:
-                #   HARDWARE: slot1, adapters, ports_mapping
-                #   SOFTWARE: startup_config_content, startup_script, etc.
-                #
-                # GNS3 merges provided properties with template defaults.
-                # The name is included directly — no separate PUT needed.
-                payload = {"x": x, "y": y, "compute_id": compute_id, "name": name}
-                result = client.post(f"/projects/{project_id}/templates/{tid}", payload)
+                # TEMPLATE_USAGE_SCHEMA only accepts: x, y, name, compute_id.
+                # All node-type-specific properties come from the template.
+                payload = {
+                    "x": x, "y": y,
+                    "compute_id": compute_id,
+                    "name": name,
+                    "properties": {},
+                }
+                result = client.post(
+                    f"/projects/{project_id}/templates/{tid}", payload
+                )
                 uuid = result["node_id"]
 
-                # Apply custom properties via PUT (template creation only accepts x/y/name/compute_id)
-                if n.get("properties"):
+                # Apply remaining properties via PUT.
+                # After popping file-based configs, n["properties"] contains:
+                #   - Hardware/compute keys (slot1, adapters, ports_mapping, ram, ...)
+                #   - Property-based software keys (start_command, environment,
+                #     extra_hosts, extra_volumes, kernel_command_line, usage)
+                # Both categories are safe for the properties PUT endpoint.
+                # GNS3 uses MERGE semantics — only provided keys are updated.
+                remaining_props = n.get("properties")
+                if remaining_props:
                     try:
-                        client.put(f"/projects/{project_id}/nodes/{uuid}",
-                                   {"properties": n["properties"]})
+                        client.put(
+                            f"/projects/{project_id}/nodes/{uuid}",
+                            {"properties": remaining_props},
+                        )
                     except Exception as e:
                         WARN(f"Failed to apply properties to '{name}': {e}")
+
+                # Refresh port list after PUT — the expanded hardware may have
+                # added new ports that weren't in the initial POST response.
+                try:
+                    refreshed = client.get(f"/projects/{project_id}/nodes/{uuid}")
+                    new_ports = refreshed.get("ports", [])
+                    if len(new_ports) > len(result.get("ports", [])):
+                        logger.info(
+                            "Node '%s': port count updated after PUT: %d -> %d",
+                            name, len(result.get("ports", [])), len(new_ports),
+                        )
+                        result = refreshed
+                except Exception:
+                    pass
+
+                # Push file-based configs via Files API.
+                # This MUST happen after the properties PUT so that the node's
+                # virtual filesystem is fully initialised.
+                if file_configs:
+                    _push_file_configs(
+                        client, project_id, uuid, ntype,
+                        file_configs, name,
+                    )
+
             else:
                 # ── Path B: Direct node creation (fallback) ──────────────
-                # WARNING: This only works reliably for BUILT-IN types
+                # WARNING: Only works reliably for BUILT-IN types
                 # (ethernet_switch, ethernet_hub, vpcs, cloud, nat).
                 # Template-dependent types (dynamips, qemu, iou, docker)
                 # need disk image info from a template and will likely fail.
                 if lookup:
-                    WARN(f"No template_id for '{name}' — direct creation may fail for '{ntype}'")
+                    WARN(f"No template_id for '{name}' — direct creation "
+                         f"may fail for '{ntype}'")
 
                 payload = {
                     "name": name,
@@ -372,12 +513,20 @@ def deploy_hybrid_topology(client: GNS3Client, data: dict, args, inventory: list
                     "compute_id": compute_id,
                     "x": x,
                     "y": y,
+                    "properties": n.get("properties", {}),
                 }
-                if n.get("properties"):
-                    payload["properties"] = n["properties"]
 
-                result = client.post(f"/projects/{project_id}/nodes", payload)
+                result = client.post(
+                    f"/projects/{project_id}/nodes", payload
+                )
                 uuid = result["node_id"]
+
+                # Push file-based configs for direct-created nodes too
+                if file_configs:
+                    _push_file_configs(
+                        client, project_id, uuid, ntype,
+                        file_configs, name,
+                    )
 
             node_id_map[nid] = uuid
             ports = result.get("ports", [])
@@ -388,8 +537,10 @@ def deploy_hybrid_topology(client: GNS3Client, data: dict, args, inventory: list
             # Log properties forwarding status
             props = n.get("properties", {})
             prop_keys = list(props.keys()) if props else []
+            sw_keys = list(file_configs.keys()) if file_configs else []
             OK(f"'{name}' ({ntype}) -> {uuid[:8]}... "
-               f"[{len(ports)} ports, props: {prop_keys or 'empty'}]")
+               f"[{len(ports)} ports, hw_props: {prop_keys or 'empty'}, "
+               f"file_configs: {sw_keys or 'none'}]")
 
             # Heuristic wait: QEMU/Docker/IOU/Dynamips take longer to init
             time.sleep(0.8 if ntype in ("qemu", "docker", "iou", "dynamips") else 0.2)
@@ -397,7 +548,7 @@ def deploy_hybrid_topology(client: GNS3Client, data: dict, args, inventory: list
         except Exception as e:
             failed_nodes.append((name, str(e)))
             WARN(f"Failed to deploy '{name}': {e}")
-
+            
     if not deployed_nodes:
         raise DeploymentError("All nodes failed to deploy — aborting.")
 
@@ -507,7 +658,7 @@ def deploy_hybrid_topology(client: GNS3Client, data: dict, args, inventory: list
             WARN(f"Link failed: {e}")
 
     # ── Step 5: Start Nodes (optional) ────────────────────────────────────────
-    if getattr(args, "start", False):
+    if getattr(args, "start", True):
         HEAD("Step 5 - Starting Nodes")
         try:
             client.post(f"/projects/{project_id}/nodes/start")
