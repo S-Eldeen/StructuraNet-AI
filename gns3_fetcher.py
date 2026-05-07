@@ -18,7 +18,7 @@ logger = logging.getLogger("structranet.fetcher")
 
 # Well-known port counts for built-in GNS3 node types
 BUILTIN_PORTS = {
-    "ethernet_switch": 8, "ethernet_hub": 8, "vpcs": 1,
+    "ethernet_switch": 128, "ethernet_hub": 128, "vpcs": 1,
     "cloud": 1, "nat": 1, "traceng": 1,
     "frame_relay_switch": 8, "atm_switch": 8,
 }

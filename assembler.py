@@ -38,6 +38,7 @@ ethernet_hub, vpcs, cloud, nat). It will NOT work for template-dependent types
 """
 
 import argparse
+import copy
 import json
 import sys
 import time
@@ -396,7 +397,14 @@ def deploy_hybrid_topology(client: GNS3Client, data: dict, args, inventory: list
 
     # ── Step 2: Deploy Nodes ──────────────────────────────────────────────────
     HEAD("Step 2 - Deploying Nodes")
-    for n in ai_nodes:
+    for _n in ai_nodes:
+        # Deep-copy the node dict so that the pop() calls below (which strip
+        # file-based config keys before the properties PUT) do NOT mutate the
+        # caller's topology data.  Without this, a second call to
+        # deploy_hybrid_topology (e.g. after --overwrite deletes and recreates
+        # the project) would find startup_config_content already gone and
+        # silently skip pushing the IOS config to the node.
+        n = copy.deepcopy(_n)
         nid = n.get("node_id")
         name = n.get("name", "Unknown")
         ntype = n.get("node_type", "")
@@ -450,7 +458,7 @@ def deploy_hybrid_topology(client: GNS3Client, data: dict, args, inventory: list
                     "x": x, "y": y,
                     "compute_id": compute_id,
                     "name": name,
-                    # "properties": {},
+                    "properties": {},
                 }
                 result = client.post(
                     f"/projects/{project_id}/templates/{tid}", payload
@@ -585,13 +593,37 @@ def deploy_hybrid_topology(client: GNS3Client, data: dict, args, inventory: list
     # ── Step 4: Deploy Links ──────────────────────────────────────────────────
     HEAD("Step 4 - Deploying Links")
 
-    def _find_port(real_id, adapter, port, link_type="ethernet"):
+    # Collect the set of logical node_ids that have a Phase 2 software config
+    # (startup_config_content, startup_script, etc.).  For these nodes, a port
+    # fallback would silently wire the wrong interface relative to the config
+    # (e.g., IOS config on Fa1/0 but the cable ended up on Fa2/0).  We promote
+    # the fallback from a WARN to a hard error for these nodes so the operator
+    # knows to fix the topology rather than deploy a silently broken network.
+    nodes_with_sw_config: Set[str] = set()
+    for _n in ai_nodes:
+        props = _n.get("properties", {})
+        if any(k in props for k in ("startup_config_content", "startup_script",
+                                    "start_command", "environment")):
+            nid_ = _n.get("node_id")
+            if nid_:
+                nodes_with_sw_config.add(nid_)
+
+    def _find_port(real_id, adapter, port, link_type="ethernet",
+                   logical_node_id: str = ""):
         """Validate requested port, or find next available compatible one.
 
         Resolution order:
-          1. Exact match: (adapter, port) exists and not yet used
+          1. Exact match: (adapter, port) exists and not yet used  → OK
           2. Fallback: next unused port with compatible link_type
-          3. Error: no available port
+             - If the node has a Phase 2 software config (IOS startup-config,
+               VPCS script, etc.) the fallback is a HARD ERROR.  The config
+               was generated for a specific interface; using a different port
+               would produce a network that wires up on a different interface
+               than the one with an IP address, causing silent connectivity
+               failures that are extremely hard to diagnose.
+             - For nodes without a software config the fallback is a WARN,
+               preserving the original behaviour.
+          3. Error: no available port (always hard error)
         """
         ports = node_ports.get(real_id, [])
         used = used_ports.get(real_id, set())
@@ -610,8 +642,24 @@ def deploy_hybrid_topology(client: GNS3Client, data: dict, args, inventory: list
                 continue
             plt = p.get("link_type")
             if plt is None or plt == link_type:
-                WARN(f"Port ({adapter}/{port}) not available on {real_id[:8]}..., "
-                     f"using fallback ({pk[0]}/{pk[1]})")
+                has_sw_config = logical_node_id in nodes_with_sw_config
+                msg = (
+                    f"Port ({adapter}/{port}) not available on "
+                    f"{real_id[:8]}... (logical: {logical_node_id}), "
+                    f"fallback would use ({pk[0]}/{pk[1]})"
+                )
+                if has_sw_config:
+                    # Hard error: Phase 2 config targets a specific interface.
+                    # Using a different port would wire the cable to an
+                    # unconfigured interface, producing a silent network failure.
+                    raise DeploymentError(
+                        f"{msg}. This node has a software config (startup-config / "
+                        f"startup_script) that was generated for adapter={adapter}, "
+                        f"port={port}. Using a different port would silently mismatch "
+                        f"the wiring against the config. Fix the topology's port "
+                        f"assignments to match the exact ports the config targets."
+                    )
+                WARN(f"{msg} — using fallback (node has no software config)")
                 return {"node_id": real_id, "adapter_number": pk[0], "port_number": pk[1]}
 
         raise DeploymentError(
@@ -637,8 +685,10 @@ def deploy_hybrid_topology(client: GNS3Client, data: dict, args, inventory: list
 
         ltype = lnk.get("link_type", "ethernet")
         try:
-            vp0 = _find_port(rid0, ep0.get("adapter_number", 0), ep0.get("port_number", 0), ltype)
-            vp1 = _find_port(rid1, ep1.get("adapter_number", 0), ep1.get("port_number", 0), ltype)
+            vp0 = _find_port(rid0, ep0.get("adapter_number", 0), ep0.get("port_number", 0),
+                             ltype, logical_node_id=ep0.get("node_id", ""))
+            vp1 = _find_port(rid1, ep1.get("adapter_number", 0), ep1.get("port_number", 0),
+                             ltype, logical_node_id=ep1.get("node_id", ""))
         except DeploymentError as e:
             failed_links.append((f"{ep0.get('node_id')}<->{ep1.get('node_id')}", str(e)))
             WARN(f"Port error: {e}")

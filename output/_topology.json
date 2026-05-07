@@ -454,14 +454,6 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-principal",
-        "name": "Principal-PC",
-        "node_type": "vpcs",
-        "template_name": "VPCS",
-        "properties": {},
-        "compute_id": "local"
-      },
-      {
         "node_id": "pc-f1-c1",
         "name": "F1-Class1",
         "node_type": "vpcs",
@@ -624,6 +616,14 @@
       {
         "node_id": "pc-f3-t3",
         "name": "F3-Teacher3",
+        "node_type": "vpcs",
+        "template_name": "VPCS",
+        "properties": {},
+        "compute_id": "local"
+      },
+      {
+        "node_id": "pc-principal",
+        "name": "Principal-PC",
         "node_type": "vpcs",
         "template_name": "VPCS",
         "properties": {},
@@ -805,6 +805,66 @@
           },
           {
             "node_id": "pc-admin7",
+            "adapter_number": 0,
+            "port_number": 0
+          }
+        ],
+        "link_type": "ethernet"
+      },
+      {
+        "nodes": [
+          {
+            "node_id": "sw-admin",
+            "adapter_number": 0,
+            "port_number": 8
+          },
+          {
+            "node_id": "pc-admin8",
+            "adapter_number": 0,
+            "port_number": 0
+          }
+        ],
+        "link_type": "ethernet"
+      },
+      {
+        "nodes": [
+          {
+            "node_id": "sw-admin",
+            "adapter_number": 0,
+            "port_number": 9
+          },
+          {
+            "node_id": "pc-admin9",
+            "adapter_number": 0,
+            "port_number": 0
+          }
+        ],
+        "link_type": "ethernet"
+      },
+      {
+        "nodes": [
+          {
+            "node_id": "sw-admin",
+            "adapter_number": 0,
+            "port_number": 10
+          },
+          {
+            "node_id": "pc-admin10",
+            "adapter_number": 0,
+            "port_number": 0
+          }
+        ],
+        "link_type": "ethernet"
+      },
+      {
+        "nodes": [
+          {
+            "node_id": "sw-admin",
+            "adapter_number": 0,
+            "port_number": 11
+          },
+          {
+            "node_id": "pc-principal",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -1120,66 +1180,6 @@
           },
           {
             "node_id": "pc-f3-t3",
-            "adapter_number": 0,
-            "port_number": 0
-          }
-        ],
-        "link_type": "ethernet"
-      },
-      {
-        "nodes": [
-          {
-            "node_id": "sw-admin",
-            "adapter_number": 0,
-            "port_number": 8
-          },
-          {
-            "node_id": "pc-admin8",
-            "adapter_number": 0,
-            "port_number": 0
-          }
-        ],
-        "link_type": "ethernet"
-      },
-      {
-        "nodes": [
-          {
-            "node_id": "sw-admin",
-            "adapter_number": 0,
-            "port_number": 9
-          },
-          {
-            "node_id": "pc-admin9",
-            "adapter_number": 0,
-            "port_number": 0
-          }
-        ],
-        "link_type": "ethernet"
-      },
-      {
-        "nodes": [
-          {
-            "node_id": "sw-admin",
-            "adapter_number": 0,
-            "port_number": 10
-          },
-          {
-            "node_id": "pc-admin10",
-            "adapter_number": 0,
-            "port_number": 0
-          }
-        ],
-        "link_type": "ethernet"
-      },
-      {
-        "nodes": [
-          {
-            "node_id": "sw-admin",
-            "adapter_number": 0,
-            "port_number": 11
-          },
-          {
-            "node_id": "pc-principal",
             "adapter_number": 0,
             "port_number": 0
           }

@@ -433,20 +433,30 @@ def run_phase2(
     dict or None
         The final integrated topology dict, or None on failure
     """
-    # ── Step 1: Load Phase 1 JSON ──
+    # ── Step 1 + 2: Load Phase 1 JSON, patch ports_mapping, build brief ──
+    #
+    # build_configuration_brief now returns a TUPLE: (brief, mutated_topology).
+    #
+    # WHY we no longer do a separate json.load here:
+    # The previous code loaded phase1_dict from disk, then called
+    # build_configuration_brief(path) which loaded the SAME file a second time,
+    # ran patch_switch_ports_mapping on that second copy, and returned only the
+    # brief string — discarding the patched ports_mapping entirely.  The
+    # unpatched phase1_dict then flowed into safe_merge_configs, meaning every
+    # GNS3 ethernet_switch was deployed with all ports as "access/vlan 1" and
+    # every 802.1Q tagged frame from the router was dropped at the first switch.
+    #
+    # Now build_configuration_brief owns the load + patch lifecycle and returns
+    # the mutated project dict alongside the brief string.  We use that dict
+    # directly as the base for safe_merge_configs.
     p1_path = Path(phase1_json_path)
     if not p1_path.exists():
         logger.error("Phase 1 JSON not found: %s", phase1_json_path)
         return None
 
-    with open(p1_path, "r", encoding="utf-8") as f:
-        phase1_dict = json.load(f)
-
-    logger.info("Loaded Phase 1 JSON: %s", phase1_json_path)
-
-    # ── Step 2: Build Configuration Brief ──
-    brief = build_configuration_brief(phase1_json_path)
-    logger.info("Configuration brief: %d chars", len(brief))
+    brief, mutated_topology = build_configuration_brief(phase1_json_path)
+    logger.info("Configuration brief: %d chars — ports_mapping patched in topology",
+                len(brief))
 
     # ── Step 3: Generate Software Configs via LLM ──
     llm_configs = generate_software_configs(brief)
@@ -455,7 +465,10 @@ def run_phase2(
         return None
 
     # ── Step 4: Three-Gate Safe Merge ──
-    merged_dict, rejection_log = safe_merge_configs(phase1_dict, llm_configs)
+    # Use mutated_topology (ports_mapping already patched) as the base, NOT a
+    # fresh disk load.  The merge adds the LLM's software configs (startup
+    # configs, startup scripts) on top of the already-correct hardware layout.
+    merged_dict, rejection_log = safe_merge_configs(mutated_topology, llm_configs)
 
     if rejection_log:
         logger.warning("Some LLM configs were rejected:")

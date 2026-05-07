@@ -17,9 +17,17 @@ which interfaces share a subnet.
 
 import json
 import logging
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, FrozenSet, List, Optional, Set, Tuple
+
+# Import hardware constants from the single source of truth in hw_config.
+# This eliminates the dual-maintenance problem: if the Dynamips builtin port
+# counts or IOU ports-per-slot values change, context_builder.py inherits
+# the update automatically.
+from hw_config import DYNAMIPS_BUILTIN_PORTS as _HW_DYNAMIPS_BUILTIN_PORTS
+from hw_config import IOU_PORTS_PER_SLOT as _HW_IOU_PORTS_PER_SLOT
 
 logger = logging.getLogger("structranet.context_builder")
 
@@ -126,11 +134,18 @@ class Segment:
 
     link_pairs stores each link as a (endpoint_a, endpoint_b) tuple so the
     brief can show connections as "R1 Fa0/0 ↔ SW1 Eth0".
+
+    vlan_id is set for Router-on-a-Stick segments: each access switch that
+    hangs off a core switch gets its own VLAN ID so the brief tells the LLM
+    which sub-interface to configure (e.g., Fa0/0.10 for VLAN 10).
+    A value of 0 means "untagged / no VLAN" (simple flat topology).
     """
     segment_id: int
     seg_type: str  # "multi-access" or "point-to-point"
     link_pairs: List[Tuple[ResolvedPort, ResolvedPort]]
     concentrator_ids: Set[str] = field(default_factory=set)
+    vlan_id: int = 0                 # 0 = untagged; >0 = 802.1Q VLAN
+    access_switch_name: str = ""     # human name of the access switch for this segment
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -257,18 +272,27 @@ def _resolve_all_interfaces(node: dict) -> List[str]:
 
 
 def _list_dynamips_interfaces(node: dict) -> List[str]:
-    """Enumerate all interface names for a Dynamips router."""
+    """Enumerate all interface names for a Dynamips router.
+
+    Port COUNT comes from _HW_DYNAMIPS_BUILTIN_PORTS (imported from hw_config —
+    single source of truth shared with the slot-injection logic).
+    Interface PREFIX comes from DYNAMIPS_BUILTIN_INTERFACES (local dict) because
+    hw_config only tracks counts, not IOS naming prefixes.  These two concerns
+    are intentionally split: if the port count in hw_config changes, this
+    function inherits it automatically without a separate edit here.
+    """
     platform = _identify_platform(node)
     props = node.get("properties", {})
     interfaces: List[str] = []
 
-    # Built-in (slot 0)
-    builtin = DYNAMIPS_BUILTIN_INTERFACES.get(
+    # Built-in (slot 0) — count from hw_config, prefix from local dict
+    builtin_count = _HW_DYNAMIPS_BUILTIN_PORTS.get(platform, 1)
+    builtin_prefix_entry = DYNAMIPS_BUILTIN_INTERFACES.get(
         platform, {"prefix": "FastEthernet", "count": 1}
     )
-    prefix = builtin.get("prefix")
-    if prefix and builtin["count"] > 0:
-        for p in range(builtin["count"]):
+    prefix = builtin_prefix_entry.get("prefix")
+    if prefix and builtin_count > 0:
+        for p in range(builtin_count):
             interfaces.append(f"{prefix}0/{p}")
 
     # Expansion slots (slot1 through slot6)
@@ -289,7 +313,12 @@ def _list_dynamips_interfaces(node: dict) -> List[str]:
 
 
 def _list_iou_interfaces(node: dict) -> List[str]:
-    """Enumerate all interface names for an IOU device."""
+    """Enumerate all interface names for an IOU device.
+
+    Uses _HW_IOU_PORTS_PER_SLOT imported from hw_config (single source of truth)
+    instead of a hardcoded literal so changes to the constant propagate here
+    automatically.
+    """
     props = node.get("properties", {})
     interfaces: List[str] = []
 
@@ -298,12 +327,12 @@ def _list_iou_interfaces(node: dict) -> List[str]:
         module_val = props.get(slot_key)
         if module_val is None:
             continue
-        # L3 IOU: module is an integer (typically 0–3), 4 interfaces per slot
-        # L2 IOU: module is "l2", also 4 interfaces per slot
+        # L3 IOU: module is an integer (typically 0–3), N interfaces per slot
+        # L2 IOU: module is "l2", also N interfaces per slot
         if isinstance(module_val, int) or (
             isinstance(module_val, str) and module_val != ""
         ):
-            for p in range(4):
+            for p in range(_HW_IOU_PORTS_PER_SLOT):
                 interfaces.append(f"Ethernet{slot_num}/{p}")
 
     return interfaces
@@ -335,6 +364,124 @@ def _resolve_endpoint(ep: dict, node_map: Dict[str, dict]) -> ResolvedPort:
     )
 
 
+def _infer_vlan_for_access_switch(
+    switch_name: str,
+    vlan_counter: List[int],
+    used_vlans: Set[int],
+) -> int:
+    """Assign a unique VLAN ID to an access switch.
+
+    Priority order:
+      1. Explicit ``vlan`` property on the switch node — handled by the caller
+         before this function is called.
+      2. Name-encoded VLAN: if the switch name matches ``<prefix><N>-SW``
+         (e.g. F1-SW, Floor2-SW), extract N and return N*10 — IF that value
+         has not already been claimed by another switch.
+      3. Sequential allocation: walk the counter from its current position,
+         incrementing by 10, skipping any already-used value.
+
+    Parameters
+    ----------
+    switch_name:
+        Human-readable name of the switch node (e.g. "F1-SW", "Admin-SW").
+    vlan_counter:
+        Single-element list holding the next candidate VLAN for sequential
+        allocation.  Mutated in place so all callers share the same counter.
+    used_vlans:
+        Set of VLAN IDs already assigned in this topology.  Every ID returned
+        by this function is added to the set by the caller so subsequent calls
+        see the full picture.  Both the regex and the sequential strategy check
+        this set before committing to a candidate.
+
+    The ``used_vlans`` parameter is what Z AI flagged: without it, strategy 2
+    (regex) can return VLAN 10 for "F1-SW" while strategy 3 (sequential)
+    independently returns VLAN 10 for "Admin-SW" (which has no digit suffix),
+    producing two access switches sharing the same VLAN ID.  That causes the
+    GNS3 switch to merge their broadcast domains silently — hosts from Floor 1
+    and Admin would be in the same VLAN and could communicate unintentionally.
+    """
+    # ── Strategy 2: name-encoded VLAN ────────────────────────────────
+    # Pattern: one or more letters, followed by digits, followed by "-SW"
+    # Examples: F1-SW→10, F2-SW→20, Floor3-SW→30, Lab12-SW→120
+    m = re.match(r"^[A-Za-z]+(\d+)-SW$", switch_name, re.IGNORECASE)
+    if m:
+        suffix = int(m.group(1))
+        candidate = suffix * 10
+        if 1 <= candidate <= 4094 and candidate not in used_vlans:
+            return candidate
+        # Candidate collides or is out of range — fall through to sequential
+
+    # ── Strategy 3: sequential allocation ────────────────────────────
+    # Walk forward from vlan_counter[0] until we find a free slot.
+    # The counter starts at 10 and increments by 10, but we skip any
+    # value already used so the step is not always exactly 10.
+    while vlan_counter[0] in used_vlans or vlan_counter[0] < 1:
+        vlan_counter[0] += 10
+        if vlan_counter[0] > 4094:
+            # Exhausted the VLAN space — should never happen in practice
+            # (would require >409 access switches) but we must not loop forever.
+            raise ValueError(
+                f"VLAN space exhausted while assigning VLAN for switch "
+                f"'{switch_name}'.  All VLAN IDs 10–4094 (step 10) are in use."
+            )
+
+    result = vlan_counter[0]
+    vlan_counter[0] += 10   # advance for the next caller
+    return result
+
+
+def _identify_core_switches(
+    topology: dict,
+    node_map: Dict[str, dict],
+) -> Set[str]:
+    """Return the node_ids of switches that act as distribution/core switches.
+
+    A switch is classified as a "core" switch if ANY of these conditions hold:
+      1. Its name contains "core" (case-insensitive) — explicit naming convention.
+      2. It is directly connected to BOTH a router AND at least one other switch.
+         This is the structural definition: a core switch is the one that bridges
+         the router to the access layer.
+
+    All other switches are "access" switches that serve end-devices.
+    """
+    links = topology.get("links", [])
+    core_ids: Set[str] = set()
+
+    for node in topology.get("nodes", []):
+        if node.get("node_type") not in L2_CONCENTRATOR_TYPES:
+            continue
+        nid = node["node_id"]
+        name = node.get("name", "").lower()
+
+        # Condition 1: explicit "core" in name
+        if "core" in name:
+            core_ids.add(nid)
+            continue
+
+        # Condition 2: connected to a router AND at least one other switch
+        has_router_neighbor = False
+        has_switch_neighbor = False
+        for link in links:
+            eps = link.get("nodes", [])
+            if len(eps) < 2:
+                continue
+            a_id = eps[0].get("node_id", "")
+            b_id = eps[1].get("node_id", "")
+            other_id = b_id if a_id == nid else (a_id if b_id == nid else None)
+            if other_id is None:
+                continue
+            other_type = node_map.get(other_id, {}).get("node_type", "")
+            if other_type in L3_ROUTER_TYPES:
+                has_router_neighbor = True
+            elif other_type in L2_CONCENTRATOR_TYPES:
+                has_switch_neighbor = True
+
+        if has_router_neighbor and has_switch_neighbor:
+            core_ids.add(nid)
+
+    return core_ids
+
+
 def build_segments(
     topology: dict, node_map: Dict[str, dict]
 ) -> List[Segment]:
@@ -345,27 +492,64 @@ def build_segments(
     on Layer 2. Two switches connected to DIFFERENT router interfaces are
     in DIFFERENT segments, even if a switch-to-switch uplink exists.
 
+    ROUTER-ON-A-STICK FIX (the critical change from the original):
+    In a Router-on-a-Stick topology, ALL access switches share a single
+    physical router interface (Fa0/0).  The original code collapsed every
+    link that could trace back to Fa0/0 into a single segment, producing
+    a brief that told the LLM there was one flat network with 25 hosts —
+    exactly wrong.
+
+    The fix introduces VLAN-aware segment splitting:
+      - Identify "core" switches (those connected to BOTH a router and other
+        switches) via _identify_core_switches().
+      - For each access switch hanging off a core switch, assign a unique
+        VLAN ID via _infer_vlan_for_access_switch().
+      - Segment keys for access-switch-connected links use the form
+        "router:R1:FastEthernet0/0:vlan:10" instead of the bare physical
+        interface key, so each access switch produces its own distinct segment.
+
+    This means the brief now tells the LLM:
+      Segment 1 (VLAN 10, F1-SW): router sub-if Fa0/0.10
+      Segment 2 (VLAN 20, F2-SW): router sub-if Fa0/0.20
+      Segment 3 (VLAN 30, Admin-SW): router sub-if Fa0/0.30
+
     Algorithm:
-      1. For each link, determine its "segment key":
-         - If a router is involved: key = (router_id, router_interface)
-         - If only switches/hubs: key = the concentrator group (Union-Find)
-      2. Group links by segment key
-      3. Each group becomes one Segment (multi-access or point-to-point)
+      1. Identify concentrators, core switches, and access switches.
+      2. Assign VLAN IDs to access switches.
+      3. For each link, compute a segment key:
+         - Router ↔ router: point-to-point
+         - Router ↔ core switch: the trunk link — keyed to router interface
+           (no VLAN suffix; the trunk itself is not a routed segment)
+         - Access switch or its hosts: keyed by (router_iface + vlan_id)
+         - Isolated switch groups: keyed by Union-Find root
+      4. Group links by key; build Segment objects with vlan_id set.
     """
     links = topology.get("links", [])
 
-    # Identify concentrator nodes
+    # ── Identify structural roles ─────────────────────────────────────
     concentrator_ids: Set[str] = set()
     for node in topology.get("nodes", []):
         if node.get("node_type") in L2_CONCENTRATOR_TYPES:
             concentrator_ids.add(node["node_id"])
 
+    core_switch_ids = _identify_core_switches(topology, node_map)
+    access_switch_ids = concentrator_ids - core_switch_ids
+
+    logger.debug(
+        "build_segments: core_switches=%s  access_switches=%s",
+        core_switch_ids, access_switch_ids,
+    )
+
     # ── Union-Find for concentrator groups (switch-to-switch only) ──
+    # NOTE: we intentionally union ALL switch-to-switch pairs here so that
+    # _find_router_segment_key_vlan can traverse the full L2 domain.
+    # The VLAN-aware segment splitting happens at key assignment time, not
+    # at the union-find level.
     parent: Dict[str, str] = {}
 
     def find(x: str) -> str:
         while parent.get(x, x) != x:
-            parent[x] = parent.get(parent[x], parent[x])  # path compression
+            parent[x] = parent.get(parent[x], parent[x])
             x = parent[x]
         return x
 
@@ -374,8 +558,6 @@ def build_segments(
         if ra != rb:
             parent[ra] = rb
 
-    # Union concentrators that are directly connected (switch-to-switch links)
-    # BUT NOT through a router — a router is a Layer 3 boundary
     for link in links:
         eps = link.get("nodes", [])
         if len(eps) < 2:
@@ -384,22 +566,104 @@ def build_segments(
         b_id = eps[1].get("node_id", "")
         a_type = node_map.get(a_id, {}).get("node_type", "")
         b_type = node_map.get(b_id, {}).get("node_type", "")
-
-        # Only union two concentrators if NEITHER endpoint is a router
-        if (a_type in L2_CONCENTRATOR_TYPES and
-                b_type in L2_CONCENTRATOR_TYPES):
-            # Both are switches/hubs — same L2 domain
+        if a_type in L2_CONCENTRATOR_TYPES and b_type in L2_CONCENTRATOR_TYPES:
             union(a_id, b_id)
 
-    # ── Assign segment keys ──────────────────────────────────────────
-    # For each link, compute a segment key that respects L3 boundaries.
-    # Key format: "router:R1:FastEthernet0/0" or "switch:SW_root_id"
+    # ── Assign VLAN IDs to access switches ───────────────────────────
+    # IMPORTANT: only access switches that are children of a core switch
+    # (i.e., true Router-on-a-Stick participants) get VLAN IDs.  A switch
+    # that connects DIRECTLY to a router without a core switch in between
+    # is part of a flat network and should remain untagged (vlan_id = 0).
+    #
+    # COUNTER DESIGN: The sequential fallback counter starts at 100, not 10.
+    # This isolates two non-overlapping VLAN spaces:
+    #   • Regex space  (strategy 2): 10, 20, 30, ... 4090  — name-encoded
+    #   • Sequential space (strategy 3): 100, 110, 120, ...  — unnamed switches
+    # Starting at 100 means an unnamed switch (Admin-SW, Mgmt-SW, etc.) that
+    # has no digit suffix can never steal VLAN 10 or 20 from a named switch
+    # simply because it happened to be iterated first.  The naming convention
+    # F1→10, F2→20, F3→30 is always honoured for switches that carry it;
+    # unnamed switches fall into the high range and do not interfere.
+    #
+    # used_vlans tracks every committed ID so both strategies can detect and
+    # avoid collisions even across the two spaces.  Explicit node-property
+    # VLANs are registered in Pass 1 before any inference runs.
+    vlan_counter = [100]   # sequential fallback space: 100, 110, 120, ...
+    used_vlans: Set[int] = set()
+    access_switch_vlan: Dict[str, int] = {}          # node_id → vlan_id
+    access_switch_name_map: Dict[str, str] = {}      # node_id → human name
+
+    # Determine which access switches are actually children of a core switch
+    # (a switch whose parent in the L2 domain is a core switch, not a router)
+    access_sw_has_core_parent: Set[str] = set()
+    for link in links:
+        eps = link.get("nodes", [])
+        if len(eps) < 2:
+            continue
+        a_id = eps[0].get("node_id", "")
+        b_id = eps[1].get("node_id", "")
+        if a_id in core_switch_ids and b_id in access_switch_ids:
+            access_sw_has_core_parent.add(b_id)
+        elif b_id in core_switch_ids and a_id in access_switch_ids:
+            access_sw_has_core_parent.add(a_id)
+
+    # ── Pass 1: register explicit vlan properties first ──────────────
+    # Do this before any inference so the inference strategies can see
+    # all "taken" VLANs when they run in pass 2.
+    for node in topology.get("nodes", []):
+        nid = node.get("node_id", "")
+        if nid not in access_switch_ids or nid not in access_sw_has_core_parent:
+            continue
+        explicit_vlan = node.get("properties", {}).get("vlan", 0)
+        if explicit_vlan and 1 <= int(explicit_vlan) <= 4094:
+            vid = int(explicit_vlan)
+            access_switch_vlan[nid] = vid
+            used_vlans.add(vid)
+
+    # ── Pass 2: infer VLANs for switches without an explicit property ─
+    for node in topology.get("nodes", []):
+        nid = node.get("node_id", "")
+        if nid not in access_switch_ids:
+            continue
+        sw_name = node.get("name", nid)
+        access_switch_name_map[nid] = sw_name
+
+        if nid not in access_sw_has_core_parent:
+            # Directly router-connected switch — flat/untagged, no VLAN
+            access_switch_vlan[nid] = 0
+            continue
+
+        if nid in access_switch_vlan:
+            # Already assigned from pass 1 (explicit property)
+            continue
+
+        vid = _infer_vlan_for_access_switch(sw_name, vlan_counter, used_vlans)
+        access_switch_vlan[nid] = vid
+        used_vlans.add(vid)     # register immediately so the next switch sees it
+
+    logger.debug("Access switch VLAN assignments: %s", access_switch_vlan)
+
+    # ── Build a lookup: access_switch_id → router segment base key ───
+    # For each access switch, find which router interface its core switch
+    # connects to.  This is the "base" segment key; VLAN ID is appended
+    # to produce the final per-access-switch segment key.
+    access_sw_router_key: Dict[str, str] = {}
+    for sw_id in access_switch_ids:
+        base_key = _find_router_segment_key_vlan(
+            sw_id, links, node_map, concentrator_ids, core_switch_ids, find
+        )
+        access_sw_router_key[sw_id] = base_key
+
+    # ── Assign segment keys to every link ────────────────────────────
     link_segment_keys: List[str] = []
+    # Also track which access switch each link belongs to (for Segment metadata)
+    link_access_sw: List[Optional[str]] = []
 
     for link in links:
         eps = link.get("nodes", [])
         if len(eps) < 2:
             link_segment_keys.append("")
+            link_access_sw.append(None)
             continue
 
         a_id = eps[0].get("node_id", "")
@@ -411,56 +675,124 @@ def build_segments(
         b_is_router = b_type in L3_ROUTER_TYPES
         a_is_conc = a_type in L2_CONCENTRATOR_TYPES
         b_is_conc = b_type in L2_CONCENTRATOR_TYPES
+        a_is_access = a_id in access_switch_ids
+        b_is_access = b_id in access_switch_ids
+        a_is_core = a_id in core_switch_ids
+        b_is_core = b_id in core_switch_ids
+
+        assigned_access_sw: Optional[str] = None
 
         if a_is_router and b_is_router:
-            # Router-to-router: true point-to-point
+            # True point-to-point between two routers
             key = f"p2p:{a_id}:{eps[0].get('adapter_number',0)}:{eps[0].get('port_number',0)}"
-        elif a_is_router:
-            # Router to switch/host — router interface is the L3 boundary
+
+        elif a_is_router and b_is_core:
+            # Router ↔ core switch: the 802.1Q trunk link itself.
+            # This link is not a routed segment — it carries tagged frames for
+            # multiple VLANs.  Key it to the physical router interface but mark
+            # it as a trunk so the brief can describe it correctly.
             resolved = resolve_port_name(
                 node_map[a_id],
                 eps[0].get("adapter_number", 0),
                 eps[0].get("port_number", 0),
             )
-            key = f"router:{a_id}:{resolved}"
-        elif b_is_router:
-            # Switch/host to router — router interface is the L3 boundary
+            key = f"trunk:{a_id}:{resolved}"
+
+        elif b_is_router and a_is_core:
             resolved = resolve_port_name(
                 node_map[b_id],
                 eps[1].get("adapter_number", 0),
                 eps[1].get("port_number", 0),
             )
-            key = f"router:{b_id}:{resolved}"
+            key = f"trunk:{b_id}:{resolved}"
+
+        elif a_is_router:
+            # Router directly connected to an access switch (no core sw) or host
+            resolved = resolve_port_name(
+                node_map[a_id],
+                eps[0].get("adapter_number", 0),
+                eps[0].get("port_number", 0),
+            )
+            if b_is_access:
+                vlan = access_switch_vlan.get(b_id, 0)
+                key = f"router:{a_id}:{resolved}:vlan:{vlan}"
+                assigned_access_sw = b_id
+            else:
+                key = f"router:{a_id}:{resolved}:vlan:0"
+
+        elif b_is_router:
+            resolved = resolve_port_name(
+                node_map[b_id],
+                eps[1].get("adapter_number", 0),
+                eps[1].get("port_number", 0),
+            )
+            if a_is_access:
+                vlan = access_switch_vlan.get(a_id, 0)
+                key = f"router:{b_id}:{resolved}:vlan:{vlan}"
+                assigned_access_sw = a_id
+            else:
+                key = f"router:{b_id}:{resolved}:vlan:0"
+
+        elif a_is_core and b_is_access:
+            # Core switch ↔ access switch: classify under the access switch's
+            # VLAN segment so this uplink appears in the right segment in the brief
+            base = access_sw_router_key.get(b_id, f"switch_group:{find(b_id)}")
+            vlan = access_switch_vlan.get(b_id, 0)
+            key = f"{base}:vlan:{vlan}" if ":vlan:" not in base else base
+            assigned_access_sw = b_id
+
+        elif b_is_core and a_is_access:
+            base = access_sw_router_key.get(a_id, f"switch_group:{find(a_id)}")
+            vlan = access_switch_vlan.get(a_id, 0)
+            key = f"{base}:vlan:{vlan}" if ":vlan:" not in base else base
+            assigned_access_sw = a_id
+
+        elif a_is_access:
+            # Access switch ↔ host
+            base = access_sw_router_key.get(a_id, f"switch_group:{find(a_id)}")
+            vlan = access_switch_vlan.get(a_id, 0)
+            key = f"{base}:vlan:{vlan}" if ":vlan:" not in base else base
+            assigned_access_sw = a_id
+
+        elif b_is_access:
+            base = access_sw_router_key.get(b_id, f"switch_group:{find(b_id)}")
+            vlan = access_switch_vlan.get(b_id, 0)
+            key = f"{base}:vlan:{vlan}" if ":vlan:" not in base else base
+            assigned_access_sw = b_id
+
         elif a_is_conc and b_is_conc:
-            # Switch-to-switch (same L2 domain, no router between them)
+            # Two core switches or two hub/switch concentrators with no access sw
             root = find(a_id)
             key = f"switch_group:{root}"
+
         elif a_is_conc:
-            # Switch to host — group under the switch's root
-            root = find(a_id)
-            # If this switch is also connected to a router, use the
-            # router's segment key instead (find the router link)
-            key = _find_router_segment_key(
-                a_id, links, node_map, concentrator_ids, find
+            key = _find_router_segment_key_vlan(
+                a_id, links, node_map, concentrator_ids, core_switch_ids, find
             )
+
         elif b_is_conc:
-            root = find(b_id)
-            key = _find_router_segment_key(
-                b_id, links, node_map, concentrator_ids, find
+            key = _find_router_segment_key_vlan(
+                b_id, links, node_map, concentrator_ids, core_switch_ids, find
             )
+
         else:
-            # Neither router nor switch (e.g., VPCS-to-VPCS — shouldn't happen)
+            # Host-to-host (schema validator should have caught this)
             key = f"p2p:{a_id}:{eps[0].get('adapter_number',0)}:{eps[0].get('port_number',0)}"
 
         link_segment_keys.append(key)
+        link_access_sw.append(assigned_access_sw)
 
-    # ── Group links by segment key ───────────────────────────────────
+    # ── Group links by segment key ────────────────────────────────────
     grouped: Dict[str, List[dict]] = {}
+    grouped_access_sw: Dict[str, Optional[str]] = {}  # key → access_switch_id
     for i, key in enumerate(link_segment_keys):
         if key:
             grouped.setdefault(key, []).append(links[i])
+            # Record whichever access switch we found for this key
+            if link_access_sw[i] is not None:
+                grouped_access_sw[key] = link_access_sw[i]
 
-    # ── Build Segment objects ────────────────────────────────────────
+    # ── Build Segment objects ─────────────────────────────────────────
     segments: List[Segment] = []
     seg_id = 1
 
@@ -475,38 +807,59 @@ def build_segments(
             rp_a = _resolve_endpoint(eps[0], node_map)
             rp_b = _resolve_endpoint(eps[1], node_map)
             pair_list.append((rp_a, rp_b))
-
             if rp_a.node_id in concentrator_ids:
                 conc_ids.add(rp_a.node_id)
             if rp_b.node_id in concentrator_ids:
                 conc_ids.add(rp_b.node_id)
 
-        seg_type = "point-to-point" if key.startswith("p2p:") else "multi-access"
+        # Determine segment type and VLAN metadata
+        if key.startswith("p2p:"):
+            seg_type = "point-to-point"
+            vlan_id = 0
+            sw_name = ""
+        elif key.startswith("trunk:"):
+            seg_type = "trunk"
+            vlan_id = 0
+            sw_name = ""
+        else:
+            seg_type = "multi-access"
+            # Extract VLAN id from key suffix ":vlan:N"
+            m = re.search(r":vlan:(\d+)$", key)
+            vlan_id = int(m.group(1)) if m else 0
+            # Look up the human name of the access switch for this segment
+            access_sw_id = grouped_access_sw.get(key)
+            sw_name = access_switch_name_map.get(access_sw_id, "") if access_sw_id else ""
 
         segments.append(Segment(
             segment_id=seg_id,
             seg_type=seg_type,
             link_pairs=pair_list,
             concentrator_ids=conc_ids,
+            vlan_id=vlan_id,
+            access_switch_name=sw_name,
         ))
         seg_id += 1
 
     return segments
 
 
-def _find_router_segment_key(
+def _find_router_segment_key_vlan(
     switch_id: str,
     all_links: List[dict],
     node_map: Dict[str, dict],
     concentrator_ids: Set[str],
+    core_switch_ids: Set[str],
     find_func,
 ) -> str:
-    """Find which router interface a switch is connected to (directly or
-    via other switches) and return a router-based segment key.
+    """Find the router interface that this switch's L2 domain connects to.
 
-    If the switch group has NO router uplink, fall back to switch_group key.
+    Traverses the switch group (via union-find) to locate a router uplink.
+    Returns a "router:R_ID:iface_name" base key (without the :vlan: suffix —
+    callers append that themselves so the same base key can be shared across
+    all access switches that connect to the same router interface).
+
+    If no router uplink is found, falls back to a switch_group key.
     """
-    # Check direct links from this switch (or its union group) to a router
     for link in all_links:
         eps = link.get("nodes", [])
         if len(eps) < 2:
@@ -516,8 +869,6 @@ def _find_router_segment_key(
         a_type = node_map.get(a_id, {}).get("node_type", "")
         b_type = node_map.get(b_id, {}).get("node_type", "")
 
-        # If one endpoint is a router and the other is in the same
-        # concentrator group as our switch_id
         if a_type in L3_ROUTER_TYPES and b_type in L2_CONCENTRATOR_TYPES:
             if find_func(b_id) == find_func(switch_id):
                 resolved = resolve_port_name(
@@ -571,14 +922,259 @@ def _collect_segment_hosts(seg: Segment) -> List[ResolvedPort]:
     return hosts
 
 
+def _find_router_iface_in_segment(seg: "Segment") -> str:
+    """Return the router's canonical interface name if the router endpoint
+    appears directly in this segment's link_pairs.
+
+    This works for simple flat topologies (Router ↔ SW ↔ hosts) where the
+    router IS present in the multi-access segment.  For Router-on-a-Stick
+    topologies the router link lives in the *trunk* segment, not in the VLAN
+    multi-access segments — use _extract_trunk_router_iface() for those.
+
+    Returns an empty string when no router endpoint is found.
+    """
+    for ep_a, ep_b in seg.link_pairs:
+        for ep in (ep_a, ep_b):
+            if ep.node_type in L3_ROUTER_TYPES:
+                return ep.canonical_name
+    return ""
+
+
+def _extract_trunk_router_iface(segments: List["Segment"]) -> str:
+    """Scan all segments for a trunk segment and return the router's physical
+    interface name from that trunk link.
+
+    In a Router-on-a-Stick topology the router ↔ core-switch link is classified
+    as seg_type='trunk'.  Its router endpoint carries the physical interface name
+    (e.g. "FastEthernet0/0") that is the parent for all 802.1Q sub-interfaces.
+
+    This is the correct source for the sub-interface hint in VLAN segments,
+    because the router never appears in those segments' link_pairs directly —
+    its physical cable terminates at the core switch, not at the access switches.
+
+    Returns an empty string if no trunk segment is found (flat topology).
+    """
+    for seg in segments:
+        if seg.seg_type != "trunk":
+            continue
+        for ep_a, ep_b in seg.link_pairs:
+            for ep in (ep_a, ep_b):
+                if ep.node_type in L3_ROUTER_TYPES:
+                    return ep.canonical_name
+    return ""
+
+
+
+# ── GNS3 port type constants ─────────────────────────────────────────────────
+# Values accepted by the GNS3 ethernet_switch ports_mapping "type" field.
+_PM_ACCESS = "access"   # strips VLAN tags; forwards only frames for one VLAN
+_PM_DOT1Q  = "dot1q"   # carries 802.1Q tagged frames for multiple VLANs
+
+
+def patch_switch_ports_mapping(
+    topology: dict,
+    segments: List[Segment],
+    node_map: Dict[str, dict],
+) -> Dict[str, List[Dict[str, int]]]:
+    """Rewrite GNS3 ethernet_switch ports_mapping to match the RoaS VLAN plan.
+
+    This function fixes the critical GNS3 deployment bug where every switch
+    port starts as ``"type": "access", "vlan": 1``.  With that default, the
+    GNS3 software switch strips the 802.1Q tags that the router sends, so
+    tagged frames never reach the access switches and the network is dead.
+
+    Decision table (derived purely from the link graph and segment metadata —
+    no heuristics, no name matching):
+
+    ┌─────────────────────────────────────────────┬──────────┬────────────┐
+    │ Link                                        │ type     │ vlan       │
+    ├─────────────────────────────────────────────┼──────────┼────────────┤
+    │ Router  ↔  core switch  (trunk)             │ dot1q    │ (ignored)  │
+    │ Core SW ↔  access switch (inter-switch)     │ dot1q    │ (ignored)  │
+    │ Access SW uplink port   (to core)           │ dot1q    │ (ignored)  │
+    │ Access SW host port     (to VPCS/host)      │ access   │ segment ID │
+    │ Unlinked / unused port                      │ (unchanged)            │
+    └─────────────────────────────────────────────┴──────────┴────────────┘
+
+    For ``dot1q`` ports the ``vlan`` field is set to 0; GNS3 ignores the vlan
+    field for dot1q ports but we zero it explicitly to avoid confusing diffs.
+
+    Parameters
+    ----------
+    topology:
+        The Phase 1 / Phase 2 topology dict (mutated in place).
+    segments:
+        The Segment list produced by ``build_segments()`` for this topology.
+    node_map:
+        The node_id → node dict index produced by ``_build_node_map()``.
+
+    Returns
+    -------
+    Dict[str, List[Dict]]
+        A log of every change made, keyed by node_id.  Each entry is a list
+        of ``{"port": N, "old_type": "...", "new_type": "...", "vlan": V}``
+        dicts — useful for audit logging and tests.
+    """
+    # ── Step 1: build a (node_id, port_number) → action map ──────────────────
+    # action = ("dot1q", 0) | ("access", vlan_id)
+    #
+    # We drive this entirely from the links array and the segment VLAN map —
+    # no name heuristics here.  Each link tells us the port numbers on both
+    # endpoints; the segment map tells us which VLAN those ports belong to.
+    #
+    # Build the access-switch → VLAN lookup from the segments list so we
+    # don't have to re-run the VLAN assignment logic.
+    access_sw_vlan: Dict[str, int] = {}   # node_id → assigned vlan_id
+    for seg in segments:
+        if seg.vlan_id > 0:
+            for sw_id in seg.concentrator_ids:
+                if sw_id not in access_sw_vlan:
+                    access_sw_vlan[sw_id] = seg.vlan_id
+
+    # Identify core and access switch sets from node_map + segment data
+    # (mirrors _identify_core_switches without re-running it)
+    core_sw_ids = _identify_core_switches(topology, node_map)
+
+    # (node_id, port_number) → ("dot1q"|"access", vlan_id)
+    PortAction = Tuple[str, int]
+    port_actions: Dict[Tuple[str, int], PortAction] = {}
+
+    links = topology.get("links", [])
+    for link in links:
+        eps = link.get("nodes", [])
+        if len(eps) < 2:
+            continue
+        a_id  = eps[0].get("node_id", "")
+        a_port = eps[0].get("port_number", 0)
+        b_id  = eps[1].get("node_id", "")
+        b_port = eps[1].get("port_number", 0)
+        a_type = node_map.get(a_id, {}).get("node_type", "")
+        b_type = node_map.get(b_id, {}).get("node_type", "")
+
+        a_is_sw   = a_type in L2_CONCENTRATOR_TYPES
+        b_is_sw   = b_type in L2_CONCENTRATOR_TYPES
+        a_is_rtr  = a_type in L3_ROUTER_TYPES
+        b_is_rtr  = b_type in L3_ROUTER_TYPES
+        a_is_core = a_id in core_sw_ids
+        b_is_core = b_id in core_sw_ids
+        a_is_acc  = a_is_sw and not a_is_core
+        b_is_acc  = b_is_sw and not b_is_core
+
+        if a_is_rtr and b_is_sw:
+            # Router → any switch port: trunk on the switch side
+            port_actions[(b_id, b_port)] = (_PM_DOT1Q, 0)
+
+        elif b_is_rtr and a_is_sw:
+            # Any switch → router: trunk on the switch side
+            port_actions[(a_id, a_port)] = (_PM_DOT1Q, 0)
+
+        elif a_is_core and b_is_sw:
+            # Core → any switch (access or another core): both ends dot1q
+            port_actions[(a_id, a_port)] = (_PM_DOT1Q, 0)
+            port_actions[(b_id, b_port)] = (_PM_DOT1Q, 0)
+
+        elif b_is_core and a_is_sw:
+            # Any switch → core: both ends dot1q
+            port_actions[(a_id, a_port)] = (_PM_DOT1Q, 0)
+            port_actions[(b_id, b_port)] = (_PM_DOT1Q, 0)
+
+        elif a_is_acc and not b_is_sw:
+            # Access switch → host: access port with the segment's VLAN
+            vlan = access_sw_vlan.get(a_id, 1)
+            port_actions[(a_id, a_port)] = (_PM_ACCESS, vlan)
+
+        elif b_is_acc and not a_is_sw:
+            # Host → access switch: access port with the segment's VLAN
+            vlan = access_sw_vlan.get(b_id, 1)
+            port_actions[(b_id, b_port)] = (_PM_ACCESS, vlan)
+
+    logger.debug(
+        "patch_switch_ports_mapping: %d port actions computed", len(port_actions)
+    )
+
+    # ── Step 2: apply actions to ports_mapping arrays ─────────────────────────
+    change_log: Dict[str, List[dict]] = {}
+
+    for node in topology.get("nodes", []):
+        nid = node.get("node_id", "")
+        if node.get("node_type") not in L2_CONCENTRATOR_TYPES:
+            continue
+
+        props = node.setdefault("properties", {})
+        pm = props.get("ports_mapping")
+        if not pm:
+            logger.debug("Node %s: no ports_mapping, skipping", nid)
+            continue
+
+        node_changes: List[dict] = []
+
+        for port_entry in pm:
+            pnum = port_entry.get("port_number", -1)
+            action = port_actions.get((nid, pnum))
+            if action is None:
+                continue  # unlinked port — leave unchanged
+
+            new_type, new_vlan = action
+            old_type = port_entry.get("type", "")
+            old_vlan = port_entry.get("vlan", 1)
+
+            if new_type == old_type and (new_type == _PM_DOT1Q or new_vlan == old_vlan):
+                continue  # already correct — no-op
+
+            port_entry["type"] = new_type
+            if new_type == _PM_DOT1Q:
+                port_entry["vlan"] = 0   # explicit zero for dot1q ports
+            else:
+                port_entry["vlan"] = new_vlan
+
+            node_changes.append({
+                "port":     pnum,
+                "old_type": old_type,
+                "old_vlan": old_vlan,
+                "new_type": new_type,
+                "new_vlan": port_entry["vlan"],
+            })
+            logger.debug(
+                "  %s port %d: %s/vlan=%d → %s/vlan=%d",
+                nid, pnum, old_type, old_vlan, new_type, port_entry["vlan"],
+            )
+
+        if node_changes:
+            change_log[nid] = node_changes
+            logger.info(
+                "patch_switch_ports_mapping: %s — %d port(s) updated",
+                node.get("name", nid), len(node_changes),
+            )
+
+    return change_log
+
+
 def generate_brief(topology: dict) -> str:
     """Generate the human-readable Configuration Brief from a Phase 1 topology.
 
     This is the core function. Returns a formatted string ready to be
     injected into the LLM system prompt for Phase 2 config generation.
+
+    Side-effect: mutates ``topology`` in place to fix GNS3 switch
+    ``ports_mapping`` entries (dot1q trunk ports and correct access VLAN IDs).
+    This is intentional — the corrected topology is what gets deployed.
     """
     node_map = _build_node_map(topology)
     segments = build_segments(topology, node_map)
+
+    # ── Patch switch ports_mapping BEFORE rendering the brief ────────
+    # This must run here (after segments are known, before deployment)
+    # because the VLAN IDs assigned by build_segments are the ground truth
+    # that the ports_mapping must reflect.  Running it here ensures the
+    # topology object the caller holds is already deployment-ready.
+    patch_log = patch_switch_ports_mapping(topology, segments, node_map)
+    if patch_log:
+        logger.info(
+            "ports_mapping patched for %d switch(es): %s",
+            len(patch_log),
+            {nid: len(changes) for nid, changes in patch_log.items()},
+        )
+
     nodes = topology.get("nodes", [])
 
     lines: List[str] = []
@@ -605,18 +1201,65 @@ def generate_brief(topology: dict) -> str:
 
     # ── SEGMENTS section ──
     lines.append("SEGMENTS:")
+
+    # Pre-compute the router's physical interface name from the trunk segment
+    # (if one exists).  This is the parent interface for all 802.1Q
+    # sub-interfaces in a Router-on-a-Stick topology.
+    #
+    # WHY HERE and not inside the loop: the trunk segment may appear at any
+    # position in `segments` relative to the VLAN multi-access segments.
+    # Pre-computing it once ensures the hint is available for every VLAN
+    # segment regardless of iteration order.
+    trunk_router_iface: str = _extract_trunk_router_iface(segments)
+
     for seg in segments:
         hosts = _collect_segment_hosts(seg)
         host_count = len(hosts)
 
-        if seg.seg_type == "multi-access":
+        if seg.seg_type == "trunk":
+            # The Router-Core-SW 802.1Q trunk: not a routed segment itself,
+            # but we surface it so the LLM knows the physical interface to use
+            # as the sub-interface parent.
+            lines.append(f"  Segment {seg.segment_id} (802.1Q trunk — NOT a routed segment):")
+            for ep_a, ep_b in seg.link_pairs:
+                lines.append(
+                    f"    {ep_a.node_id:6s} {ep_a.canonical_name:20s}"
+                    f"  <->  {ep_b.node_id} {ep_b.canonical_name}"
+                )
             lines.append(
-                f"  Segment {seg.segment_id} (multi-access, {host_count} host(s)):"
+                f"    → Configure 802.1Q sub-interfaces on the router side "
+                f"of this link, one per VLAN below."
             )
-            # Show each link as:  host_iface  ↔  switch_port
+
+        elif seg.seg_type == "multi-access":
+            vlan_label = f"VLAN {seg.vlan_id}" if seg.vlan_id else "untagged"
+            sw_label = f", access-sw: {seg.access_switch_name}" if seg.access_switch_name else ""
+            lines.append(
+                f"  Segment {seg.segment_id} "
+                f"(multi-access, {vlan_label}{sw_label}, {host_count} host(s)):"
+            )
+            if seg.vlan_id:
+                # Resolve the parent physical interface for the sub-interface hint.
+                # Priority:
+                #   1. trunk_router_iface  — set when a trunk segment exists
+                #      (RoaS topology: router is NOT in this segment's link_pairs)
+                #   2. _find_router_iface_in_segment — flat topology fallback
+                #      (router IS directly connected to this switch segment)
+                parent_iface = trunk_router_iface or _find_router_iface_in_segment(seg)
+                if parent_iface:
+                    lines.append(
+                        f"    → Router sub-interface: {parent_iface}.{seg.vlan_id} "
+                        f"(encapsulation dot1Q {seg.vlan_id})"
+                    )
+                else:
+                    # No router interface found anywhere — emit a generic hint
+                    # so the LLM still knows to create a sub-interface
+                    lines.append(
+                        f"    → Router sub-interface: <parent-iface>.{seg.vlan_id} "
+                        f"(encapsulation dot1Q {seg.vlan_id})"
+                    )
             for ep_a, ep_b in seg.link_pairs:
                 if ep_a.node_type in L2_CONCENTRATOR_TYPES:
-                    # Switch on the A side → swap for readability
                     lines.append(
                         f"    {ep_b.node_id:6s} {ep_b.canonical_name:20s}"
                         f"  <->  {ep_a.node_id} {ep_a.canonical_name}"
@@ -627,7 +1270,6 @@ def generate_brief(topology: dict) -> str:
                         f"  <->  {ep_b.node_id} {ep_b.canonical_name}"
                     )
                 else:
-                    # Both are non-switch (e.g. router-router via switch)
                     lines.append(
                         f"    {ep_a.node_id:6s} {ep_a.canonical_name:20s}"
                         f"  <->  {ep_b.node_id} {ep_b.canonical_name}"
@@ -704,10 +1346,15 @@ def generate_brief(topology: dict) -> str:
 
     # ── TASK section ──
     lines.append("TASK:")
-    lines.append("  1. Assign one subnet per segment (no overlaps).")
+    lines.append("  1. Assign one unique subnet per segment (no overlaps).")
     lines.append("  2. Use /24 for multi-access segments, /30 for point-to-point.")
     lines.append("  3. For each router: generate a full Cisco IOS startup config.")
+    lines.append("     - If VLAN segments exist: configure 802.1Q sub-interfaces")
+    lines.append("       on the trunk physical interface, one per VLAN.")
+    lines.append("       Use the EXACT sub-interface numbers shown above (e.g., Fa0/0.10).")
+    lines.append("     - Each VLAN segment's subnet must be assigned to its sub-interface.")
     lines.append("  4. For each VPCS host: generate a startup_script with 'ip' command.")
+    lines.append("     The gateway IP MUST be the router's sub-interface IP for that VLAN.")
     lines.append("  5. For each Docker container: set 'environment' and 'start_command'.")
     lines.append("  6. Skip switches, hubs, and NAT nodes — they need no IP config.")
     lines.append(
@@ -721,10 +1368,25 @@ def generate_brief(topology: dict) -> str:
 #  Public API
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def build_configuration_brief(phase1_json_path: str) -> str:
-    """Load a Phase 1 JSON file and return the Configuration Brief string.
+def build_configuration_brief(phase1_json_path: str) -> Tuple[str, Dict[str, Any]]:
+    """Load a Phase 1 JSON file, patch its switch ports_mapping, and return
+    both the Configuration Brief string and the mutated topology dict.
 
     This is the main entry point for context_builder.py.
+
+    WHY A TUPLE: ``generate_brief`` calls ``patch_switch_ports_mapping``
+    internally, which rewrites every GNS3 ethernet_switch port from the
+    default ``"type": "access", "vlan": 1`` to the correct dot1q/access
+    settings derived from the VLAN segment plan.  Those mutations live on
+    the in-memory ``topology`` dict.  If the caller only received the brief
+    string, the patched ports_mapping would be silently discarded and the
+    unpatched disk copy would flow into ``safe_merge_configs`` — meaning the
+    deployed switches would still have all ports as ``access/vlan 1`` and
+    every 802.1Q tagged frame from the router would be dropped immediately.
+
+    The caller (``config_agent.run_phase2``) MUST use the returned
+    ``mutated_topology`` as the base dict for ``safe_merge_configs``, NOT
+    the raw JSON re-read from disk.
 
     Parameters
     ----------
@@ -733,8 +1395,13 @@ def build_configuration_brief(phase1_json_path: str) -> str:
 
     Returns
     -------
-    str
-        The formatted Configuration Brief, ready to inject into the LLM prompt
+    Tuple[str, Dict[str, Any]]
+        ``(brief, mutated_topology)`` where:
+        - ``brief`` is the formatted Configuration Brief string ready to
+          inject into the LLM system prompt for Phase 2 config generation.
+        - ``mutated_topology`` is the full project dict (``{"name": ...,
+          "topology": {...}}``) with switch ``ports_mapping`` already patched.
+          Pass this directly to ``safe_merge_configs`` as ``phase1_dict``.
     """
     path = Path(phase1_json_path)
     if not path.exists():
@@ -744,11 +1411,17 @@ def build_configuration_brief(phase1_json_path: str) -> str:
         data = json.load(f)
 
     # Unwrap from the GNS3Project structure  { "name": ..., "topology": {…} }
+    # generate_brief mutates topology in place (patch_switch_ports_mapping).
+    # We hold a reference to `data` so those mutations are visible through it.
     topology = data.get("topology", data)
 
-    brief = generate_brief(topology)
+    brief = generate_brief(topology)   # ← patches topology.nodes[*].properties.ports_mapping
     logger.info("Configuration brief generated (%d chars)", len(brief))
-    return brief
+
+    # Return the brief AND the mutated project dict.
+    # `data` now contains the patched ports_mapping because `topology` is a
+    # reference into `data`, not a copy.
+    return brief, data
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

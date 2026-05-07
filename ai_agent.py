@@ -508,7 +508,7 @@ if __name__ == "__main__":
         {"name": "c7200", "gns3_type": "dynamips", "template_id": "x",
          "builtin": False, "category": "router", "port_count": 4},
         {"name": "Ethernet switch", "gns3_type": "ethernet_switch", "template_id": "y",
-         "builtin": True, "category": "switch", "port_count": 8},
+         "builtin": True, "category": "switch", "port_count": 128},
         {"name": "VPCS", "gns3_type": "vpcs", "template_id": "z",
          "builtin": True, "category": "guest", "port_count": 1},
     ]

@@ -143,10 +143,16 @@ DYNAMIPS_BUILTIN_DEFAULT = 1  # assume at least 1 if platform unknown
 # For L2 IOU images, the string "l2" is used.
 IOU_L3_DEFAULT_MODULE = 2        # 4 Ethernet interfaces per slot (image-dependent)
 IOU_L2_MODULE = "l2"
-IOU_PORTS_PER_SLOT = 4           # typical; varies by IOU image
+IOU_PORTS_PER_SLOT = 4           # SINGLE SOURCE OF TRUTH — imported by context_builder.py
 IOU_FIRST_CONFIGURABLE_SLOT = 1  # slot0 is always present
 IOU_MAX_SLOTS = 15               # slot1–slot15
 IOU_BUILTIN_PORTS = 4            # slot0 typically provides 4 interfaces
+
+# NOTE — cross-module contract:
+# context_builder.py imports DYNAMIPS_BUILTIN_PORTS and IOU_PORTS_PER_SLOT
+# from this module so there is a single source of truth for both constants.
+# If you change the values above, context_builder.py inherits the change
+# automatically without needing a separate edit.
 
 # ── Tier 1c: Built-in ports for switch / hub ────────────────────────────────
 # Source: gns3server/schemas/ethernet_switch_template.py (default = 8 entries)
@@ -342,20 +348,32 @@ def _inject_dynamips_slots(
             return
 
     # Walk slots from first_configurable upward; skip occupied slots.
+    #
+    # TERMINATION FIX: The old guard was `slots_injected < max_slots`, which
+    # only counts *newly* injected slots.  If the node already had pre-existing
+    # slots (from a prior run or template), those pre-existing slots did NOT
+    # increment `slots_injected`, so the loop could attempt to write beyond the
+    # platform's physical slot range before the inner break fired.
+    #
+    # The correct bound is the slot_idx itself: never walk past the last
+    # configurable slot for this platform, regardless of how many of those
+    # slots were pre-existing vs. freshly injected.
     slots_injected = 0
     ports_covered = 0
     slot_idx = first_slot
+    last_slot = first_slot + max_slots - 1  # inclusive upper bound
 
     # Continue until BOTH conditions are met:
     #   a) enough ports are covered (ports_covered >= remaining)
     #   b) we've reached the last adapter slot the AI referenced
-    while (ports_covered < remaining or slot_idx <= last_required_slot) and slots_injected < max_slots:
+    # AND we have not exceeded the platform's physical slot range.
+    while slot_idx <= last_slot and (ports_covered < remaining or slot_idx <= last_required_slot):
         slot_key = f"slot{slot_idx}"
 
         if slot_key in properties:
-            # Slot already configured — assume it provides ports_per_module.
-            # (Conservative: the existing module might provide fewer ports,
-            #  but we don't want to overwrite the user's choice.)
+            # Slot already configured — count its contribution but don't overwrite.
+            # (Conservative: the existing module might provide fewer ports than
+            #  ports_per_module, but we don't want to overwrite the user's choice.)
             ports_covered += ports_per_module
             logger.debug(
                 "Node %s (%s): %s already set to '%s', counting %d ports",
@@ -373,10 +391,6 @@ def _inject_dynamips_slots(
             )
 
         slot_idx += 1
-
-        # Guard: don't go past the platform's max slot range
-        if slot_idx > first_slot + max_slots - 1:
-            break
 
     total_after = builtin + ports_covered
     logger.info(
