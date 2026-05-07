@@ -411,10 +411,10 @@ def _infer_vlan_for_access_switch(
             return candidate
         # Candidate collides or is out of range — fall through to sequential
 
-    # ── Strategy 3: sequential allocation ────────────────────────────
+# ── Strategy 3: sequential allocation ────────────────────────────
     # Walk forward from vlan_counter[0] until we find a free slot.
-    # The counter starts at 10 and increments by 10, but we skip any
-    # value already used so the step is not always exactly 10.
+    # The initial counter value is set by the caller (e.g., starting at 100
+    # to isolate unnamed switches from named ones) and increments by 10.
     while vlan_counter[0] in used_vlans or vlan_counter[0] < 1:
         vlan_counter[0] += 10
         if vlan_counter[0] > 4094:
@@ -1036,8 +1036,7 @@ def patch_switch_ports_mapping(
     core_sw_ids = _identify_core_switches(topology, node_map)
 
     # (node_id, port_number) → ("dot1q"|"access", vlan_id)
-    PortAction = Tuple[str, int]
-    port_actions: Dict[Tuple[str, int], PortAction] = {}
+    port_actions: Dict[Tuple[str, int], Tuple[str, int]] = {}
 
     links = topology.get("links", [])
     for link in links:

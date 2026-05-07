@@ -344,8 +344,8 @@ def _inject_dynamips_slots(
             node.get("node_id"), platform, required_ports, builtin,
         )
         # Even if port count is fine, we may still need slots for adapter coverage
-        if min_adapter_slots < first_slot:
-            return
+        # if min_adapter_slots < first_slot:
+        return
 
     # Walk slots from first_configurable upward; skip occupied slots.
     #
