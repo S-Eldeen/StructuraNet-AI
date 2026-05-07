@@ -37,6 +37,9 @@ const SignUpPage = () => {
 
   return (
     <div className="signUpPage">
+      <div className="network-bg">
+        <img src="/network1.gif" alt="network" />
+      </div>
       <form onSubmit={handleSignUp} className="signUpForm">
         <h2>Create Account</h2>
 

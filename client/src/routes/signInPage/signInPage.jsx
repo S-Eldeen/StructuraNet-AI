@@ -39,7 +39,12 @@ const SignInPage = () => {
   };
 
   return (
+
     <div className="signInPage">
+      <div className="network-bg">
+        <img src="/network1.gif" alt="network" />
+      </div>
+
       <form onSubmit={handleLogin} className="signInForm">
         <h2>Sign In</h2>
 
@@ -70,7 +75,7 @@ const SignInPage = () => {
           </span>
         </p>
       </form>
-    </div>
+    </div >
   );
 };
 

@@ -1,84 +1,100 @@
-.signUpPage {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg-main);
-  color: var(--text-main);
-  position: relative;
-  z-index: 1;
-}
+ .network-bg {
+   position: absolute;
+   inset: 0;
+   z-index: 0;
+   overflow: hidden;
+ }
 
-.signUpForm {
-  width: 420px;
-  padding: 36px;
-  border-radius: 24px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
+ .network-bg img {
+   width: 100%;
+   height: 100%;
+   object-fit: cover;
+   animation: zoomBg 20s ease-in-out infinite alternate;
+ }
 
-.signUpForm h2 {
-  font-size: 30px;
-  text-align: center;
-  margin-bottom: 10px;
-}
+ .signUpPage {
+   min-height: 100vh;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   background: var(--bg-main);
+   color: var(--text-main);
+   position: relative;
+   z-index: 1;
+ }
 
-.signUpForm input {
-  width: 100%;
-  padding: 14px 16px;
-  border-radius: 14px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-sidebar-item);
-  color: var(--text-main);
-  outline: none;
-  font-size: 15px;
-}
+ .signUpForm {
+   width: 420px;
+   padding: 36px;
+   border-radius: 24px;
+   backdrop-filter: none;
+   z-index: 2;
+   background: var(--bg-card);
+   border: 1px solid var(--border-color);
+   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+   display: flex;
+   flex-direction: column;
+   gap: 18px;
+ }
 
-.signUpForm input::placeholder {
-  color: var(--sidebar-muted);
-}
+ .signUpForm h2 {
+   font-size: 30px;
+   text-align: center;
+   margin-bottom: 10px;
+ }
 
-.signUpForm input:focus {
-  border-color: #6c63ff;
-}
+ .signUpForm input {
+   width: 100%;
+   padding: 14px 16px;
+   border-radius: 14px;
+   border: 1px solid var(--border-color);
+   background: var(--bg-sidebar-item);
+   color: var(--text-main);
+   outline: none;
+   font-size: 15px;
+ }
 
-.signUpForm button {
-  padding: 14px;
-  border: none;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #605bff, #8f5cff);
-  color: white;
-  font-weight: 700;
-  cursor: pointer;
-  font-size: 16px;
-}
+ .signUpForm input::placeholder {
+   color: var(--sidebar-muted);
+ }
 
-.signUpForm button:hover {
-  opacity: 0.9;
-}
+ .signUpForm input:focus {
+   border-color: #6c63ff;
+ }
 
-.error {
-  color: #ff6b6b;
-  text-align: center;
-  font-size: 14px;
-}
+ .signUpForm button {
+   padding: 14px;
+   border: none;
+   border-radius: 14px;
+   background: linear-gradient(135deg, #605bff, #8f5cff);
+   color: white;
+   font-weight: 700;
+   cursor: pointer;
+   font-size: 16px;
+ }
 
-.authSwitch {
-  text-align: center;
-  font-size: 14px;
-  color: var(--sidebar-muted);
-}
+ .signUpForm button:hover {
+   opacity: 0.9;
+ }
 
-.authSwitch span {
-  color: #8f5cff;
-  cursor: pointer;
-  font-weight: 600;
-}
+ .error {
+   color: #ff6b6b;
+   text-align: center;
+   font-size: 14px;
+ }
 
-.authSwitch span:hover {
-  text-decoration: underline;
-}
+ .authSwitch {
+   text-align: center;
+   font-size: 14px;
+   color: var(--sidebar-muted);
+ }
+
+ .authSwitch span {
+   color: #8f5cff;
+   cursor: pointer;
+   font-weight: 600;
+ }
+
+ .authSwitch span:hover {
+   text-decoration: underline;
+ }
