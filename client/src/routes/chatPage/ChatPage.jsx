@@ -8,6 +8,65 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { askGeminiStream } from "../../lib/gemini";
 
+
+// ── Claude-like Thinking Block ───────────────────────────────────────────────
+const ThinkingBlock = ({ label = "Thinking..." }) => {
+  return (
+    <div className="sn-claude-thinking">
+      <div className="sn-claude-spinner" aria-hidden="true" />
+      <span>{label}</span>
+    </div>
+  );
+};
+
+// ── Clean Diagram Renderer ───────────────────────────────────────────────────
+const DiagramBlock = ({ value = "" }) => {
+  const rawLines = value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const titleLine = rawLines.find((line) => line.toLowerCase().startsWith("title:"));
+  const title = titleLine ? titleLine.replace(/^title:\s*/i, "") : "Architecture Diagram";
+
+  const contentLines = rawLines.filter((line) => !line.toLowerCase().startsWith("title:"));
+  const joined = contentLines.join(" ");
+
+  let nodes = [];
+
+  const bracketNodes = [...joined.matchAll(/\[([^\]]+)\]/g)].map((m) => m[1].trim());
+  if (bracketNodes.length) {
+    nodes = bracketNodes;
+  } else {
+    nodes = contentLines
+      .flatMap((line) => line.split(/->|→|=>/g))
+      .map((part) => part.replace(/^[\-\s]+|[\-\s]+$/g, "").trim())
+      .filter(Boolean);
+  }
+
+  const uniqueNodes = [...new Set(nodes)].slice(0, 8);
+
+  if (!uniqueNodes.length) {
+    return <pre className="sn-diagram-fallback">{value}</pre>;
+  }
+
+  return (
+    <div className="sn-diagram-card">
+      <div className="sn-diagram-title">{title}</div>
+      <div className="sn-diagram-flow">
+        {uniqueNodes.map((node, index) => (
+          <div className="sn-diagram-step" key={`${node}-${index}`}>
+            <div className="sn-diagram-node">{node}</div>
+            {index < uniqueNodes.length - 1 && (
+              <div className="sn-diagram-arrow">→</div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // ── Action Buttons ────────────────────────────────────────────────────────────
 const MessageActions = ({ msg, msgIndex, onRegenerate, isAi }) => {
   const [copied, setCopied] = useState(false);
@@ -321,47 +380,59 @@ const Chatpage = () => {
                         })}
                       </div>
                     )}
-                    <ReactMarkdown
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        code({ node, inline, className, children, ...props }) {
-                          const match = /language-(\w+)/.exec(className || '');
-                          const codeText = String(children).replace(/\n$/, '');
-                          if (!inline && match) {
-                            return (
-                              <div className="sn-code-block">
-                                <div className="sn-code-header">
-                                  <span className="sn-code-lang">{match[1]}</span>
-                                  <button
-                                    className="sn-copy-code-btn"
-                                    onClick={() => navigator.clipboard.writeText(codeText)}
-                                    title="Copy code"
-                                  >
-                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-                                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                                    </svg>
-                                    نسخ
-                                  </button>
-                                </div>
-                                <SyntaxHighlighter
-                                  style={vscDarkPlus}
-                                  language={match[1]}
-                                  PreTag="div"
-                                  showLineNumbers
-                                  {...props}
-                                >
-                                  {codeText}
-                                </SyntaxHighlighter>
-                              </div>
-                            );
-                          }
-                          return <code className={`sn-inline-code ${className || ''}`} {...props}>{children}</code>;
-                        }
-                      }}
-                    >
-                      {msg.content || ""}
-                    </ReactMarkdown>
+                    {isAi && isStreaming && !msg.content ? (
+                      <ThinkingBlock label="Thinking..." />
+                    ) : (
+                      <div className={`sn-response-content ${isAi ? "sn-response-content-ai" : ""} ${isStreaming ? "sn-response-streaming" : ""}`}>
+<ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            code({ node, inline, className, children, ...props }) {
+                              const match = /language-(\w+)/.exec(className || '');
+                              const codeText = String(children).replace(/\n$/, '');
+                              if (!inline && match) {
+                                const lang = match[1].toLowerCase();
+
+                                if (["diagram", "flow", "architecture"].includes(lang)) {
+                                  return <DiagramBlock value={codeText} />;
+                                }
+
+                                return (
+                                  <div className="sn-code-block">
+                                    <div className="sn-code-header">
+                                      <span className="sn-code-lang">{match[1]}</span>
+                                      <button
+                                        className="sn-copy-code-btn"
+                                        onClick={() => navigator.clipboard.writeText(codeText)}
+                                        title="Copy code"
+                                      >
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
+                                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                        </svg>
+                                        نسخ
+                                      </button>
+                                    </div>
+                                    <SyntaxHighlighter
+                                      style={vscDarkPlus}
+                                      language={match[1]}
+                                      PreTag="div"
+                                      showLineNumbers
+                                      {...props}
+                                    >
+                                      {codeText}
+                                    </SyntaxHighlighter>
+                                  </div>
+                                );
+                              }
+                              return <code className={`sn-inline-code ${className || ''}`} {...props}>{children}</code>;
+                            }
+                          }}
+                        >
+                          {msg.content || ""}
+                        </ReactMarkdown>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -371,13 +442,6 @@ const Chatpage = () => {
               </div>
             );
           })}
-
-          {isTyping && (
-            <div className="sn-row sn-row-ai">
-              <div className="sn-bubble sn-bubble-ai">Typing...</div>
-            </div>
-          )}
-
           <div ref={endRef} />
         </div>
       </div>

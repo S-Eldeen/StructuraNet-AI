@@ -20,15 +20,20 @@ const NewPrompt = forwardRef(
           setShowUploadMenu(false);
         }
       };
+
       document.addEventListener("mousedown", handler);
       return () => document.removeEventListener("mousedown", handler);
     }, []);
 
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
     const fileToBase64 = (file) =>
       new Promise((resolve, reject) => {
         const reader = new FileReader();
+
         reader.onload = () => {
           const result = reader.result;
+
           resolve({
             data: result.split(",")[1],
             mimeType: file.type || "image/jpeg",
@@ -37,6 +42,7 @@ const NewPrompt = forwardRef(
             isFile: !file.type.startsWith("image/"),
           });
         };
+
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
@@ -44,6 +50,7 @@ const NewPrompt = forwardRef(
     const handleImageChange = async (e) => {
       const files = Array.from(e.target.files || []);
       if (!files.length) return;
+
       const converted = await Promise.all(files.map(fileToBase64));
       setImages((prev) => [...prev, ...converted]);
       e.target.value = "";
@@ -53,6 +60,7 @@ const NewPrompt = forwardRef(
     const handleFileChange = async (e) => {
       const files = Array.from(e.target.files || []);
       if (!files.length) return;
+
       const converted = await Promise.all(files.map(fileToBase64));
       setImages((prev) => [...prev, ...converted]);
       e.target.value = "";
@@ -72,6 +80,7 @@ const NewPrompt = forwardRef(
       }
 
       const recognition = new SpeechRecognition();
+
       recognition.lang = "ar-EG";
       recognition.continuous = false;
       recognition.interimResults = false;
@@ -90,78 +99,589 @@ const NewPrompt = forwardRef(
       recognition.start();
     };
 
-    const needsStepByStep = (input = "") => {
+    const isBuildRequest = (input = "") => {
       const lower = input.toLowerCase();
 
       return (
-        lower.includes("steps") ||
-        lower.includes("step by step") ||
-        lower.includes("roadmap") ||
-        lower.includes("plan") ||
-        lower.includes("how to") ||
-        lower.includes("explain") ||
-        input.includes("خطوات") ||
-        input.includes("خطة") ||
-        input.includes("اشرح") ||
-        input.includes("ازاي") ||
-        input.includes("إزاي") ||
-        input.includes("كيف")
+        lower.includes("build") ||
+        lower.includes("create") ||
+        lower.includes("make") ||
+        lower.includes("develop") ||
+        lower.includes("app") ||
+        lower.includes("application") ||
+        lower.includes("system") ||
+        lower.includes("dashboard") ||
+        lower.includes("platform") ||
+        lower.includes("website") ||
+        lower.includes("tool") ||
+        lower.includes("ai") ||
+        lower.includes("frontend") ||
+        lower.includes("backend") ||
+        lower.includes("ui") ||
+        lower.includes("ux") ||
+        lower.includes("diagram") ||
+        lower.includes("architecture") ||
+        lower.includes("code") ||
+        lower.includes("api") ||
+        lower.includes("database") ||
+        input.includes("تطبيق") ||
+        input.includes("نظام") ||
+        input.includes("موقع") ||
+        input.includes("منصة") ||
+        input.includes("أداة") ||
+        input.includes("اداة") ||
+        input.includes("ذكاء") ||
+        input.includes("واجهة") ||
+        input.includes("فرونت") ||
+        input.includes("باك") ||
+        input.includes("ديزاين") ||
+        input.includes("تصميم") ||
+        input.includes("اعمل") ||
+        input.includes("أعمل") ||
+        input.includes("ابني") ||
+        input.includes("أنشئ") ||
+        input.includes("انشئ") ||
+        input.includes("ارسم") ||
+        input.includes("داياجرام") ||
+        input.includes("مخطط") ||
+        input.includes("كود") ||
+        input.includes("أكواد") ||
+        input.includes("اكواد") ||
+        input.includes("قاعدة بيانات")
       );
     };
 
-    const buildPrompt = (userText) => {
-      if (needsStepByStep(userText)) {
-        return `
-${userText}
+    const typeStage = async (aiMessageId, currentText, stageTitle, stageBody) => {
+      let localText = `${currentText}\n\n## ${stageTitle}...\n`;
 
-Instructions:
-- Start with: "Let me guide you step by step"
-- Explain in clear numbered steps.
-- Keep the answer organized and practical.
-- At the end write: "Done ✅ — you can ask me anything else."
-- In the next user message, continue normally and do not wait for confirmation unless the user asks.
-`;
-      }
+      addMessage(
+        {
+          role: "assistant",
+          content: localText,
+          id: aiMessageId,
+          streaming: true,
+          images: [],
+        },
+        true
+      );
 
-      return `
-${userText}
+      await sleep(300);
 
-Instructions:
-- Answer normally and directly.
-- Do not force a step-by-step format unless it is useful.
-- Do not say that the previous task is finished again.
-`;
-    };
+      let typed = "";
 
-    const typeWriter = async (finalText, aiMessageId) => {
-      let index = 0;
-      let displayedText = "";
+      for (let i = 0; i < stageBody.length; i++) {
+        typed += stageBody[i];
 
-      await new Promise((resolve) => {
-        const interval = setInterval(() => {
-          if (index >= finalText.length) {
-            clearInterval(interval);
-            resolve();
-            return;
-          }
-
-          displayedText += finalText[index];
-          index++;
-
+        if (i % 5 === 0 || i === stageBody.length - 1) {
           addMessage(
             {
               role: "assistant",
-              content: displayedText,
+              content: localText + typed,
               id: aiMessageId,
               streaming: true,
               images: [],
             },
             true
           );
-        }, 12);
+
+          await sleep(5);
+        }
+      }
+
+      localText = `${currentText}\n\n## ${stageTitle} ✔\n${stageBody}`;
+
+      addMessage(
+        {
+          role: "assistant",
+          content: localText,
+          id: aiMessageId,
+          streaming: true,
+          images: [],
+        },
+        true
+      );
+
+      await sleep(350);
+      return localText;
+    };
+
+    const getBuildStages = (userText) => [
+      {
+        title: "📖 Reading requirements",
+        body: `تمام، تم قراءة المتطلبات بنجاح.
+
+المطلوب هو بناء تصور هندسي كامل ومفصل للتطبيق، مش مجرد فكرة عامة.  
+هنا هنطلع:
+
+- Architecture كاملة.
+- UI/UX structure.
+- Diagrams واضحة.
+- Database schema.
+- Backend APIs.
+- Frontend components.
+- Example code.
+- File structure.
+- Visual placeholders للصور والواجهات.`,
+      },
+      {
+        title: "🧠 Full System Architecture",
+        body: `تم بناء معمارية النظام على شكل طبقات واضحة:
+
+\`\`\`diagram
+title: Full System Architecture
+[User]
+-> [React Frontend]
+-> [API Gateway]
+-> [Backend Server]
+-> [AI Engine]
+-> [Database]
+-> [Storage]
+-> [Analytics]
+\`\`\`
+
+### الطبقات الأساسية
+
+- **Frontend Layer:** واجهة React/Vite لعرض الدروس، الاختبارات، المحادثة، والتقدم.
+- **API Layer:** نقطة اتصال بين الواجهة والباك إند.
+- **Backend Layer:** Express.js لمعالجة الطلبات وإدارة المستخدمين والدروس.
+- **AI Layer:** Gemini/OpenRouter لتوليد الدروس، التصحيح، المحادثة، والاختبارات.
+- **Database Layer:** MongoDB لحفظ المستخدمين، الدروس، التقدم، والأسئلة.
+- **Storage Layer:** لحفظ الصور، الملفات، أو تسجيلات الصوت لاحقًا.
+
+### Visual UI Placeholder
+
+\`\`\`diagram
+title: Main App Screens
+[Landing Page]
+-> [Dashboard]
+-> [Lessons]
+-> [Quiz]
+-> [AI Tutor]
+-> [Progress]
+\`\`\``,
+      },
+      {
+        title: "🎨 UI / UX Design",
+        body: `تم تصميم الواجهة بحيث تكون قريبة من تطبيقات التعليم الحديثة:
+
+### Dashboard Layout
+
+\`\`\`diagram
+title: Dashboard UI Layout
+[Top Navbar]
+-> [Progress Cards]
+-> [Current Lesson]
+-> [Vocabulary Cards]
+-> [Quick Quiz]
+-> [AI Chat Tutor]
+\`\`\`
+
+### شكل الشاشة الرئيسية
+
+- كارت يعرض المستوى الحالي مثل A1.
+- كارت عدد الكلمات التي تم تعلمها.
+- كارت الأيام المتواصلة Streak.
+- كارت دقة الإجابات.
+- Grid للدروس المتاحة.
+- زر يبدأ درس جديد.
+- منطقة محادثة مع AI Tutor.
+
+### صورة/واجهة مقترحة
+
+[IMAGE: Modern dark educational dashboard for German learning app with progress cards, lesson cards, quiz card, and AI tutor chat panel]
+
+### React UI Example
+
+\`\`\`jsx
+export default function Dashboard() {
+  return (
+    <main className="dashboard">
+      <section className="stats-grid">
+        <ProgressCard title="Words Learned" value="120" />
+        <ProgressCard title="Streak" value="7 days" />
+        <ProgressCard title="Accuracy" value="86%" />
+      </section>
+
+      <section className="content-grid">
+        <LessonGrid />
+        <QuickQuiz />
+        <AITutor />
+      </section>
+    </main>
+  );
+}
+\`\`\``,
+      },
+      {
+        title: "🧩 Frontend Components",
+        body: `تم تقسيم الواجهة إلى Components قابلة لإعادة الاستخدام:
+
+### Component Tree
+
+\`\`\`diagram
+title: Frontend Component Tree
+[App]
+-> [DashboardLayout]
+-> [Sidebar]
+-> [DashboardPage]
+-> [LessonPage]
+-> [QuizPage]
+-> [AITutorPage]
+\`\`\`
+
+### Components المقترحة
+
+\`\`\`txt
+components/
+ ├── ProgressCard/
+ │   ├── ProgressCard.jsx
+ │   └── progressCard.css
+ ├── LessonCard/
+ │   ├── LessonCard.jsx
+ │   └── lessonCard.css
+ ├── LessonGrid/
+ │   ├── LessonGrid.jsx
+ │   └── lessonGrid.css
+ ├── QuickQuiz/
+ │   ├── QuickQuiz.jsx
+ │   └── quickQuiz.css
+ ├── AITutor/
+ │   ├── AITutor.jsx
+ │   └── aiTutor.css
+ └── LevelSelector/
+     ├── LevelSelector.jsx
+     └── levelSelector.css
+\`\`\`
+
+### Example Component
+
+\`\`\`jsx
+function LessonCard({ title, level, duration, onStart }) {
+  return (
+    <article className="lesson-card">
+      <span className="lesson-level">{level}</span>
+      <h3>{title}</h3>
+      <p>{duration} minutes</p>
+      <button onClick={onStart}>Start Lesson</button>
+    </article>
+  );
+}
+
+export default LessonCard;
+\`\`\``,
+      },
+      {
+        title: "🗄️ Database Structures",
+        body: `تم تصميم قاعدة البيانات بشكل يسمح بتتبع التعلم والتقدم:
+
+### User Model
+
+\`\`\`js
+const userSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true },
+  name: String,
+  level: { type: String, default: "A1" },
+  streak: { type: Number, default: 0 },
+  wordsLearned: { type: Number, default: 0 },
+  accuracy: { type: Number, default: 0 },
+  createdAt: { type: Date, default: Date.now }
+});
+\`\`\`
+
+### Lesson Model
+
+\`\`\`js
+const lessonSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  level: { type: String, enum: ["A1", "A2", "B1", "B2"] },
+  category: {
+    type: String,
+    enum: ["vocabulary", "grammar", "listening", "speaking"]
+  },
+  content: String,
+  examples: [String],
+  imagePrompt: String,
+  duration: Number
+});
+\`\`\`
+
+### Progress Model
+
+\`\`\`js
+const progressSchema = new mongoose.Schema({
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  lessonId: { type: mongoose.Schema.Types.ObjectId, ref: "Lesson" },
+  completed: { type: Boolean, default: false },
+  score: Number,
+  mistakes: [String],
+  completedAt: Date
+});
+\`\`\`
+
+### Quiz Model
+
+\`\`\`js
+const quizSchema = new mongoose.Schema({
+  lessonId: { type: mongoose.Schema.Types.ObjectId, ref: "Lesson" },
+  question: String,
+  options: [String],
+  correctAnswer: String,
+  explanation: String
+});
+\`\`\``,
+      },
+      {
+        title: "⚙️ Backend APIs",
+        body: `تم تجهيز APIs أساسية للباك إند:
+
+### API Flow
+
+\`\`\`diagram
+title: API Request Flow
+[React UI]
+-> [Express Routes]
+-> [Controller]
+-> [MongoDB]
+-> [JSON Response]
+\`\`\`
+
+### Routes Structure
+
+\`\`\`txt
+backend/
+ ├── routes/
+ │   ├── lesson.routes.js
+ │   ├── quiz.routes.js
+ │   ├── progress.routes.js
+ │   └── ai.routes.js
+ ├── controllers/
+ │   ├── lesson.controller.js
+ │   ├── quiz.controller.js
+ │   ├── progress.controller.js
+ │   └── ai.controller.js
+ └── models/
+     ├── Lesson.js
+     ├── Quiz.js
+     ├── Progress.js
+     └── User.js
+\`\`\`
+
+### Lesson API
+
+\`\`\`js
+import express from "express";
+import Lesson from "../models/Lesson.js";
+
+const router = express.Router();
+
+router.get("/", async (req, res) => {
+  const { level } = req.query;
+  const lessons = await Lesson.find(level ? { level } : {});
+  res.json(lessons);
+});
+
+router.post("/", async (req, res) => {
+  const lesson = await Lesson.create(req.body);
+  res.status(201).json(lesson);
+});
+
+export default router;
+\`\`\`
+
+### Progress API
+
+\`\`\`js
+router.patch("/:lessonId/complete", async (req, res) => {
+  const { userId, score, mistakes } = req.body;
+
+  const progress = await Progress.findOneAndUpdate(
+    { userId, lessonId: req.params.lessonId },
+    {
+      completed: true,
+      score,
+      mistakes,
+      completedAt: new Date()
+    },
+    { new: true, upsert: true }
+  );
+
+  res.json(progress);
+});
+\`\`\``,
+      },
+      {
+        title: "🤖 AI Tutor Logic",
+        body: `تم بناء منطق المساعد الذكي ليكون جزء أساسي من التطبيق:
+
+### AI Tutor Flow
+
+\`\`\`diagram
+title: AI Tutor Flow
+[User Message]
+-> [Frontend Chat]
+-> [AI API Route]
+-> [Prompt Builder]
+-> [Gemini/OpenRouter]
+-> [Streaming Response]
+-> [Save Conversation]
+\`\`\`
+
+### AI Route Example
+
+\`\`\`js
+router.post("/tutor", async (req, res) => {
+  const { message, level, languageGoal } = req.body;
+
+  const prompt = \`
+You are a German tutor.
+User level: \${level}
+Goal: \${languageGoal}
+
+Help the user in Arabic and German.
+Correct mistakes and give examples.
+
+User message:
+\${message}
+\`;
+
+  const answer = await askAI(prompt);
+
+  res.json({ answer });
+});
+\`\`\`
+
+### Prompt Strategy
+
+- لو المستخدم طلب ترجمة: يرد بالترجمة + مثال.
+- لو كتب جملة ألمانية غلط: يصحح + يشرح السبب.
+- لو طلب تدريب: يولد سؤال قصير.
+- لو المستخدم ضعيف في نقطة معينة: يقترح درس مناسب.`,
+      },
+      {
+        title: "🧪 Quiz + Evaluation System",
+        body: `تم تصميم نظام الاختبارات بشكل بسيط وقابل للتطوير:
+
+### Quiz Flow
+
+\`\`\`diagram
+title: Quiz Flow
+[Start Quiz]
+-> [Load Questions]
+-> [User Answers]
+-> [Check Score]
+-> [Show Explanation]
+-> [Update Progress]
+\`\`\`
+
+### React Quiz Example
+
+\`\`\`jsx
+function QuickQuiz({ questions }) {
+  const [current, setCurrent] = useState(0);
+  const [score, setScore] = useState(0);
+
+  const answer = (option) => {
+    if (option === questions[current].correctAnswer) {
+      setScore((prev) => prev + 1);
+    }
+
+    setCurrent((prev) => prev + 1);
+  };
+
+  if (current >= questions.length) {
+    return <div>Your score: {score}/{questions.length}</div>;
+  }
+
+  return (
+    <div className="quiz-card">
+      <h3>{questions[current].question}</h3>
+      {questions[current].options.map((option) => (
+        <button key={option} onClick={() => answer(option)}>
+          {option}
+        </button>
+      ))}
+    </div>
+  );
+}
+\`\`\``,
+      },
+      {
+        title: "📁 Final Project Structure",
+        body: `الهيكل النهائي المقترح للمشروع:
+
+\`\`\`txt
+StructuraNet-AI/
+ ├── client/
+ │   ├── src/
+ │   │   ├── components/
+ │   │   │   ├── ProgressCard/
+ │   │   │   ├── LessonCard/
+ │   │   │   ├── LessonGrid/
+ │   │   │   ├── QuickQuiz/
+ │   │   │   └── AITutor/
+ │   │   ├── routes/
+ │   │   │   ├── dashboardPage/
+ │   │   │   ├── lessonPage/
+ │   │   │   ├── quizPage/
+ │   │   │   └── aiTutorPage/
+ │   │   ├── lib/
+ │   │   │   ├── api.js
+ │   │   │   └── gemini.js
+ │   │   └── App.jsx
+ │   └── package.json
+ │
+ ├── backend/
+ │   ├── models/
+ │   │   ├── User.js
+ │   │   ├── Lesson.js
+ │   │   ├── Quiz.js
+ │   │   └── Progress.js
+ │   ├── routes/
+ │   │   ├── lesson.routes.js
+ │   │   ├── quiz.routes.js
+ │   │   ├── progress.routes.js
+ │   │   └── ai.routes.js
+ │   ├── controllers/
+ │   ├── index.js
+ │   └── package.json
+ │
+ └── README.md
+\`\`\`
+
+### النتيجة النهائية
+
+التطبيق كده عنده:
+- UI منظمة.
+- باك إند قابل للتوسيع.
+- قاعدة بيانات واضحة.
+- AI Tutor.
+- اختبارات وتقييم.
+- tracking للتقدم.
+- إمكانية تحويل كل جزء لكود حقيقي خطوة بخطوة.`,
+      },
+    ];
+
+    const buildPrompt = (userText) => {
+      return `
+${userText}
+
+Answer normally and directly.
+Prefer Arabic if the user wrote Arabic.
+`;
+    };
+
+    const withTimeout = (promise, ms = 120000) => {
+      let timeoutId;
+
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error("AI_TIMEOUT"));
+        }, ms);
       });
 
-      return displayedText;
+      return Promise.race([promise, timeoutPromise]).finally(() => {
+        clearTimeout(timeoutId);
+      });
     };
 
     const runAiCall = async ({
@@ -172,6 +692,7 @@ Instructions:
       currentHistory,
     }) => {
       const token = localStorage.getItem("token");
+      const buildMode = isBuildRequest(userText);
 
       setIsLoading(true);
       setIsTyping(true);
@@ -180,52 +701,93 @@ Instructions:
 
       addMessage({
         role: "assistant",
-        content: "🤖 I am thinking...",
+        content: "",
         id: aiMessageId,
         streaming: true,
         images: [],
       });
 
       try {
-        let finalText = "";
+        let displayedText = "";
 
-        const conversation = [
+        const baseHistory = [
           ...currentHistory
             .filter((msg) => msg.content && !msg.streaming)
             .map((msg) => ({
               role: msg.role === "user" ? "user" : "assistant",
               content: msg.content,
             })),
-          {
-            role: "user",
-            content: buildPrompt(userText || "Describe this."),
-          },
         ];
 
-        await askGeminiStream(conversation, imageBase64Only, (partialText) => {
-          finalText = partialText;
-        });
+        if (buildMode) {
+          const stages = getBuildStages(userText);
 
-        if (!finalText.trim()) {
-          finalText = "لم يصل رد واضح، حاول مرة أخرى.";
+          for (const stage of stages) {
+            displayedText = await typeStage(
+              aiMessageId,
+              displayedText,
+              stage.title,
+              stage.body
+            );
+          }
+
+          displayedText +=
+            "\n\n## ✅ Done\nتم بناء output كامل ومفصل يشمل Architecture + UI + Database + APIs + Code + Structures. نقدر بعد كده نبدأ نحول كل مرحلة لفايلات فعلية في المشروع.";
+
+          addMessage(
+            {
+              role: "assistant",
+              content: displayedText,
+              id: aiMessageId,
+              streaming: false,
+              images: [],
+            },
+            true
+          );
+        } else {
+          let finalText = "";
+
+          await withTimeout(
+            askGeminiStream(
+              [
+                ...baseHistory,
+                {
+                  role: "user",
+                  content: buildPrompt(userText || "Describe this."),
+                },
+              ],
+              imageBase64Only,
+              (partialText) => {
+                finalText = partialText || "";
+
+                addMessage(
+                  {
+                    role: "assistant",
+                    content: finalText,
+                    id: aiMessageId,
+                    streaming: true,
+                    images: [],
+                  },
+                  true
+                );
+              }
+            ),
+            120000
+          );
+
+          displayedText = finalText || "لم يصل رد واضح، حاول مرة أخرى.";
+
+          addMessage(
+            {
+              role: "assistant",
+              content: displayedText,
+              id: aiMessageId,
+              streaming: false,
+              images: [],
+            },
+            true
+          );
         }
-
-        let displayedText = await typeWriter(finalText, aiMessageId);
-
-        if (needsStepByStep(userText) && !displayedText.includes("Done")) {
-          displayedText += "\n\nDone ✅ — you can ask me anything else.";
-        }
-
-        addMessage(
-          {
-            role: "assistant",
-            content: displayedText,
-            id: aiMessageId,
-            streaming: false,
-            images: [],
-          },
-          true
-        );
 
         if (chatId && token) {
           await fetch(`http://localhost:3000/api/chats/${chatId}/messages`, {
@@ -248,7 +810,8 @@ Instructions:
         addMessage(
           {
             role: "assistant",
-            content: "❌ حصل خطأ، حاول تاني.",
+            content:
+              "❌ حصل خطأ، لكن الرد السابق لن يتم مسحه. جرّب مرة تانية أو راجع مفتاح Gemini/OpenRouter.",
             id: aiMessageId,
             streaming: false,
             images: [],
@@ -280,6 +843,7 @@ Instructions:
       if (isLoading) return;
 
       const token = localStorage.getItem("token");
+
       if (!token) {
         window.location.href = "/sign-in";
         return;
@@ -301,6 +865,7 @@ Instructions:
       addMessage(userMessage);
 
       const currentText = text;
+
       setText("");
       setImages([]);
 
@@ -425,4 +990,5 @@ Instructions:
 );
 
 NewPrompt.displayName = "NewPrompt";
+
 export default NewPrompt;

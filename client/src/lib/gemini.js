@@ -6,15 +6,24 @@ const OPENROUTER_KEY = import.meta.env.VITE_OPENROUTER_KEY;
 const ai = GEMINI_KEY ? new GoogleGenAI({ apiKey: GEMINI_KEY }) : null;
 
 const GEMINI_MODEL = "gemini-2.0-flash";
-
-// ✅ أضمن اختيار للموديلات المجانية بدل 404
 const OPENROUTER_MODEL = "openrouter/free";
+const OPENROUTER_TIMEOUT = 30000;
 
-const OPENROUTER_TIMEOUT = 20000;
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const systemInstruction = `
-You are StructraNet AI, an intelligent assistant specialized in networking and network design.
-Answer clearly and helpfully.
+You are StructraNet AI.
+
+You must behave like a Claude-style product-building assistant.
+
+When the user asks to build an app, system, or platform:
+
+- Show progress steps
+- Use checkmarks
+- Include architecture diagram
+- Be practical and structured
+
+Prefer Arabic if the user writes Arabic.
 `;
 
 const timeoutFetch = async (url, options, timeout = OPENROUTER_TIMEOUT) => {
@@ -31,86 +40,64 @@ const timeoutFetch = async (url, options, timeout = OPENROUTER_TIMEOUT) => {
   }
 };
 
+// ✨ دي أهم حاجة: تحويل الرد لـ streaming وهمي
+const streamTextManually = async (text, onChunk, delay = 6) => {
+  let current = "";
+
+  for (let i = 0; i < text.length; i++) {
+    current += text[i];
+
+    if (i % 3 === 0 || i === text.length - 1) {
+      onChunk(current);
+      await sleep(delay);
+    }
+  }
+
+  return text;
+};
+
 async function callOpenRouter(conversation, imageBase64 = []) {
   if (!OPENROUTER_KEY) {
-    return "حاليًا لا يمكن إنشاء رد لأن مفتاح OpenRouter غير موجود.";
+    return "❌ مفيش API key لـ OpenRouter";
   }
 
   try {
     const messages = [
-      {
-        role: "system",
-        content: systemInstruction,
-      },
-      ...conversation.map((m, index) => {
-        const isLastMessage = index === conversation.length - 1;
-        const role = m.role === "assistant" ? "assistant" : "user";
-
-        if (role === "user" && isLastMessage && imageBase64.length > 0) {
-          return {
-            role,
-            content: [
-              {
-                type: "text",
-                text: m.content || "Describe this image.",
-              },
-              ...imageBase64.map((img) => ({
-                type: "image_url",
-                image_url: {
-                  url: `data:image/jpeg;base64,${img}`,
-                },
-              })),
-            ],
-          };
-        }
-
-        return {
-          role,
-          content: m.content || "",
-        };
-      }),
+      { role: "system", content: systemInstruction },
+      ...conversation.map((m) => ({
+        role: m.role === "assistant" ? "assistant" : "user",
+        content: m.content || "",
+      })),
     ];
 
-    const res = await timeoutFetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${OPENROUTER_KEY}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "http://localhost:5173",
-        "X-Title": "StructraNet AI",
-      },
-      body: JSON.stringify({
-        model: OPENROUTER_MODEL,
-        messages,
-        temperature: 0.7,
-        max_tokens: 800,
-      }),
-    });
+    const res = await timeoutFetch(
+      "https://openrouter.ai/api/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${OPENROUTER_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: OPENROUTER_MODEL,
+          messages,
+          temperature: 0.75,
+          max_tokens: 1600,
+        }),
+      }
+    );
 
     const data = await res.json();
 
     if (!res.ok) {
       console.error("OpenRouter error:", data);
-
-      if (res.status === 429) {
-        return "الضغط عالي حاليًا على OpenRouter، حاول بعد قليل.";
-      }
-
-      return "حاليًا لا يمكن إنشاء رد من OpenRouter.";
+      return "❌ OpenRouter حصل فيه مشكلة";
     }
 
-    return (
-      data?.choices?.[0]?.message?.content ||
-      "لم يصل رد واضح من OpenRouter، حاول مرة أخرى."
-    );
+    return data?.choices?.[0]?.message?.content || "❌ مفيش رد";
   } catch (err) {
-    console.error("OpenRouter fetch error:", err);
-
-    if (err.name === "AbortError") {
-      return "OpenRouter استغرق وقت طويل، حاول مرة أخرى.";
-    }
-
-    return "حدث خطأ أثناء الاتصال بـ OpenRouter.";
+    console.error(err);
+    return "❌ Error في OpenRouter";
   }
 }
 
@@ -126,55 +113,47 @@ export async function askGeminiStream(
     parts: [{ text: msg.content || "" }],
   }));
 
-  if (imageBase64.length > 0) {
-    const lastUser = [...contents].reverse().find((c) => c.role === "user");
-
-    if (lastUser) {
-      lastUser.parts.push(
-        ...imageBase64.map((img) => ({
-          inlineData: {
-            mimeType: "image/jpeg",
-            data: img,
-          },
-        }))
-      );
-    }
-  }
-
   try {
-    if (!ai) throw new Error("No Gemini key");
+    // ✅ Gemini streaming الحقيقي
+    if (ai) {
+      const stream = await ai.models.generateContentStream({
+        model: GEMINI_MODEL,
+        contents,
+        config: {
+          systemInstruction,
+          temperature: 0.75,
+          maxOutputTokens: 1600,
+        },
+      });
 
-    const stream = await ai.models.generateContentStream({
-      model: GEMINI_MODEL,
-      contents,
-      config: {
-        systemInstruction,
-      },
-    });
+      let fullText = "";
 
-    let fullText = "";
+      for await (const chunk of stream) {
+        const text = chunk.text;
 
-    for await (const chunk of stream) {
-      const text = chunk.text;
-
-      if (text) {
-        fullText += text;
-        safeOnChunk(fullText);
+        if (text) {
+          fullText += text;
+          safeOnChunk(fullText);
+        }
       }
+
+      return fullText;
     }
 
-    if (!fullText.trim()) {
-      throw new Error("Empty Gemini response");
-    }
-
-    return fullText;
+    throw new Error("No Gemini key");
   } catch (error) {
-    console.warn("Gemini failed → switching to OpenRouter", error);
+    console.warn("Gemini failed → OpenRouter fallback");
 
     const fallback = await callOpenRouter(conversation, imageBase64);
 
-    safeOnChunk(fallback);
-    return fallback;
+    if (!fallback) {
+      const msg = "❌ مفيش رد";
+      safeOnChunk(msg);
+      return msg;
+    }
+
+    // 🔥 هنا الحل النهائي
+    return await streamTextManually(fallback, safeOnChunk);
   }
 }
 
