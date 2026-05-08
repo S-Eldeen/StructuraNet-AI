@@ -14,6 +14,7 @@ import SignUpPage from "./routes/signUpPage/signUpPage";
 import UpgradePage from "./routes/upgradePage/UpgradePage";
 import CheckoutPage from "./routes/checkoutPage/CheckoutPage";
 import AboutPage from "./routes/aboutPage/AboutPage";
+import ContactPage from "./routes/contactPage/ContactPage";
 
 const router = createBrowserRouter([
   {
@@ -24,6 +25,7 @@ const router = createBrowserRouter([
       { path: "/sign-up/*", element: <SignUpPage /> },
       { path: "/upgrade", element: <UpgradePage /> },
       { path: "/about", element: <AboutPage /> },
+      { path: "/contact", element: <ContactPage /> },
       { path: "/checkout/go", element: <CheckoutPage /> },
       { path: "/checkout/plus", element: <CheckoutPage /> },
       { path: "/checkout/pro", element: <CheckoutPage /> },
