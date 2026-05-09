@@ -1,14 +1,23 @@
 """
-Structranet AI — Topology Schema
+Structranet AI — Topology Schema (V2.0)
 
 Pydantic models that define the contract between the AI agent and the assembler.
 The LLM generates logical topology (what connects to what).
 The assembler handles layout (x,y) and identification (UUIDs).
+
+V2.0 changelog:
+  - autofix_dynamips_port_assignments: EXCLUDES serial links from the
+    port_number>0 → sequential-adapter rewrite.  Serial modules (PA-4T+,
+    NM-4T) provide multiple ports per adapter, so port_number>0 is
+    legitimate for serial interfaces (e.g., Serial1/1 = adapter=1, port=1).
 """
 
 from pydantic import BaseModel, Field, model_validator
 from typing import List, Literal, Dict, Any, ClassVar
 import re
+import logging
+
+_schema_logger = logging.getLogger("structranet.schema")
 
 class LinkNode(BaseModel):
     """One endpoint of a link — references a node by its logical ID."""
@@ -111,28 +120,26 @@ class Topology(BaseModel):
 
     @model_validator(mode="after")
     def autofix_dynamips_port_assignments(self):
-        """Auto-correct Dynamips port_number > 0 on any adapter.
+        """Auto-correct Dynamips port_number > 0 on Ethernet links only.
 
-        The LLM frequently assigns adapter=0, port=0/1/2/3 for a c7200,
-        but c7200 has exactly 1 port per adapter (port_number=0 ONLY).
-        This validator rewrites such assignments to increment adapter_number
-        instead, with port_number=0 on each.
-
-        Before: adapter=0,port=0 | adapter=0,port=1 | adapter=0,port=2
-        After:  adapter=0,port=0 | adapter=1,port=0 | adapter=2,port=0
-
-        Only applies to dynamips nodes. Other node types are untouched.
-        Logs warnings so the user knows corrections were made.
+        V2.0 FIX: Serial links are EXCLUDED from this autofix because serial
+        modules (PA-4T+, NM-4T) provide multiple ports per adapter, so
+        port_number > 0 is legitimate for serial interfaces (e.g., Serial1/1
+        uses adapter=1, port=1).  The autofix only applies to Ethernet links
+        where each adapter provides exactly 1 port (port_number must be 0).
         """
         node_map = {n.node_id: n for n in self.nodes}
         dynamips_ids = {n.node_id for n in self.nodes if n.node_type == "dynamips"}
         if not dynamips_ids:
             return self
 
-        # Collect all link endpoints per dynamips node, grouped by adapter
-        # to detect port_number > 0 usage
+        # V2.0: Only flag port_number > 0 for ETHERNET links on dynamips nodes.
+        # Serial links are excluded because serial modules have multiple ports
+        # per adapter (e.g., PA-4T+ provides Serial1/0, Serial1/1, Serial1/2, Serial1/3).
         needs_fix = False
         for link in self.links:
+            if link.link_type == "serial":
+                continue  # V2.0: Skip serial links — port_number > 0 is valid
             for ep in link.nodes:
                 if ep.node_id in dynamips_ids and ep.port_number > 0:
                     needs_fix = True
@@ -143,21 +150,18 @@ class Topology(BaseModel):
         if not needs_fix:
             return self
 
-        # Rebuild link assignments for each dynamips node
-        # Group links by dynamips node_id, preserving order
-        import logging
-        _logger = logging.getLogger("structranet.schema.autofix")
+        _logger = _schema_logger
 
-        # For each dynamips node, collect all link indices + endpoint indices
-        # that reference it, then reassign sequentially
-        dyn_link_refs: dict[str, list[tuple[int, int]]] = {}  # node_id → [(link_idx, ep_idx)]
+        # Collect ETHERNET link endpoints per dynamips node only
+        dyn_link_refs: dict[str, list[tuple[int, int]]] = {}
         for li, link in enumerate(self.links):
+            if link.link_type == "serial":
+                continue  # V2.0: Skip serial links
             for ei, ep in enumerate(link.nodes):
                 if ep.node_id in dynamips_ids:
                     dyn_link_refs.setdefault(ep.node_id, []).append((li, ei))
 
         for node_id, refs in dyn_link_refs.items():
-            # Check if any endpoint has port_number > 0
             has_bad_port = any(
                 self.links[li].nodes[ei].port_number > 0
                 for li, ei in refs
@@ -166,12 +170,11 @@ class Topology(BaseModel):
                 continue
 
             _logger.warning(
-                "AUTOFIX: Dynamips node '%s' has port_number>0 — "
-                "rewriting to sequential adapter_number with port=0",
+                "AUTOFIX: Dynamips node '%s' has port_number>0 on Ethernet links — "
+                "rewriting to sequential adapter_number with port=0 (serial links untouched)",
                 node_id,
             )
 
-            # Reassign: link 0 → adapter=0,port=0; link 1 → adapter=1,port=0; etc.
             for seq, (li, ei) in enumerate(refs):
                 old_ad = self.links[li].nodes[ei].adapter_number
                 old_pt = self.links[li].nodes[ei].port_number
@@ -187,17 +190,26 @@ class Topology(BaseModel):
 
     @model_validator(mode="after")
     def autofix_switch_adapter_assignments(self):
-        """Auto-correct switch/hub adapter_number > 0.
+        """Auto-correct switch/hub port assignments.
 
-        The LLM sometimes assigns adapter=1 or adapter=2 to switch endpoints,
-        but switches/hubs ALWAYS use adapter_number=0. This validator forces
-        adapter=0 and reassigns port_number sequentially for each switch.
+        Two problems this validator fixes:
+          1. adapter_number > 0: The LLM sometimes assigns adapter=1 or
+             adapter=2 to switch endpoints, but switches/hubs ALWAYS use
+             adapter_number=0.
+          2. port_number == 0: GNS3 API v2 requires port_number >= 1 for
+             ethernet_switch/hub ports_mapping. The LLM prompt may instruct
+             port=0,1,2,... (0-based), but the hardware injection generates
+             ports_mapping with 1-based port_numbers. This mismatch causes
+             link creation to fail (wrong port) or ports_mapping PUT to
+             be rejected (port_number=0 violates the GNS3 schema minimum).
+
+        Both problems are fixed by rewriting all switch endpoints to
+        adapter=0 with sequential 1-based port_number (1, 2, 3, ...).
 
         Before: adapter=1,port=0 | adapter=0,port=0 | adapter=0,port=1
-        After:  adapter=0,port=0 | adapter=0,port=1 | adapter=0,port=2
+        After:  adapter=0,port=1 | adapter=0,port=2 | adapter=0,port=3
 
         Only applies to ethernet_switch and ethernet_hub nodes.
-        Logs warnings so the user knows corrections were made.
         """
         switch_ids = {
             n.node_id for n in self.nodes
@@ -206,54 +218,58 @@ class Topology(BaseModel):
         if not switch_ids:
             return self
 
-        # Check if any switch endpoint has adapter_number > 0
-        needs_fix = False
-        for link in self.links:
-            for ep in link.nodes:
-                if ep.node_id in switch_ids and ep.adapter_number > 0:
-                    needs_fix = True
-                    break
-            if needs_fix:
-                break
-
-        if not needs_fix:
-            return self
-
-        import logging
-        _logger = logging.getLogger("structranet.schema.autofix")
-
-        # For each switch, collect all link references, then reassign
-        # adapter=0 with sequential port_number
+        # Collect all link references per switch
         sw_link_refs: dict[str, list[tuple[int, int]]] = {}  # node_id → [(link_idx, ep_idx)]
         for li, link in enumerate(self.links):
             for ei, ep in enumerate(link.nodes):
                 if ep.node_id in switch_ids:
                     sw_link_refs.setdefault(ep.node_id, []).append((li, ei))
 
+        _logger = _schema_logger
+
         for node_id, refs in sw_link_refs.items():
             has_bad_adapter = any(
                 self.links[li].nodes[ei].adapter_number > 0
                 for li, ei in refs
             )
-            if not has_bad_adapter:
-                continue
-
-            _logger.warning(
-                "AUTOFIX: Switch/hub node '%s' has adapter_number>0 — "
-                "rewriting to adapter=0 with sequential port_number",
-                node_id,
+            # Also check for 0-based port_number (port_number < 1).
+            # GNS3 requires port_number >= 1 in the ports_mapping PUT.
+            # If ANY endpoint on this switch has port_number < 1, the
+            # entire switch needs renumbering to 1-based.
+            has_zero_port = any(
+                self.links[li].nodes[ei].port_number < 1
+                for li, ei in refs
             )
 
-            # Reassign: all adapter=0, port_number = 0,1,2,... sequentially
+            if not has_bad_adapter and not has_zero_port:
+                continue
+
+            reason = []
+            if has_bad_adapter:
+                reason.append("adapter_number>0")
+            if has_zero_port:
+                reason.append("port_number<1 (GNS3 requires port_number>=1)")
+
+            _logger.warning(
+                "AUTOFIX: Switch/hub node '%s' has %s — "
+                "rewriting to adapter=0 with sequential 1-based port_number",
+                node_id, " + ".join(reason),
+            )
+
+            # Reassign: all adapter=0, port_number = 1,2,3,... sequentially
+            # GNS3 API v2 requires port_number >= 1 for ethernet_switch/hub
+            # ports_mapping. Using 1-based numbering ensures link endpoints
+            # match the port_number values in the hardware-injected ports_mapping.
             for seq, (li, ei) in enumerate(refs):
+                new_port = seq + 1  # 1-based per GNS3 requirement
                 old_ad = self.links[li].nodes[ei].adapter_number
                 old_pt = self.links[li].nodes[ei].port_number
                 self.links[li].nodes[ei].adapter_number = 0
-                self.links[li].nodes[ei].port_number = seq
-                if old_ad != 0 or old_pt != seq:
+                self.links[li].nodes[ei].port_number = new_port
+                if old_ad != 0 or old_pt != new_port:
                     _logger.info(
                         "  Fixed: adapter=%d,port=%d → adapter=0,port=%d",
-                        old_ad, old_pt, seq,
+                        old_ad, old_pt, new_port,
                     )
 
         return self
@@ -344,7 +360,7 @@ class Topology(BaseModel):
                             f"Node '{ep.node_id}' ({node.node_type}) is a "
                             f"switch/hub — must use adapter=0, but link "
                             f"uses adapter={ep.adapter_number}. "
-                            f"Switch ports are addressed as adapter=0, port=0,1,2..."
+                            f"Switch ports are addressed as adapter=0, port=1,2,3..."
                         )
         return self
 
@@ -507,13 +523,30 @@ class Topology(BaseModel):
              so port_number must always be 0. Assigning port_number > 0
              will fail at deployment.
 
-        Only Ethernet links are checked — serial ports have different bounds.
+        Ethernet links are checked for port_number bounds; serial links are
+        validated for adapter_number bounds (adapter >= 1 required for dynamips,
+        since no platform has built-in serial ports on adapter 0).
         """
         node_map = {n.node_id: n for n in self.nodes}
 
         for link in self.links:
-            # Only validate Ethernet links (serial has different constraints)
+            # Serial links: validate adapter bounds but skip port_number checks
+            # (serial modules have different port counts per platform, and
+            # hw_config will inject the appropriate serial module)
             if link.link_type == "serial":
+                for ep in link.nodes:
+                    node = node_map.get(ep.node_id)
+                    if node is None:
+                        continue
+                    # Serial ports require expansion modules (adapter >= 1)
+                    # because no Dynamips platform has built-in serial
+                    if node.node_type == "dynamips" and ep.adapter_number == 0:
+                        # c7200 has no built-in serial on adapter 0
+                        raise ValueError(
+                            f"Node '{ep.node_id}' (dynamips): serial links "
+                            f"cannot use adapter 0 (no built-in serial ports). "
+                            f"Use adapter 1 or higher (requires serial module injection)."
+                        )
                 continue
 
             for ep in link.nodes:
@@ -729,4 +762,3 @@ class GNS3Project(BaseModel):
     """The top-level object the AI must return."""
     name: str = Field(..., min_length=1, description="GNS3 project name")
     topology: Topology
-

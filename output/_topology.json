@@ -19,56 +19,56 @@
           "ports_mapping": [
             {
               "name": "Ethernet0",
-              "port_number": 0,
-              "type": "access",
-              "vlan": 1,
-              "ethertype": ""
-            },
-            {
-              "name": "Ethernet1",
               "port_number": 1,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet2",
+              "name": "Ethernet1",
               "port_number": 2,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet3",
+              "name": "Ethernet2",
               "port_number": 3,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet4",
+              "name": "Ethernet3",
               "port_number": 4,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet5",
+              "name": "Ethernet4",
               "port_number": 5,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet6",
+              "name": "Ethernet5",
               "port_number": 6,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet7",
+              "name": "Ethernet6",
               "port_number": 7,
+              "type": "access",
+              "vlan": 1,
+              "ethertype": ""
+            },
+            {
+              "name": "Ethernet7",
+              "port_number": 8,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
@@ -86,83 +86,76 @@
           "ports_mapping": [
             {
               "name": "Ethernet0",
-              "port_number": 0,
-              "type": "access",
-              "vlan": 1,
-              "ethertype": ""
-            },
-            {
-              "name": "Ethernet1",
               "port_number": 1,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet2",
+              "name": "Ethernet1",
               "port_number": 2,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet3",
+              "name": "Ethernet2",
               "port_number": 3,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet4",
+              "name": "Ethernet3",
               "port_number": 4,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet5",
+              "name": "Ethernet4",
               "port_number": 5,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet6",
+              "name": "Ethernet5",
               "port_number": 6,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet7",
+              "name": "Ethernet6",
               "port_number": 7,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet8",
+              "name": "Ethernet7",
               "port_number": 8,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet9",
+              "name": "Ethernet8",
               "port_number": 9,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet10",
+              "name": "Ethernet9",
               "port_number": 10,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet11",
+              "name": "Ethernet10",
               "port_number": 11,
               "type": "access",
               "vlan": 1,
@@ -181,56 +174,56 @@
           "ports_mapping": [
             {
               "name": "Ethernet0",
-              "port_number": 0,
-              "type": "access",
-              "vlan": 1,
-              "ethertype": ""
-            },
-            {
-              "name": "Ethernet1",
               "port_number": 1,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet2",
+              "name": "Ethernet1",
               "port_number": 2,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet3",
+              "name": "Ethernet2",
               "port_number": 3,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet4",
+              "name": "Ethernet3",
               "port_number": 4,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet5",
+              "name": "Ethernet4",
               "port_number": 5,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet6",
+              "name": "Ethernet5",
               "port_number": 6,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet7",
+              "name": "Ethernet6",
               "port_number": 7,
+              "type": "access",
+              "vlan": 1,
+              "ethertype": ""
+            },
+            {
+              "name": "Ethernet7",
+              "port_number": 8,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
@@ -248,56 +241,56 @@
           "ports_mapping": [
             {
               "name": "Ethernet0",
-              "port_number": 0,
-              "type": "access",
-              "vlan": 1,
-              "ethertype": ""
-            },
-            {
-              "name": "Ethernet1",
               "port_number": 1,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet2",
+              "name": "Ethernet1",
               "port_number": 2,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet3",
+              "name": "Ethernet2",
               "port_number": 3,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet4",
+              "name": "Ethernet3",
               "port_number": 4,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet5",
+              "name": "Ethernet4",
               "port_number": 5,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet6",
+              "name": "Ethernet5",
               "port_number": 6,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet7",
+              "name": "Ethernet6",
               "port_number": 7,
+              "type": "access",
+              "vlan": 1,
+              "ethertype": ""
+            },
+            {
+              "name": "Ethernet7",
+              "port_number": 8,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
@@ -315,56 +308,56 @@
           "ports_mapping": [
             {
               "name": "Ethernet0",
-              "port_number": 0,
-              "type": "access",
-              "vlan": 1,
-              "ethertype": ""
-            },
-            {
-              "name": "Ethernet1",
               "port_number": 1,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet2",
+              "name": "Ethernet1",
               "port_number": 2,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet3",
+              "name": "Ethernet2",
               "port_number": 3,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet4",
+              "name": "Ethernet3",
               "port_number": 4,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet5",
+              "name": "Ethernet4",
               "port_number": 5,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet6",
+              "name": "Ethernet5",
               "port_number": 6,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
             },
             {
-              "name": "Ethernet7",
+              "name": "Ethernet6",
               "port_number": 7,
+              "type": "access",
+              "vlan": 1,
+              "ethertype": ""
+            },
+            {
+              "name": "Ethernet7",
+              "port_number": 8,
               "type": "access",
               "vlan": 1,
               "ethertype": ""
@@ -374,7 +367,74 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-admin1",
+        "node_id": "sw-principal",
+        "name": "Principal-SW",
+        "node_type": "ethernet_switch",
+        "template_name": "Ethernet switch",
+        "properties": {
+          "ports_mapping": [
+            {
+              "name": "Ethernet0",
+              "port_number": 1,
+              "type": "access",
+              "vlan": 1,
+              "ethertype": ""
+            },
+            {
+              "name": "Ethernet1",
+              "port_number": 2,
+              "type": "access",
+              "vlan": 1,
+              "ethertype": ""
+            },
+            {
+              "name": "Ethernet2",
+              "port_number": 3,
+              "type": "access",
+              "vlan": 1,
+              "ethertype": ""
+            },
+            {
+              "name": "Ethernet3",
+              "port_number": 4,
+              "type": "access",
+              "vlan": 1,
+              "ethertype": ""
+            },
+            {
+              "name": "Ethernet4",
+              "port_number": 5,
+              "type": "access",
+              "vlan": 1,
+              "ethertype": ""
+            },
+            {
+              "name": "Ethernet5",
+              "port_number": 6,
+              "type": "access",
+              "vlan": 1,
+              "ethertype": ""
+            },
+            {
+              "name": "Ethernet6",
+              "port_number": 7,
+              "type": "access",
+              "vlan": 1,
+              "ethertype": ""
+            },
+            {
+              "name": "Ethernet7",
+              "port_number": 8,
+              "type": "access",
+              "vlan": 1,
+              "ethertype": ""
+            }
+          ]
+        },
+        "compute_id": "local"
+      },
+      {
+        "node_id": "admin-pc1",
         "name": "Admin-PC1",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -382,7 +442,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-admin2",
+        "node_id": "admin-pc2",
         "name": "Admin-PC2",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -390,7 +450,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-admin3",
+        "node_id": "admin-pc3",
         "name": "Admin-PC3",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -398,7 +458,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-admin4",
+        "node_id": "admin-pc4",
         "name": "Admin-PC4",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -406,7 +466,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-admin5",
+        "node_id": "admin-pc5",
         "name": "Admin-PC5",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -414,7 +474,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-admin6",
+        "node_id": "admin-pc6",
         "name": "Admin-PC6",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -422,7 +482,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-admin7",
+        "node_id": "admin-pc7",
         "name": "Admin-PC7",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -430,7 +490,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-admin8",
+        "node_id": "admin-pc8",
         "name": "Admin-PC8",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -438,7 +498,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-admin9",
+        "node_id": "admin-pc9",
         "name": "Admin-PC9",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -446,7 +506,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-admin10",
+        "node_id": "admin-pc10",
         "name": "Admin-PC10",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -454,7 +514,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f1-c1",
+        "node_id": "f1-class1",
         "name": "F1-Class1",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -462,7 +522,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f1-c2",
+        "node_id": "f1-class2",
         "name": "F1-Class2",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -470,7 +530,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f1-c3",
+        "node_id": "f1-class3",
         "name": "F1-Class3",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -478,7 +538,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f1-c4",
+        "node_id": "f1-class4",
         "name": "F1-Class4",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -486,7 +546,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f1-t1",
+        "node_id": "f1-teacher1",
         "name": "F1-Teacher1",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -494,7 +554,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f1-t2",
+        "node_id": "f1-teacher2",
         "name": "F1-Teacher2",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -502,7 +562,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f1-t3",
+        "node_id": "f1-teacher3",
         "name": "F1-Teacher3",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -510,7 +570,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f2-c1",
+        "node_id": "f2-class1",
         "name": "F2-Class1",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -518,7 +578,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f2-c2",
+        "node_id": "f2-class2",
         "name": "F2-Class2",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -526,7 +586,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f2-c3",
+        "node_id": "f2-class3",
         "name": "F2-Class3",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -534,7 +594,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f2-c4",
+        "node_id": "f2-class4",
         "name": "F2-Class4",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -542,7 +602,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f2-t1",
+        "node_id": "f2-teacher1",
         "name": "F2-Teacher1",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -550,7 +610,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f2-t2",
+        "node_id": "f2-teacher2",
         "name": "F2-Teacher2",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -558,7 +618,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f2-t3",
+        "node_id": "f2-teacher3",
         "name": "F2-Teacher3",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -566,7 +626,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f3-c1",
+        "node_id": "f3-class1",
         "name": "F3-Class1",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -574,7 +634,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f3-c2",
+        "node_id": "f3-class2",
         "name": "F3-Class2",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -582,7 +642,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f3-c3",
+        "node_id": "f3-class3",
         "name": "F3-Class3",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -590,7 +650,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f3-c4",
+        "node_id": "f3-class4",
         "name": "F3-Class4",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -598,7 +658,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f3-t1",
+        "node_id": "f3-teacher1",
         "name": "F3-Teacher1",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -606,7 +666,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f3-t2",
+        "node_id": "f3-teacher2",
         "name": "F3-Teacher2",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -614,7 +674,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-f3-t3",
+        "node_id": "f3-teacher3",
         "name": "F3-Teacher3",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -622,7 +682,7 @@
         "compute_id": "local"
       },
       {
-        "node_id": "pc-principal",
+        "node_id": "principal-pc",
         "name": "Principal-PC",
         "node_type": "vpcs",
         "template_name": "VPCS",
@@ -641,22 +701,7 @@
           {
             "node_id": "sw-core",
             "adapter_number": 0,
-            "port_number": 0
-          }
-        ],
-        "link_type": "ethernet"
-      },
-      {
-        "nodes": [
-          {
-            "node_id": "sw-core",
-            "adapter_number": 0,
             "port_number": 1
-          },
-          {
-            "node_id": "sw-admin",
-            "adapter_number": 0,
-            "port_number": 0
           }
         ],
         "link_type": "ethernet"
@@ -667,26 +712,26 @@
             "node_id": "sw-core",
             "adapter_number": 0,
             "port_number": 2
+          },
+          {
+            "node_id": "sw-admin",
+            "adapter_number": 0,
+            "port_number": 1
+          }
+        ],
+        "link_type": "ethernet"
+      },
+      {
+        "nodes": [
+          {
+            "node_id": "sw-core",
+            "adapter_number": 0,
+            "port_number": 3
           },
           {
             "node_id": "sw-f1",
             "adapter_number": 0,
-            "port_number": 0
-          }
-        ],
-        "link_type": "ethernet"
-      },
-      {
-        "nodes": [
-          {
-            "node_id": "sw-core",
-            "adapter_number": 0,
-            "port_number": 3
-          },
-          {
-            "node_id": "sw-f2",
-            "adapter_number": 0,
-            "port_number": 0
+            "port_number": 1
           }
         ],
         "link_type": "ethernet"
@@ -699,9 +744,9 @@
             "port_number": 4
           },
           {
-            "node_id": "sw-f3",
+            "node_id": "sw-f2",
             "adapter_number": 0,
-            "port_number": 0
+            "port_number": 1
           }
         ],
         "link_type": "ethernet"
@@ -709,14 +754,29 @@
       {
         "nodes": [
           {
-            "node_id": "sw-admin",
+            "node_id": "sw-core",
             "adapter_number": 0,
-            "port_number": 1
+            "port_number": 5
           },
           {
-            "node_id": "pc-admin1",
+            "node_id": "sw-f3",
             "adapter_number": 0,
-            "port_number": 0
+            "port_number": 1
+          }
+        ],
+        "link_type": "ethernet"
+      },
+      {
+        "nodes": [
+          {
+            "node_id": "sw-core",
+            "adapter_number": 0,
+            "port_number": 6
+          },
+          {
+            "node_id": "sw-principal",
+            "adapter_number": 0,
+            "port_number": 1
           }
         ],
         "link_type": "ethernet"
@@ -729,7 +789,7 @@
             "port_number": 2
           },
           {
-            "node_id": "pc-admin2",
+            "node_id": "admin-pc1",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -744,7 +804,7 @@
             "port_number": 3
           },
           {
-            "node_id": "pc-admin3",
+            "node_id": "admin-pc2",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -759,7 +819,7 @@
             "port_number": 4
           },
           {
-            "node_id": "pc-admin4",
+            "node_id": "admin-pc3",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -774,7 +834,7 @@
             "port_number": 5
           },
           {
-            "node_id": "pc-admin5",
+            "node_id": "admin-pc4",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -789,7 +849,7 @@
             "port_number": 6
           },
           {
-            "node_id": "pc-admin6",
+            "node_id": "admin-pc5",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -804,7 +864,7 @@
             "port_number": 7
           },
           {
-            "node_id": "pc-admin7",
+            "node_id": "admin-pc6",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -819,7 +879,7 @@
             "port_number": 8
           },
           {
-            "node_id": "pc-admin8",
+            "node_id": "admin-pc7",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -834,7 +894,7 @@
             "port_number": 9
           },
           {
-            "node_id": "pc-admin9",
+            "node_id": "admin-pc8",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -849,7 +909,7 @@
             "port_number": 10
           },
           {
-            "node_id": "pc-admin10",
+            "node_id": "admin-pc9",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -864,22 +924,7 @@
             "port_number": 11
           },
           {
-            "node_id": "pc-principal",
-            "adapter_number": 0,
-            "port_number": 0
-          }
-        ],
-        "link_type": "ethernet"
-      },
-      {
-        "nodes": [
-          {
-            "node_id": "sw-f1",
-            "adapter_number": 0,
-            "port_number": 1
-          },
-          {
-            "node_id": "pc-f1-c1",
+            "node_id": "admin-pc10",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -894,7 +939,7 @@
             "port_number": 2
           },
           {
-            "node_id": "pc-f1-c2",
+            "node_id": "f1-class1",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -909,7 +954,7 @@
             "port_number": 3
           },
           {
-            "node_id": "pc-f1-c3",
+            "node_id": "f1-class2",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -924,7 +969,7 @@
             "port_number": 4
           },
           {
-            "node_id": "pc-f1-c4",
+            "node_id": "f1-class3",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -939,7 +984,7 @@
             "port_number": 5
           },
           {
-            "node_id": "pc-f1-t1",
+            "node_id": "f1-class4",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -954,7 +999,7 @@
             "port_number": 6
           },
           {
-            "node_id": "pc-f1-t2",
+            "node_id": "f1-teacher1",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -969,7 +1014,7 @@
             "port_number": 7
           },
           {
-            "node_id": "pc-f1-t3",
+            "node_id": "f1-teacher2",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -979,12 +1024,12 @@
       {
         "nodes": [
           {
-            "node_id": "sw-f2",
+            "node_id": "sw-f1",
             "adapter_number": 0,
-            "port_number": 1
+            "port_number": 8
           },
           {
-            "node_id": "pc-f2-c1",
+            "node_id": "f1-teacher3",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -999,7 +1044,7 @@
             "port_number": 2
           },
           {
-            "node_id": "pc-f2-c2",
+            "node_id": "f2-class1",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -1014,7 +1059,7 @@
             "port_number": 3
           },
           {
-            "node_id": "pc-f2-c3",
+            "node_id": "f2-class2",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -1029,7 +1074,7 @@
             "port_number": 4
           },
           {
-            "node_id": "pc-f2-c4",
+            "node_id": "f2-class3",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -1044,7 +1089,7 @@
             "port_number": 5
           },
           {
-            "node_id": "pc-f2-t1",
+            "node_id": "f2-class4",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -1059,7 +1104,7 @@
             "port_number": 6
           },
           {
-            "node_id": "pc-f2-t2",
+            "node_id": "f2-teacher1",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -1074,7 +1119,7 @@
             "port_number": 7
           },
           {
-            "node_id": "pc-f2-t3",
+            "node_id": "f2-teacher2",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -1084,12 +1129,12 @@
       {
         "nodes": [
           {
-            "node_id": "sw-f3",
+            "node_id": "sw-f2",
             "adapter_number": 0,
-            "port_number": 1
+            "port_number": 8
           },
           {
-            "node_id": "pc-f3-c1",
+            "node_id": "f2-teacher3",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -1104,7 +1149,7 @@
             "port_number": 2
           },
           {
-            "node_id": "pc-f3-c2",
+            "node_id": "f3-class1",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -1119,7 +1164,7 @@
             "port_number": 3
           },
           {
-            "node_id": "pc-f3-c3",
+            "node_id": "f3-class2",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -1134,7 +1179,7 @@
             "port_number": 4
           },
           {
-            "node_id": "pc-f3-c4",
+            "node_id": "f3-class3",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -1149,7 +1194,7 @@
             "port_number": 5
           },
           {
-            "node_id": "pc-f3-t1",
+            "node_id": "f3-class4",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -1164,7 +1209,7 @@
             "port_number": 6
           },
           {
-            "node_id": "pc-f3-t2",
+            "node_id": "f3-teacher1",
             "adapter_number": 0,
             "port_number": 0
           }
@@ -1179,7 +1224,37 @@
             "port_number": 7
           },
           {
-            "node_id": "pc-f3-t3",
+            "node_id": "f3-teacher2",
+            "adapter_number": 0,
+            "port_number": 0
+          }
+        ],
+        "link_type": "ethernet"
+      },
+      {
+        "nodes": [
+          {
+            "node_id": "sw-f3",
+            "adapter_number": 0,
+            "port_number": 8
+          },
+          {
+            "node_id": "f3-teacher3",
+            "adapter_number": 0,
+            "port_number": 0
+          }
+        ],
+        "link_type": "ethernet"
+      },
+      {
+        "nodes": [
+          {
+            "node_id": "sw-principal",
+            "adapter_number": 0,
+            "port_number": 2
+          },
+          {
+            "node_id": "principal-pc",
             "adapter_number": 0,
             "port_number": 0
           }

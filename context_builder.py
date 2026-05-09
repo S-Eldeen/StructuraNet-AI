@@ -54,6 +54,11 @@ DYNAMIPS_MODULE_INTERFACES: Dict[str, Dict[str, Any]] = {
     "NM-1FE-TX":  {"prefix": "FastEthernet",    "count": 1},
     "NM-16ESW":   {"prefix": "FastEthernet",    "count": 16},
     "GT96100-FE": {"prefix": "FastEthernet",    "count": 2},
+    # Serial / WAN modules
+    "PA-4T+":     {"prefix": "Serial",           "count": 4},
+    "PA-8T":      {"prefix": "Serial",           "count": 8},
+    "NM-4T":      {"prefix": "Serial",           "count": 4},
+    "NM-1T":      {"prefix": "Serial",           "count": 1},
 }
 
 # Built-in interfaces per Dynamips platform (slot 0, before any expansion)
@@ -79,7 +84,7 @@ L3_ROUTER_TYPES: FrozenSet[str] = frozenset([
     "dynamips", "iou", "qemu", "docker", "virtualbox", "vmware",
 ])
 
-# Node types that don't need IP configuration
+# Note: "iou" is NOT in this set because IOU L2/L3 devices need IOS configs.
 NO_CONFIG_TYPES: FrozenSet[str] = frozenset([
     "ethernet_switch", "ethernet_hub", "nat", "cloud",
     "frame_relay_switch", "atm_switch",
@@ -141,11 +146,12 @@ class Segment:
     A value of 0 means "untagged / no VLAN" (simple flat topology).
     """
     segment_id: int
-    seg_type: str  # "multi-access" or "point-to-point"
+    seg_type: str  # "multi-access", "point-to-point", or "trunk"
     link_pairs: List[Tuple[ResolvedPort, ResolvedPort]]
     concentrator_ids: Set[str] = field(default_factory=set)
     vlan_id: int = 0                 # 0 = untagged; >0 = 802.1Q VLAN
     access_switch_name: str = ""     # human name of the access switch for this segment
+    link_type: str = "ethernet"      # "ethernet" or "serial" — critical for WAN brief
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -411,10 +417,10 @@ def _infer_vlan_for_access_switch(
             return candidate
         # Candidate collides or is out of range — fall through to sequential
 
-# ── Strategy 3: sequential allocation ────────────────────────────
+    # ── Strategy 3: sequential allocation ────────────────────────────
     # Walk forward from vlan_counter[0] until we find a free slot.
-    # The initial counter value is set by the caller (e.g., starting at 100
-    # to isolate unnamed switches from named ones) and increments by 10.
+    # The counter starts at 10 and increments by 10, but we skip any
+    # value already used so the step is not always exactly 10.
     while vlan_counter[0] in used_vlans or vlan_counter[0] < 1:
         vlan_counter[0] += 10
         if vlan_counter[0] > 4094:
@@ -658,12 +664,15 @@ def build_segments(
     link_segment_keys: List[str] = []
     # Also track which access switch each link belongs to (for Segment metadata)
     link_access_sw: List[Optional[str]] = []
+    # Track the link_type for each link so Segment objects can carry it
+    link_link_types: List[str] = []
 
     for link in links:
         eps = link.get("nodes", [])
         if len(eps) < 2:
             link_segment_keys.append("")
             link_access_sw.append(None)
+            link_link_types.append("ethernet")
             continue
 
         a_id = eps[0].get("node_id", "")
@@ -781,16 +790,22 @@ def build_segments(
 
         link_segment_keys.append(key)
         link_access_sw.append(assigned_access_sw)
+        link_link_types.append(link.get("link_type", "ethernet"))
 
     # ── Group links by segment key ────────────────────────────────────
     grouped: Dict[str, List[dict]] = {}
     grouped_access_sw: Dict[str, Optional[str]] = {}  # key → access_switch_id
+    grouped_link_type: Dict[str, str] = {}             # key → dominant link_type
     for i, key in enumerate(link_segment_keys):
         if key:
             grouped.setdefault(key, []).append(links[i])
             # Record whichever access switch we found for this key
             if link_access_sw[i] is not None:
                 grouped_access_sw[key] = link_access_sw[i]
+            # Track link_type: serial wins over ethernet if any link is serial
+            lt = link_link_types[i] if i < len(link_link_types) else "ethernet"
+            if key not in grouped_link_type or lt == "serial":
+                grouped_link_type[key] = lt
 
     # ── Build Segment objects ─────────────────────────────────────────
     segments: List[Segment] = []
@@ -830,6 +845,9 @@ def build_segments(
             access_sw_id = grouped_access_sw.get(key)
             sw_name = access_switch_name_map.get(access_sw_id, "") if access_sw_id else ""
 
+        # Determine link_type for this segment (serial vs ethernet)
+        seg_link_type = grouped_link_type.get(key, "ethernet")
+
         segments.append(Segment(
             segment_id=seg_id,
             seg_type=seg_type,
@@ -837,6 +855,7 @@ def build_segments(
             concentrator_ids=conc_ids,
             vlan_id=vlan_id,
             access_switch_name=sw_name,
+            link_type=seg_link_type,
         ))
         seg_id += 1
 
@@ -971,30 +990,99 @@ _PM_ACCESS = "access"   # strips VLAN tags; forwards only frames for one VLAN
 _PM_DOT1Q  = "dot1q"   # carries 802.1Q tagged frames for multiple VLANs
 
 
+def _classify_switch_vlan_needs(
+    topology: dict,
+    node_map: Dict[str, dict],
+    access_sw_vlan: Dict[str, int],
+) -> Dict[str, bool]:
+    """Classify each switch as needing 802.1Q trunking or flat (untagged).
+
+    GENERAL RULE: 802.1Q trunking is required ONLY when a switch must carry
+    tagged frames for multiple VLANs.  This is a structural property derived
+    from the topology graph, not a heuristic.
+
+    A switch needs trunking (dot1q on its uplink port) if and only if:
+      1. It is a core switch (connected to router + other switches) — it
+         carries tagged frames for every downstream VLAN.
+      2. It is an access switch with a non-zero VLAN assignment — it must
+         receive tagged frames from its upstream trunk partner (core switch
+         or router) and strip them for its own access ports.
+
+    A switch does NOT need trunking when:
+      1. It is an access switch connected directly to a router with
+         vlan_id=0 (flat/untagged) — the router interface carries plain
+         Ethernet frames, no dot1Q encapsulation needed.
+      2. The entire topology has no VLANs at all (single flat LAN).
+
+    This classification prevents the critical bug where a flat topology
+    (each switch on its own router interface) gets dot1q trunk ports
+    that the router's plain physical interface cannot speak, breaking
+    Layer 2 connectivity entirely.
+
+    Returns
+    -------
+    Dict[str, bool]
+        node_id → True if this switch needs 802.1Q trunking on its
+        uplink port(s), False if it should use plain access ports.
+    """
+    core_sw_ids = _identify_core_switches(topology, node_map)
+    result: Dict[str, bool] = {}
+
+    for node in topology.get("nodes", []):
+        ntype = node.get("node_type", "")
+        if ntype not in L2_CONCENTRATOR_TYPES:
+            continue
+        nid = node["node_id"]
+
+        if nid in core_sw_ids:
+            # Core switches ALWAYS need trunking — they aggregate
+            # multiple VLAN-tagged streams from access switches.
+            result[nid] = True
+        elif access_sw_vlan.get(nid, 0) > 0:
+            # Access switch with a VLAN assignment — needs trunk uplink
+            # to receive tagged frames from core/router.
+            result[nid] = True
+        else:
+            # Access switch with vlan_id=0 — flat/untagged, no trunking.
+            # The router's physical interface will carry plain Ethernet
+            # frames with no dot1Q encapsulation.
+            result[nid] = False
+
+    return result
+
+
 def patch_switch_ports_mapping(
     topology: dict,
     segments: List[Segment],
     node_map: Dict[str, dict],
 ) -> Dict[str, List[Dict[str, int]]]:
-    """Rewrite GNS3 ethernet_switch ports_mapping to match the RoaS VLAN plan.
+    """Rewrite GNS3 ethernet_switch ports_mapping to match the VLAN plan.
 
     This function fixes the critical GNS3 deployment bug where every switch
     port starts as ``"type": "access", "vlan": 1``.  With that default, the
     GNS3 software switch strips the 802.1Q tags that the router sends, so
     tagged frames never reach the access switches and the network is dead.
 
-    Decision table (derived purely from the link graph and segment metadata —
-    no heuristics, no name matching):
+    V3.0 GENERAL RULE: The decision to use dot1q trunking vs. plain access
+    ports is now driven by structural topology analysis, not a blanket
+    "all switch uplinks are dot1q" rule.  See ``_classify_switch_vlan_needs``
+    for the full decision logic.
 
-    ┌─────────────────────────────────────────────┬──────────┬────────────┐
-    │ Link                                        │ type     │ vlan       │
-    ├─────────────────────────────────────────────┼──────────┼────────────┤
-    │ Router  ↔  core switch  (trunk)             │ dot1q    │ (ignored)  │
-    │ Core SW ↔  access switch (inter-switch)     │ dot1q    │ (ignored)  │
-    │ Access SW uplink port   (to core)           │ dot1q    │ (ignored)  │
-    │ Access SW host port     (to VPCS/host)      │ access   │ segment ID │
-    │ Unlinked / unused port                      │ (unchanged)            │
-    └─────────────────────────────────────────────┴──────────┴────────────┘
+    Decision table (derived from topology structure + segment VLAN data):
+
+    ┌─────────────────────────────────────────────────┬──────────┬──────────┐
+    │ Link + Switch VLAN Status                       │ type     │ vlan     │
+    ├─────────────────────────────────────────────────┼──────────┼──────────┤
+    │ Router ↔ core switch  (trunk, ALWAYS)           │ dot1q    │ 0        │
+    │ Core SW ↔ access SW with vlan>0 (trunk)         │ dot1q    │ 0        │
+    │ Core SW ↔ access SW with vlan=0 (flat)          │ access   │ 1        │
+    │ Access SW (vlan>0) uplink to router/core         │ dot1q    │ 0        │
+    │ Access SW (vlan=0) uplink to router (flat)      │ access   │ 1        │
+    │ Access SW host port (vlan>0)                     │ access   │ vlan_id  │
+    │ Access SW host port (vlan=0, flat)               │ access   │ 1        │
+    │ Core SW ↔ core SW (inter-switch trunk)           │ dot1q    │ 0        │
+    │ Unlinked / unused port                           │ unchanged           │
+    └─────────────────────────────────────────────────┴──────────┴──────────┘
 
     For ``dot1q`` ports the ``vlan`` field is set to 0; GNS3 ignores the vlan
     field for dot1q ports but we zero it explicitly to avoid confusing diffs.
@@ -1015,12 +1103,11 @@ def patch_switch_ports_mapping(
         of ``{"port": N, "old_type": "...", "new_type": "...", "vlan": V}``
         dicts — useful for audit logging and tests.
     """
-    # ── Step 1: build a (node_id, port_number) → action map ──────────────────
-    # action = ("dot1q", 0) | ("access", vlan_id)
-    #
-    # We drive this entirely from the links array and the segment VLAN map —
-    # no name heuristics here.  Each link tells us the port numbers on both
-    # endpoints; the segment map tells us which VLAN those ports belong to.
+    # ── Step 0: Classify each switch's VLAN needs ─────────────────────────
+    # This is the V3.0 general rule: not every switch needs trunking.
+    # Flat (vlan_id=0) switches that connect directly to a router use
+    # plain access ports for their uplink, matching the router's physical
+    # interface that carries no dot1Q tags.
     #
     # Build the access-switch → VLAN lookup from the segments list so we
     # don't have to re-run the VLAN assignment logic.
@@ -1030,6 +1117,23 @@ def patch_switch_ports_mapping(
             for sw_id in seg.concentrator_ids:
                 if sw_id not in access_sw_vlan:
                     access_sw_vlan[sw_id] = seg.vlan_id
+
+    switch_needs_trunking = _classify_switch_vlan_needs(
+        topology, node_map, access_sw_vlan
+    )
+    logger.debug(
+        "patch_switch_ports_mapping: switch trunking classification: %s",
+        switch_needs_trunking,
+    )
+
+    # ── Step 1: build a (node_id, port_number) → action map ──────────────────
+    # action = ("dot1q", 0) | ("access", vlan_id)
+    #
+    # We drive this entirely from the links array, the segment VLAN map, and
+    # the switch trunking classification — no name heuristics here.  Each link
+    # tells us the port numbers on both endpoints; the segment map tells us
+    # which VLAN those ports belong to; the trunking classification tells us
+    # whether a switch uplink should be dot1q or access.
 
     # Identify core and access switch sets from node_map + segment data
     # (mirrors _identify_core_switches without re-running it)
@@ -1060,22 +1164,43 @@ def patch_switch_ports_mapping(
         b_is_acc  = b_is_sw and not b_is_core
 
         if a_is_rtr and b_is_sw:
-            # Router → any switch port: trunk on the switch side
-            port_actions[(b_id, b_port)] = (_PM_DOT1Q, 0)
+            # Router → switch: trunk ONLY if the switch needs trunking.
+            # Flat switches (vlan_id=0, no core parent) keep access/vlan=1
+            # because the router's physical interface sends plain frames.
+            if switch_needs_trunking.get(b_id, False):
+                port_actions[(b_id, b_port)] = (_PM_DOT1Q, 0)
+            # else: leave as default access/vlan=1 — no action needed
 
         elif b_is_rtr and a_is_sw:
-            # Any switch → router: trunk on the switch side
-            port_actions[(a_id, a_port)] = (_PM_DOT1Q, 0)
+            # Switch → router: same logic, check if switch needs trunking.
+            if switch_needs_trunking.get(a_id, False):
+                port_actions[(a_id, a_port)] = (_PM_DOT1Q, 0)
+            # else: leave as default access/vlan=1 — no action needed
 
         elif a_is_core and b_is_sw:
-            # Core → any switch (access or another core): both ends dot1q
-            port_actions[(a_id, a_port)] = (_PM_DOT1Q, 0)
-            port_actions[(b_id, b_port)] = (_PM_DOT1Q, 0)
+            # Core → downstream switch: port type depends on whether the
+            # downstream switch participates in a VLAN (needs trunk) or
+            # is flat (access).  This is per-port, not per-switch — a core
+            # switch can have dot1q ports for VLAN'd downstream switches
+            # and access ports for flat ones simultaneously.
+            if switch_needs_trunking.get(b_id, False):
+                port_actions[(a_id, a_port)] = (_PM_DOT1Q, 0)
+                port_actions[(b_id, b_port)] = (_PM_DOT1Q, 0)
+            else:
+                # Flat downstream switch — both ends use access/vlan=1.
+                # The core switch port facing this particular downstream
+                # switch carries plain frames (no dot1Q tag).
+                port_actions[(a_id, a_port)] = (_PM_ACCESS, 1)
+                port_actions[(b_id, b_port)] = (_PM_ACCESS, 1)
 
         elif b_is_core and a_is_sw:
-            # Any switch → core: both ends dot1q
-            port_actions[(a_id, a_port)] = (_PM_DOT1Q, 0)
-            port_actions[(b_id, b_port)] = (_PM_DOT1Q, 0)
+            # Mirror of above (switch → core direction)
+            if switch_needs_trunking.get(a_id, False):
+                port_actions[(a_id, a_port)] = (_PM_DOT1Q, 0)
+                port_actions[(b_id, b_port)] = (_PM_DOT1Q, 0)
+            else:
+                port_actions[(a_id, a_port)] = (_PM_ACCESS, 1)
+                port_actions[(b_id, b_port)] = (_PM_ACCESS, 1)
 
         elif a_is_acc and not b_is_sw:
             # Access switch → host: access port with the segment's VLAN
@@ -1148,6 +1273,138 @@ def patch_switch_ports_mapping(
     return change_log
 
 
+def _detect_nat_role(
+    nat_node_id: str,
+    links: List[dict],
+    node_map: Dict[str, dict],
+    concentrator_ids: Set[str],
+) -> str:
+    """Determine if a NAT node is 'inside' or 'outside' relative to the network.
+
+    Heuristic: the NAT port connected to a router is 'outside', the port
+    connected to a switch (or directly to hosts) is 'inside'.
+
+    Returns "inside", "outside", or "" if indeterminate.
+    """
+    for link in links:
+        eps = link.get("nodes", [])
+        if len(eps) < 2:
+            continue
+        a_id = eps[0].get("node_id", "")
+        b_id = eps[1].get("node_id", "")
+        # Find the link that has this NAT node
+        if a_id == nat_node_id:
+            other_id = b_id
+        elif b_id == nat_node_id:
+            other_id = a_id
+        else:
+            continue
+        other_type = node_map.get(other_id, {}).get("node_type", "")
+        # If the NAT connects to a router, that side is outside
+        if other_type in L3_ROUTER_TYPES:
+            return "outside"
+        # If the NAT connects to a switch/hub, that side is inside
+        if other_type in L2_CONCENTRATOR_TYPES:
+            return "inside"
+    return ""
+
+
+def _detect_router_nat_interfaces(
+    nodes: List[dict],
+    links: List[dict],
+    node_map: Dict[str, dict],
+    concentrator_ids: Set[str],
+) -> Dict[str, Dict[str, str]]:
+    """Detect which router interfaces should be NAT inside vs outside.
+
+    When a router connects to a GNS3 NAT node, that router interface is the
+    NAT outside.  All other router interfaces connected to internal switches
+    are NAT inside.
+
+    Returns: ``{router_node_id: {interface_name: "inside"|"outside"}}``
+    """
+    nat_node_ids: Set[str] = set()
+    for node in nodes:
+        if node.get("node_type") == "nat":
+            nat_node_ids.add(node.get("node_id", ""))
+
+    if not nat_node_ids:
+        return {}
+
+    # For each link between a router and a NAT node, mark the router's
+    # interface as "outside".  For links between a router and an internal
+    # switch (when a NAT exists), mark as "inside".
+    router_ifaces: Dict[str, Dict[str, str]] = {}
+
+    for link in links:
+        eps = link.get("nodes", [])
+        if len(eps) < 2:
+            continue
+        a_id = eps[0].get("node_id", "")
+        b_id = eps[1].get("node_id", "")
+        a_type = node_map.get(a_id, {}).get("node_type", "")
+        b_type = node_map.get(b_id, {}).get("node_type", "")
+
+        # Router ↔ NAT link → router interface is "outside"
+        if a_type in L3_ROUTER_TYPES and b_id in nat_node_ids:
+            resolved = resolve_port_name(
+                node_map[a_id],
+                eps[0].get("adapter_number", 0),
+                eps[0].get("port_number", 0),
+            )
+            router_ifaces.setdefault(a_id, {})[resolved] = "outside"
+        elif b_type in L3_ROUTER_TYPES and a_id in nat_node_ids:
+            resolved = resolve_port_name(
+                node_map[b_id],
+                eps[1].get("adapter_number", 0),
+                eps[1].get("port_number", 0),
+            )
+            router_ifaces.setdefault(b_id, {})[resolved] = "outside"
+
+    # For routers that have an "outside" interface, mark all other
+    # connected interfaces as "inside" (including serial WAN links
+    # to other internal routers, which are NOT the internet exit).
+    for link in links:
+        eps = link.get("nodes", [])
+        if len(eps) < 2:
+            continue
+        a_id = eps[0].get("node_id", "")
+        b_id = eps[1].get("node_id", "")
+        a_type = node_map.get(a_id, {}).get("node_type", "")
+        b_type = node_map.get(b_id, {}).get("node_type", "")
+
+        if a_type in L3_ROUTER_TYPES and a_id in router_ifaces:
+            resolved = resolve_port_name(
+                node_map[a_id],
+                eps[0].get("adapter_number", 0),
+                eps[0].get("port_number", 0),
+            )
+            # Mark as "inside" if:
+            # 1. Connected to a switch (LAN interface) — original logic
+            # 2. Connected to another router via a SERIAL link (internal WAN)
+            #    (serial links to other internal routers are NOT internet-facing)
+            is_inside = (
+                (b_type in L2_CONCENTRATOR_TYPES) or
+                (b_type in L3_ROUTER_TYPES and link.get("link_type") == "serial")
+            )
+            if resolved not in router_ifaces[a_id] and is_inside:
+                router_ifaces[a_id][resolved] = "inside"
+        elif b_type in L3_ROUTER_TYPES and b_id in router_ifaces:
+            resolved = resolve_port_name(
+                node_map[b_id],
+                eps[1].get("adapter_number", 0),
+                eps[1].get("port_number", 0),
+            )
+            is_inside = (
+                (a_type in L2_CONCENTRATOR_TYPES) or
+                (a_type in L3_ROUTER_TYPES and link.get("link_type") == "serial")
+            )
+            if resolved not in router_ifaces[b_id] and is_inside:
+                router_ifaces[b_id][resolved] = "inside"
+
+    return router_ifaces
+
+
 def generate_brief(topology: dict) -> str:
     """Generate the human-readable Configuration Brief from a Phase 1 topology.
 
@@ -1160,6 +1417,14 @@ def generate_brief(topology: dict) -> str:
     """
     node_map = _build_node_map(topology)
     segments = build_segments(topology, node_map)
+    nodes = topology.get("nodes", [])
+    links = topology.get("links", [])
+
+    # Build concentrator_ids for NAT detection
+    concentrator_ids: Set[str] = set()
+    for node in nodes:
+        if node.get("node_type") in L2_CONCENTRATOR_TYPES:
+            concentrator_ids.add(node["node_id"])
 
     # ── Patch switch ports_mapping BEFORE rendering the brief ────────
     # This must run here (after segments are known, before deployment)
@@ -1173,8 +1438,6 @@ def generate_brief(topology: dict) -> str:
             len(patch_log),
             {nid: len(changes) for nid, changes in patch_log.items()},
         )
-
-    nodes = topology.get("nodes", [])
 
     lines: List[str] = []
 
@@ -1283,6 +1546,95 @@ def generate_brief(topology: dict) -> str:
 
         lines.append("")
 
+    # ── NAT GATEWAY section ──
+    nat_nodes = [n for n in nodes if n.get("node_type") == "nat"]
+    if nat_nodes:
+        lines.append("NAT GATEWAYS:")
+        for nat_node in nat_nodes:
+            nat_id = nat_node.get("node_id", "?")
+            nat_name = nat_node.get("name", nat_id)
+            role = _detect_nat_role(nat_id, links, node_map, concentrator_ids)
+            lines.append(
+                f"  {nat_name} ({nat_id}): role={role or 'unknown'}"
+            )
+            if role == "outside":
+                lines.append(
+                    f"    → Router interface connected to this NAT should be "
+                    f"configured as 'ip nat outside'"
+                )
+            elif role == "inside":
+                lines.append(
+                    f"    → Internal interfaces should be configured as "
+                    f"'ip nat inside'"
+                )
+        lines.append("")
+
+    # ── ROUTER NAT INTERFACE MAPPING section ──
+    # When routers connect to NAT nodes, annotate which of their interfaces
+    # are "ip nat inside" vs "ip nat outside".  This is essential for the LLM
+    # to produce correct NAT/PAT configuration.
+    router_nat_ifaces = _detect_router_nat_interfaces(nodes, links, node_map, concentrator_ids)
+    if router_nat_ifaces:
+        lines.append("ROUTER NAT INTERFACE ASSIGNMENTS:")
+        for router_id, iface_map in router_nat_ifaces.items():
+            router_name = node_map.get(router_id, {}).get("name", router_id)
+            lines.append(f"  {router_name} ({router_id}):")
+            for iface_name, direction in sorted(iface_map.items()):
+                lines.append(
+                    f"    {iface_name}: ip nat {direction}"
+                )
+        lines.append("")
+
+    # ── WAN POINT-TO-POINT section ──
+    p2p_segments = [s for s in segments if s.seg_type == "point-to-point"]
+    if p2p_segments:
+        lines.append("WAN POINT-TO-POINT LINKS:")
+        wan_idx = 0
+        for seg in p2p_segments:
+            is_serial = seg.link_type == "serial"
+            media_label = "SERIAL" if is_serial else "Ethernet"
+            lines.append(
+                f"  Segment {seg.segment_id} (point-to-point WAN — {media_label}):"
+            )
+            for ep_a, ep_b in seg.link_pairs:
+                lines.append(
+                    f"    {ep_a.node_id:6s} {ep_a.canonical_name:20s}"
+                    f"  <->  {ep_b.node_id:6s} {ep_b.canonical_name}"
+                )
+            lines.append(
+                f"    → Use /30 subnets for WAN links (e.g., 10.255.{wan_idx}.0/30)"
+            )
+            lines.append(
+                f"    → Configure routing protocol neighbors across this link"
+            )
+            if is_serial:
+                lines.append(
+                    f"    → SERIAL LINK: Use 'encapsulation hdlc' (or ppp). "
+                    f"Set 'clock rate 64000' on the DCE side."
+                )
+            wan_idx += 1
+        lines.append("")
+
+    # ── IOU L2 SWITCHES section ──
+    iou_nodes = [n for n in nodes if n.get("node_type") == "iou"]
+    if iou_nodes:
+        lines.append("IOU DEVICES (require IOS-style configuration):")
+        for iou_node in iou_nodes:
+            iou_id = iou_node.get("node_id", "?")
+            iou_name = iou_node.get("name", iou_id)
+            props = iou_node.get("properties", {})
+            is_l2 = "l2" in str(props.get("slot0", "")).lower()
+            sw_type = "L2 Switch" if is_l2 else "L3 Router"
+            lines.append(f"  {iou_name} ({iou_id}): IOU {sw_type}")
+            if is_l2:
+                lines.append(
+                    f"    → Requires VLAN database and switchport configuration"
+                )
+                lines.append(
+                    f"    → Use 'vlan 10', 'switchport mode trunk/access' commands"
+                )
+        lines.append("")
+
     # ── CONFIG KEY MAPPING section ──
     lines.append("CONFIG KEY MAPPING (use these exact property names):")
     present_types = {n.get("node_type") for n in nodes}
@@ -1297,46 +1649,82 @@ def generate_brief(topology: dict) -> str:
     # ── ARCHITECTURAL ADVICE section ──
     lines.append("ARCHITECTURAL ADVICE:")
 
-    # Count access switches: any ethernet_switch whose name does NOT
-    # contain "Core" (case-insensitive).  Access switches serve end-devices
-    # in distinct departments/floors/zones and SHOULD be on separate
-    # broadcast domains.  Core switches are L2 concentrators that
-    # interconnect access switches and the router.
-    access_switches = [
-        n for n in nodes
-        if n.get("node_type") == "ethernet_switch"
-        and "core" not in n.get("name", "").lower()
-    ]
-    access_count = len(access_switches)
+    # V3.0 GENERAL RULE: Architecture classification is derived from the
+    # topology's STRUCTURE, not from switch counts.  The key question is:
+    # "Do multiple access switches share a single router interface through
+    # a core switch?"  If YES → Router-on-a-Stick (dot1Q).  If NO → flat.
+    #
+    # Detection strategy: examine the segments produced by build_segments().
+    #   - VLAN segments (vlan_id > 0) exist → RoaS is needed
+    #   - All segments are untagged (vlan_id = 0) → flat network
+    #   - Mixed → hybrid (some flat, some VLAN'd)
+    #
+    # This correctly handles:
+    #   A. Single switch → flat (1 segment, no VLANs)
+    #   B. 2+ switches each on own router interface → flat (2+ segments, no VLANs)
+    #   C. 2+ switches through a core switch → RoaS (2+ VLAN segments)
+    #   D. 1 switch through core + 1 direct → mixed (1 VLAN + 1 flat)
+    vlan_segments = [s for s in segments if s.vlan_id > 0]
+    flat_segments = [s for s in segments if s.seg_type == "multi-access" and s.vlan_id == 0]
+    has_trunk = any(s.seg_type == "trunk" for s in segments)
+    num_vlan_segs = len(vlan_segments)
+    num_flat_segs = len(flat_segments)
 
-    if access_count > 1:
-        # Multi-department topology — requires L3 segmentation
-        access_names = ", ".join(n.get("name", n.get("node_id", "?")) for n in access_switches)
+    if num_vlan_segs > 0:
+        # Router-on-a-Stick topology (or hybrid with some flat segments)
+        vlan_sw_names = [s.access_switch_name for s in vlan_segments if s.access_switch_name]
+        vlan_label = ", ".join(vlan_sw_names) if vlan_sw_names else f"{num_vlan_segs} VLAN(s)"
         lines.append(
-            f"  This is a MULTI-DEPARTMENT network with {access_count} access "
-            f"switch(es): [{access_names}]."
+            f"  This topology has {num_vlan_segs} VLAN segment(s): [{vlan_label}]."
         )
         lines.append(
             "  You MUST implement Router-on-a-Stick (802.1Q sub-interfaces) "
-            "so each access switch operates in its OWN VLAN with its OWN "
-            "unique subnet."
+            "for these VLAN segments."
         )
         lines.append(
             "  Pattern: Router sub-if N → VLAN N → Access Switch N → "
             "end-devices in VLAN N's subnet."
         )
+        if num_flat_segs > 0:
+            # Hybrid: some flat, some VLAN'd
+            flat_sw_names = [s.access_switch_name for s in flat_segments if s.access_switch_name]
+            flat_label = ", ".join(flat_sw_names) if flat_sw_names else f"{num_flat_segs} flat"
+            lines.append(
+                f"  IN ADDITION, this topology has {num_flat_segs} FLAT/untagged "
+                f"segment(s): [{flat_label}]."
+            )
+            lines.append(
+                "  These flat segments connect DIRECTLY to a router's physical "
+                "interface (no core switch).  Assign a plain IP address on the "
+                "router's physical interface — do NOT use dot1Q sub-interfaces "
+                "for these segments."
+            )
+            lines.append(
+                "  IMPORTANT: Each flat segment uses its OWN router interface. "
+                "Do NOT merge flat segments with VLAN segments on the same "
+                "router interface."
+            )
+    elif num_flat_segs > 0:
+        # Pure flat topology — no VLANs at all
+        flat_sw_names = [s.access_switch_name for s in flat_segments if s.access_switch_name]
+        flat_label = ", ".join(flat_sw_names) if flat_sw_names else f"{num_flat_segs} segment(s)"
         lines.append(
-            "  NEVER place all access switches / end-devices in a single "
-            "flat subnet — that defeats the purpose of having separate "
-            "switches per department."
+            f"  This is a FLAT network with {num_flat_segs} untagged segment(s): "
+            f"[{flat_label}]."
         )
-    elif access_count == 1:
         lines.append(
-            "  This is a simple single-department network. A flat subnet "
-            "is acceptable."
+            "  Each segment connects DIRECTLY to a router's physical interface. "
+            "Assign a plain IP address on each physical interface — do NOT "
+            "use 802.1Q sub-interfaces or dot1Q encapsulation."
+        )
+        lines.append(
+            "  NEVER use 'encapsulation dot1Q' or sub-interfaces when every "
+            "access switch has its own dedicated router interface.  That is "
+            "Router-on-a-Stick config applied to a flat topology — it will "
+            "break Layer 2 connectivity."
         )
     else:
-        # No access switches at all (only core, or no switches)
+        # No multi-access segments at all (only p2p, or no switches)
         lines.append(
             "  No access switches detected. Assign one subnet per segment "
             "as usual."
@@ -1348,17 +1736,40 @@ def generate_brief(topology: dict) -> str:
     lines.append("  1. Assign one unique subnet per segment (no overlaps).")
     lines.append("  2. Use /24 for multi-access segments, /30 for point-to-point.")
     lines.append("  3. For each router: generate a full Cisco IOS startup config.")
-    lines.append("     - If VLAN segments exist: configure 802.1Q sub-interfaces")
-    lines.append("       on the trunk physical interface, one per VLAN.")
-    lines.append("       Use the EXACT sub-interface numbers shown above (e.g., Fa0/0.10).")
-    lines.append("     - Each VLAN segment's subnet must be assigned to its sub-interface.")
+    # V2.0 BUG FIX: Gate VLAN sub-interface instructions on whether VLAN
+    # segments actually exist.  A pure WAN or flat topology has zero VLAN
+    # segments — emitting 802.1Q instructions here would cause the LLM
+    # to hallucinate sub-interfaces on a router that has none.
+    vlan_segments = [s for s in segments if s.vlan_id > 0]
+    if vlan_segments:
+        lines.append("     - If VLAN segments exist: configure 802.1Q sub-interfaces")
+        lines.append("       on the trunk physical interface, one per VLAN.")
+        lines.append("       Use the EXACT sub-interface numbers shown above (e.g., Fa0/0.10).")
+        lines.append("     - Each VLAN segment's subnet must be assigned to its sub-interface.")
+    if p2p_segments:
+        lines.append("     - For WAN/Serial links: use /30 subnets and configure routing")
+        lines.append("       neighbors.  For Serial interfaces, add 'no shutdown' and")
+        lines.append("       'clock rate 64000' on the DCE side.")
+    if router_nat_ifaces:
+        lines.append("     - For NAT: mark interfaces as 'ip nat inside'/'ip nat outside'")
+        lines.append("       per the ROUTER NAT INTERFACE ASSIGNMENTS section above.")
+        lines.append("       Add PAT: 'ip nat inside source list 1 interface <outside> overload'")
     lines.append("  4. For each VPCS host: generate a startup_script with 'ip' command.")
-    lines.append("     The gateway IP MUST be the router's sub-interface IP for that VLAN.")
+    # V2.0 BUG FIX: The gateway wording must match the topology type.
+    # - VLAN topology: gateway = router sub-interface IP for that VLAN
+    # - Flat topology: gateway = plain router interface IP
+    if vlan_segments:
+        lines.append("     The gateway IP MUST be the router's sub-interface IP for that VLAN.")
+    else:
+        lines.append("     The gateway IP MUST be the router's interface IP on the same segment.")
     lines.append("  5. For each Docker container: set 'environment' and 'start_command'.")
-    lines.append("  6. Skip switches, hubs, and NAT nodes — they need no IP config.")
+    lines.append("  6. Skip GNS3 built-in ethernet_switch, ethernet_hub, NAT, and cloud nodes")
+    lines.append("     — they need no IP config.  But DO include IOU devices.")
     lines.append(
-        "  7. Include routing protocols (OSPF or static) for multi-segment routers."
+        "  7. Include routing protocols (OSPF, EIGRP, BGP, or static routes) for"
     )
+    lines.append("     multi-segment routers.  NEVER leave a multi-interface router without")
+    lines.append("     a routing protocol or static routes.")
 
     return "\n".join(lines)
 
@@ -1438,7 +1849,9 @@ if __name__ == "__main__":
     json_path = sys.argv[1] if len(sys.argv) > 1 else "output/_topology.json"
 
     try:
-        brief = build_configuration_brief(json_path)
+        # build_configuration_brief returns a TUPLE (brief, mutated_topology).
+        # The CLI only needs the brief string — unpack and discard the topology.
+        brief, _mutated = build_configuration_brief(json_path)
         print(brief)
     except FileNotFoundError as e:
         print(f"ERROR: {e}")
