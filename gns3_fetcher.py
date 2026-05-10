@@ -32,7 +32,7 @@ DYNAMIPS_MAX_PORTS = {
     "c7200": 3,    # PCI bus crash with >2 PA-8E; safe = 1 builtin + 1 PA
     "c3745": 6,    # NM-4E is lighter; safe = 2 builtin + 1 NM-4E
     "c3725": 6,    # Same NM-4E; safe = 2 builtin + 1 NM-4E
-    "c3660": 5,    # 1 builtin + 1 NM-4E
+    "c3660": 5,    # 2 builtin (Leopard-2FE) + 1 NM-4E
     "c3640": 4,    # No builtin eth + 1 NM-4E
     "c3620": 4,    # Same as c3640
     "c2691": 6,    # 2 builtin + 1 NM-4E
@@ -48,7 +48,17 @@ def _get_port_count(template: dict) -> Optional[int]:
     agent an upper bound so it doesn't assign more links than the node
     can physically support.
     """
-    ttype = template.get("template_type") or template.get("type", "")
+    ttype = template.get("template_type", "")
+    if not ttype:
+        # "type" is a v1 API field; v2 always provides "template_type".
+        # Log at debug level so stale/custom templates don't spam the console.
+        ttype = template.get("type", "")
+        if ttype:
+            logger.debug(
+                "Template '%s' has no 'template_type' field — "
+                "falling back to legacy 'type' field: '%s'",
+                template.get("name", "?"), ttype,
+            )
 
     # Built-in types have known counts
     if ttype in BUILTIN_PORTS:
@@ -75,9 +85,11 @@ def _get_port_count(template: dict) -> Optional[int]:
         # Fallback: conservative default for unknown dynamips platforms
         return 3
 
-    # IOU: practical limit (4 builtin + 1 slot is safe in GNS3)
+    # IOU: compute from ethernet_adapters + serial_adapters (each adapter = 4 ports)
     if ttype == "iou":
-        return 8
+        eth_adapters = template.get("ethernet_adapters", 2)
+        ser_adapters = template.get("serial_adapters", 2)
+        return eth_adapters * 4 + ser_adapters * 4
 
     return None
 
@@ -107,7 +119,23 @@ def fetch_available_templates(retries: int = 3, timeout: float = 10.0) -> list[d
             for t in resp.json():
                 if "name" not in t or not t.get("template_id"):
                     continue
-                gns3_type = t.get("template_type") or t.get("type") or "unknown"
+                gns3_type = t.get("template_type", "")
+                if not gns3_type:
+                    gns3_type = t.get("type", "")
+                    if gns3_type:
+                        logger.debug(
+                            "Template '%s' missing 'template_type'; "
+                            "using legacy 'type': '%s'",
+                            t.get("name", "?"), gns3_type,
+                        )
+                    else:
+                        logger.warning(
+                            "Template '%s' has neither 'template_type' nor 'type' — "
+                            "skipping (template may be corrupt or from an unsupported "
+                            "GNS3 version)",
+                            t.get("name", "?"),
+                        )
+                        continue  # skip this template entirely rather than store "unknown"
                 inventory.append({
                     "name": t["name"],
                     "gns3_type": gns3_type,

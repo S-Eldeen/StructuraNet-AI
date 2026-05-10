@@ -24,6 +24,7 @@ Source: GNS3 server v2 source code (github.com/GNS3/gns3-server)
 """
 
 import logging
+import math
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger("structranet.hw_config")
@@ -222,7 +223,7 @@ DYNAMIPS_BUILTIN_PORTS: Dict[str, int] = {
     "c7200": 1,   # FastEthernet0/0 on NPE
     "c3745": 2,   # FastEthernet0/0, FastEthernet0/1
     "c3725": 2,
-    "c3660": 1,
+    "c3660": 2,   # Leopard-2FE provides 2 FastEthernet ports
     "c3640": 0,   # NM-only, no built-in Ethernet
     "c3620": 0,
     "c2691": 2,
@@ -245,16 +246,20 @@ for _mod, _info in DYNAMIPS_SERIAL_MODULE_INTERFACES.items():
     if _mod not in _MODULE_PORT_COUNT:
         _MODULE_PORT_COUNT[_mod] = _info["count"]
 
-# ── Tier 1a: IOU slot configuration ─────────────────────────────────────────
-IOU_L3_DEFAULT_MODULE = 2
-IOU_L2_MODULE = "l2"
-IOU_PORTS_PER_SLOT = 4
-IOU_FIRST_CONFIGURABLE_SLOT = 1
-IOU_MAX_SLOTS = 15
-IOU_BUILTIN_PORTS = 4
+# ── Tier 1a: IOU adapter configuration ─────────────────────────────────────
+# GNS3 IOU uses count-based properties, NOT slot-based like Dynamips.
+#   ethernet_adapters  — integer (0-16, default 2), each provides 4 ports
+#   serial_adapters    — integer (0-16, default 2), each provides 4 ports
+#
+# Ref: gns3server/schemas/iou_template.py
+#      gns3server/compute/iou/iou_vm.py
+IOU_PORTS_PER_ADAPTER = 4    # Each IOU adapter (Ethernet or Serial) provides 4 ports
+IOU_MAX_ADAPTERS = 16        # Maximum adapters per type (ethernet or serial)
+IOU_DEFAULT_ETH_ADAPTERS = 2 # Default Ethernet adapters in GNS3 templates
+IOU_DEFAULT_SER_ADAPTERS = 2 # Default Serial adapters in GNS3 templates
 
 # NOTE — cross-module contract:
-# context_builder.py imports DYNAMIPS_BUILTIN_PORTS and IOU_PORTS_PER_SLOT
+# context_builder.py imports DYNAMIPS_BUILTIN_PORTS and IOU_PORTS_PER_ADAPTER
 # from this module so there is a single source of truth for both constants.
 # If you change the values above, context_builder.py inherits the change
 # automatically without needing a separate edit.
@@ -352,18 +357,6 @@ def _classify_adapter_link_types(links: List[Dict[str, Any]]) -> Dict[str, Dict[
     return result
 
 
-def _max_adapter_per_node(links: List[Dict[str, Any]]) -> Dict[str, int]:
-    max_adapters: Dict[str, int] = {}
-    for link in links:
-        for ep in link.get("nodes", []):
-            nid = ep.get("node_id")
-            adapter = ep.get("adapter_number", 0)
-            if nid:
-                current = max_adapters.get(nid, 0)
-                max_adapters[nid] = max(current, adapter)
-    return max_adapters
-
-
 # ═══════════════════════════════════════════════════════════════════════════════
 #  Tier 1a — Slot-based expansion  (dynamips, iou)
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -382,7 +375,10 @@ def _inject_slots(
             adapter_link_types, link_counts_by_type,
         )
     elif node_type == "iou":
-        _inject_iou_slots(node, properties, required_ports, min_adapter_slots)
+        _inject_iou_slots(
+            node, properties, required_ports, min_adapter_slots,
+            link_counts_by_type=link_counts_by_type,
+        )
 
 
 def _identify_dynamips_platform(
@@ -528,47 +524,65 @@ def _inject_dynamips_slots(
 def _inject_iou_slots(
     node: Dict[str, Any], properties: Dict[str, Any],
     required_ports: int, min_adapter_slots: int = 0,
+    link_counts_by_type: Optional[Dict[str, int]] = None,
 ) -> None:
-    is_l2 = "l2" in str(properties.get("slot0", "")).lower()
-    module_value: Any = IOU_L2_MODULE if is_l2 else IOU_L3_DEFAULT_MODULE
-    ports_per_slot = IOU_PORTS_PER_SLOT
+    """Expand IOU adapter counts based on link requirements.
 
-    builtin = IOU_BUILTIN_PORTS
-    remaining = max(0, required_ports - builtin)
+    GNS3 IOU uses count-based properties (ethernet_adapters, serial_adapters),
+    NOT slot-based properties like Dynamips. Each adapter provides 4 ports.
+    This function computes the required number of Ethernet and Serial adapters
+    and sets properties["ethernet_adapters"] and properties["serial_adapters"].
 
-    slots_for_ports = (remaining + ports_per_slot - 1) // ports_per_slot
-    slots_for_adapters = max(0, min_adapter_slots - IOU_FIRST_CONFIGURABLE_SLOT + 1)
-    slots_needed = max(slots_for_ports, slots_for_adapters)
-    slots_needed = min(slots_needed, IOU_MAX_SLOTS)
+    ALWAYS sets the properties explicitly (even if they match template defaults)
+    so the properties PUT request includes the correct adapter counts.
 
-    if slots_needed <= 0:
-        logger.debug(
-            "Node %s (iou): slot0 sufficient (%d required, %d in slot0)",
-            node.get("node_id"), required_ports, builtin,
-        )
-        return
+    Ref: gns3server/schemas/iou_template.py — IOU_TEMPLATE_OBJECT_SCHEMA
+         gns3server/compute/iou/iou_vm.py — _adapter_configs()
+    """
+    lt_counts = link_counts_by_type or {}
+    eth_required = lt_counts.get("ethernet", required_ports)
+    ser_required = lt_counts.get("serial", 0)
 
-    slots_injected = 0
-    for i in range(slots_needed):
-        slot_key = f"slot{IOU_FIRST_CONFIGURABLE_SLOT + i}"
-        if slot_key not in properties:
-            properties[slot_key] = module_value
-            slots_injected += 1
-            logger.debug(
-                "Node %s (iou): injected %s = %s",
-                node.get("node_id"), slot_key, module_value,
-            )
-        else:
-            logger.debug(
-                "Node %s (iou): %s already set to '%s', skipping",
-                node.get("node_id"), slot_key, properties[slot_key],
-            )
+    # Current values (from template defaults or previous injection)
+    current_eth = int(properties.get("ethernet_adapters", IOU_DEFAULT_ETH_ADAPTERS))
+    current_ser = int(properties.get("serial_adapters", IOU_DEFAULT_SER_ADAPTERS))
 
-    total_after = builtin + slots_needed * ports_per_slot
+    # Compute needed adapters: ceil(ports / 4)
+    needed_eth = min(math.ceil(eth_required / IOU_PORTS_PER_ADAPTER), IOU_MAX_ADAPTERS)
+    needed_ser = min(math.ceil(ser_required / IOU_PORTS_PER_ADAPTER), IOU_MAX_ADAPTERS)
+
+    # Only increase, never decrease (template may have defaults we shouldn't remove)
+    new_eth = max(current_eth, needed_eth)
+    new_ser = max(current_ser, needed_ser)
+
+    # ALWAYS set the properties explicitly — ensures the PUT request includes
+    # the correct adapter counts even when they match template defaults.
+    properties["ethernet_adapters"] = new_eth
+    properties["serial_adapters"] = new_ser
+
     logger.info(
-        "Node %s (iou): %d links, max_adapter=%d → injected %d slot(s) → %d total ports",
-        node.get("node_id"), required_ports, min_adapter_slots, slots_injected, total_after,
+        "Node %s (iou): %d links (eth=%d, ser=%d) → "
+        "ethernet_adapters %d→%d, serial_adapters %d→%d",
+        node.get("node_id"), required_ports,
+        eth_required, ser_required,
+        current_eth, new_eth, current_ser, new_ser,
     )
+
+    # Warn if we couldn't meet demand
+    total_eth_ports = new_eth * IOU_PORTS_PER_ADAPTER
+    total_ser_ports = new_ser * IOU_PORTS_PER_ADAPTER
+    if total_eth_ports < eth_required:
+        logger.warning(
+            "Node %s (iou): could only provide %d/%d Ethernet ports "
+            "(max %d adapters) — topology may fail to deploy.",
+            node.get("node_id"), total_eth_ports, eth_required, IOU_MAX_ADAPTERS,
+        )
+    if total_ser_ports < ser_required:
+        logger.warning(
+            "Node %s (iou): could only provide %d/%d Serial ports "
+            "(max %d adapters) — topology may fail to deploy.",
+            node.get("node_id"), total_ser_ports, ser_required, IOU_MAX_ADAPTERS,
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -609,12 +623,12 @@ def _inject_adapter_count(node: Dict[str, Any], required_ports: int) -> None:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def _make_switch_port(index: int) -> Dict[str, Any]:
-    # GNS3 API v2 requires port_number >= 1 for ethernet_switch ports_mapping.
-    # Name stays 0-based ("Ethernet0") to match GNS3 display convention,
-    # but port_number is 1-based to satisfy the API schema constraint.
+    # GNS3 server source (ethernet_switch.py) always rewrites port_number
+    # to 0-based sequentially regardless of what we send, so we send 0-based
+    # to keep link endpoint port_numbers consistent with what the server stores.
     return {
         "name": f"Ethernet{index}",
-        "port_number": index + 1,
+        "port_number": index,
         "type": "access",
         "vlan": 1,
         "ethertype": "",
@@ -622,11 +636,10 @@ def _make_switch_port(index: int) -> Dict[str, Any]:
 
 
 def _make_hub_port(index: int) -> Dict[str, Any]:
-    # GNS3 API v2 requires port_number >= 1 for ethernet_hub ports_mapping.
-    # Same convention as _make_switch_port: name=0-based, port_number=1-based.
+    # 0-based to match the GNS3 server's internal renumbering (same as switch).
     return {
         "name": f"Ethernet{index}",
-        "port_number": index + 1,
+        "port_number": index,
     }
 
 
@@ -640,18 +653,6 @@ def _inject_ports_mapping(node: Dict[str, Any], required_ports: int) -> None:
 
     if existing_raw is not None:
         existing: List[Dict[str, Any]] = list(existing_raw)
-
-        # Normalize: GNS3 API v2 requires port_number >= 1.
-        # If any existing entries have port_number < 1 (e.g., 0-indexed
-        # from a previous version or AI-generated), renumber from 1.
-        if any(p.get("port_number", 0) < 1 for p in existing):
-            for i, port in enumerate(existing):
-                port["port_number"] = i + 1
-            logger.info(
-                "Node %s (%s): normalized ports_mapping port_numbers "
-                "to 1-based (GNS3 requires port_number >= 1)",
-                node.get("node_id"), node_type,
-            )
 
         # Normalize: GNS3 API v2 requires vlan >= 1 for ALL port types,
         # including dot1q/trunk. A vlan of 0 causes 400 Bad Request on PUT.
@@ -746,10 +747,8 @@ def inject_hardware_config(topology_dict: Dict[str, Any]) -> Dict[str, Any]:
 
         elif node_type in ("ethernet_switch", "ethernet_hub"):
             # For switches, the link count (required) IS the exact number of
-            # ports needed because autofix_switch_adapter_assignments() in
-            # schema.py guarantees sequential 1-based port_number assignment.
-            # Using max_port_map would overcount by 1 because it assumes
-            # 0-based port_number (computes highest_port + 1).
+            # ports needed.  port_assigner.py assigns 0-based port_numbers
+            # sequentially so required == number of distinct ports used.
             _inject_ports_mapping(node, required)
 
         elif node_type in IMMUTABLE_TYPES:

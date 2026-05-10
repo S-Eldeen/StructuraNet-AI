@@ -24,6 +24,7 @@ import sys
 
 from gns3_fetcher import fetch_available_templates, FetcherError
 from ai_agent import generate_network_topology, process_and_save_topology
+from topology_finalizer import apply_switch_port_patches
 from config_agent import run_phase2
 from assembler import GNS3Client, deploy_hybrid_topology, DeploymentError
 
@@ -202,6 +203,16 @@ def main():
     topo_dict = enriched.model_dump()
     for w in validate_against_inventory(topo_dict, inventory):
         print(f"  [WARN] {w}")
+
+    # ── Step 4b/7: VLAN switch port patching ─────────────────────────────────
+    # Rewrite ethernet_switch ports_mapping so trunk and access ports reflect
+    # the VLAN plan.  Must happen after hardware injection (ports_mapping exists)
+    # and before Phase 2 (configs need the correct trunk/access layout).
+    apply_switch_port_patches(topo_dict)
+    # Persist the patched topology so run_phase2 (which reads from disk) sees it
+    with open(phase1_file, "w", encoding="utf-8") as _f:
+        json.dump(topo_dict, _f, indent=2)
+    print("  Switch port patches applied (VLAN trunk/access layout)")
 
     # ── Step 5/7: Phase 2 — Software configuration generation ───────────────
     final_file = args.output or os.path.join(OUTPUT_DIR, "final_topology.json")

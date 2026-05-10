@@ -28,6 +28,7 @@ from dotenv import load_dotenv
 from openai import OpenAI, APITimeoutError, APIConnectionError, RateLimitError, InternalServerError
 
 from context_builder import build_configuration_brief
+from topology_finalizer import apply_switch_port_patches
 from schema import GNS3Project
 
 load_dotenv()
@@ -433,42 +434,38 @@ def run_phase2(
     dict or None
         The final integrated topology dict, or None on failure
     """
-    # ── Step 1 + 2: Load Phase 1 JSON, patch ports_mapping, build brief ──
-    #
-    # build_configuration_brief now returns a TUPLE: (brief, mutated_topology).
-    #
-    # WHY we no longer do a separate json.load here:
-    # The previous code loaded phase1_dict from disk, then called
-    # build_configuration_brief(path) which loaded the SAME file a second time,
-    # ran patch_switch_ports_mapping on that second copy, and returned only the
-    # brief string — discarding the patched ports_mapping entirely.  The
-    # unpatched phase1_dict then flowed into safe_merge_configs, meaning every
-    # GNS3 ethernet_switch was deployed with all ports as "access/vlan 1" and
-    # every 802.1Q tagged frame from the router was dropped at the first switch.
-    #
-    # Now build_configuration_brief owns the load + patch lifecycle and returns
-    # the mutated project dict alongside the brief string.  We use that dict
-    # directly as the base for safe_merge_configs.
+    # ── Step 1: Load Phase 1 JSON from disk ──
     p1_path = Path(phase1_json_path)
     if not p1_path.exists():
         logger.error("Phase 1 JSON not found: %s", phase1_json_path)
         return None
 
-    brief, mutated_topology = build_configuration_brief(phase1_json_path)
-    logger.info("Configuration brief: %d chars — ports_mapping patched in topology",
-                len(brief))
+    with open(p1_path, encoding="utf-8") as f:
+        phase1_dict = json.load(f)
 
-    # ── Step 3: Generate Software Configs via LLM ──
+    # ── Step 2: Patch switch ports_mapping with VLAN assignments ──
+    #
+    # hw_config.inject_hardware_config() creates all ports as access/vlan 1.
+    # topology_finalizer.apply_switch_port_patches() rewrites them so that:
+    #   • Ports connected to routers/core switches become trunk (dot1q)
+    #   • Ports connected to hosts become access with the correct VLAN id
+    # This MUST happen before build_configuration_brief() so the brief and
+    # configs see the correct trunk/access layout.
+    apply_switch_port_patches(phase1_dict)
+    logger.info("Switch port patches applied")
+
+    # ── Step 3: Build Configuration Brief ──
+    brief = build_configuration_brief(phase1_dict)
+    logger.info("Configuration brief: %d chars", len(brief))
+
+    # ── Step 4: Generate Software Configs via LLM ──
     llm_configs = generate_software_configs(brief)
     if llm_configs is None:
         logger.error("LLM failed to generate software configs — aborting Phase 2")
         return None
 
-    # ── Step 4: Three-Gate Safe Merge ──
-    # Use mutated_topology (ports_mapping already patched) as the base, NOT a
-    # fresh disk load.  The merge adds the LLM's software configs (startup
-    # configs, startup scripts) on top of the already-correct hardware layout.
-    merged_dict, rejection_log = safe_merge_configs(mutated_topology, llm_configs)
+    # ── Step 5: Three-Gate Safe Merge ──
+    merged_dict, rejection_log = safe_merge_configs(phase1_dict, llm_configs)
 
     if rejection_log:
         logger.warning("Some LLM configs were rejected:")
@@ -476,7 +473,7 @@ def run_phase2(
             for reason in reasons:
                 logger.warning("  %s: %s", nid, reason)
 
-    # ── Step 5: Re-validate through Pydantic ──
+    # ── Step 6: Re-validate through Pydantic ──
     try:
         validated = GNS3Project.model_validate(merged_dict)
         logger.info("Pydantic re-validation passed")
@@ -489,7 +486,7 @@ def run_phase2(
         out.write_text(json.dumps(merged_dict, indent=2), encoding="utf-8")
         return None
 
-    # ── Step 6: Save final integrated JSON ──
+    # ── Step 7: Save final integrated JSON ──
     out = Path(output_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(validated.model_dump_json(indent=2), encoding="utf-8")
