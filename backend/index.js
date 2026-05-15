@@ -62,6 +62,7 @@ app.post("/api/auth/signup", async (req, res) => {
 
     res.status(201).json({ message: "User created successfully" });
   } catch (err) {
+    console.error("Signup error:", err);
     res.status(500).json({ error: "Signup failed" });
   }
 });
@@ -76,10 +77,11 @@ app.post("/api/auth/signin", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
 
-    // ✅ التعديل هنا
+    const userId = user._id.toString();
+
     const token = jwt.sign(
       {
-        userId: user._id,
+        userId,
         username: user.username,
         email: user.email,
       },
@@ -90,12 +92,13 @@ app.post("/api/auth/signin", async (req, res) => {
     res.json({
       token,
       user: {
-        id: user._id,
+        id: userId,
         username: user.username,
         email: user.email,
       },
     });
   } catch (err) {
+    console.error("Signin error:", err);
     res.status(500).json({ error: "Signin failed" });
   }
 });
@@ -108,9 +111,9 @@ const requireAuth = (req, res, next) => {
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    req.userId = decoded.userId;
+    req.userId = decoded.userId.toString();
     next();
-  } catch {
+  } catch (err) {
     return res.status(401).json({ error: "Invalid token" });
   }
 };
@@ -143,7 +146,7 @@ const cleanMessages = (messages = []) => {
 /* ==== CREATE CHAT ==== */
 app.post("/api/chats", requireAuth, async (req, res) => {
   const { text, images = [] } = req.body;
-  const userId = req.userId;
+  const userId = req.userId.toString();
 
   try {
     const firstMessage = {
@@ -175,6 +178,7 @@ app.post("/api/chats", requireAuth, async (req, res) => {
           },
         ],
       });
+
       await userChatsDoc.save();
     } else {
       await UserChat.updateOne(
@@ -202,7 +206,7 @@ app.post("/api/chats", requireAuth, async (req, res) => {
 /* ==== GET CHAT ==== */
 app.get("/api/chats/:chatId", requireAuth, async (req, res) => {
   const { chatId } = req.params;
-  const userId = req.userId;
+  const userId = req.userId.toString();
 
   try {
     const chat = await Chat.findOne({ _id: chatId, userId });
@@ -213,6 +217,7 @@ app.get("/api/chats/:chatId", requireAuth, async (req, res) => {
 
     res.json(chat);
   } catch (error) {
+    console.error("Fetch chat error:", error);
     res.status(500).json({ error: "Failed to fetch chat" });
   }
 });
@@ -220,7 +225,7 @@ app.get("/api/chats/:chatId", requireAuth, async (req, res) => {
 /* ==== ADD MESSAGE ==== */
 app.post("/api/chats/:chatId/messages", requireAuth, async (req, res) => {
   const { chatId } = req.params;
-  const userId = req.userId;
+  const userId = req.userId.toString();
   const { messages } = req.body;
 
   try {
@@ -244,12 +249,13 @@ app.post("/api/chats/:chatId/messages", requireAuth, async (req, res) => {
 
 /* ==== USER CHATS ==== */
 app.get("/api/userchats", requireAuth, async (req, res) => {
-  const userId = req.userId;
+  const userId = req.userId.toString();
 
   try {
     const userChatsDoc = await UserChat.findOne({ userId });
     res.json(userChatsDoc || { chats: [] });
   } catch (error) {
+    console.error("Fetch user chats error:", error);
     res.status(500).json({ error: "Failed to fetch chats" });
   }
 });

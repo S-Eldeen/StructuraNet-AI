@@ -10,12 +10,10 @@ const DashboardPage = () => {
   const [images, setImages] = useState([]);
   const [isListening, setIsListening] = useState(false);
 
-  // 👇 الجديد
   const [greeting, setGreeting] = useState("");
 
   const navigate = useNavigate();
 
-  // 👇 جلب اسم اليوزر + تحديد أول مرة
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem("user"));
     const username = userData?.username || "User";
@@ -32,6 +30,7 @@ const DashboardPage = () => {
 
   const handleUploadStart = (file) => {
     const previewUrl = URL.createObjectURL(file);
+
     setImages((prev) => [
       ...prev,
       { file, filePath: null, progress: 0, previewUrl },
@@ -41,13 +40,20 @@ const DashboardPage = () => {
   const handleUploadProgress = (percent) => {
     setImages((prev) => {
       const lastIndex = prev.length - 1;
+
       if (lastIndex < 0) return prev;
 
       const last = prev[lastIndex];
+
       if (last.filePath) return prev;
 
       const updated = [...prev];
-      updated[lastIndex] = { ...last, progress: percent };
+
+      updated[lastIndex] = {
+        ...last,
+        progress: percent,
+      };
+
       return updated;
     });
   };
@@ -55,9 +61,11 @@ const DashboardPage = () => {
   const handleUploadSuccess = (filePath) => {
     setImages((prev) => {
       const lastIndex = prev.length - 1;
+
       if (lastIndex < 0) return prev;
 
       const updated = [...prev];
+
       updated[lastIndex] = {
         ...updated[lastIndex],
         filePath,
@@ -82,6 +90,7 @@ const DashboardPage = () => {
     }
 
     const recognition = new SpeechRecognition();
+
     recognition.lang = "ar-EG";
     recognition.continuous = false;
     recognition.interimResults = false;
@@ -90,11 +99,14 @@ const DashboardPage = () => {
 
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
+
       setText((prev) => prev + (prev ? " " : "") + transcript);
+
       setIsListening(false);
     };
 
     recognition.onerror = () => setIsListening(false);
+
     recognition.onend = () => setIsListening(false);
 
     recognition.start();
@@ -102,6 +114,7 @@ const DashboardPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (loading) return;
 
     const completedImages = images
@@ -114,16 +127,23 @@ const DashboardPage = () => {
 
     try {
       const token = localStorage.getItem("token");
+
       if (!token) return navigate("/sign-in");
 
-      const createResponse = await fetch("http://localhost:3000/api/chats", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ text, images: completedImages }),
-      });
+      const createResponse = await fetch(
+        "http://localhost:3000/api/chats",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            text,
+            images: completedImages,
+          }),
+        }
+      );
 
       const chat = await createResponse.json();
 
@@ -131,16 +151,19 @@ const DashboardPage = () => {
 
       const reply = await askGemini(text, completedImages);
 
-      await fetch(`http://localhost:3000/api/chats/${chat._id}/messages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          messages: [{ role: "assistant", content: reply }],
-        }),
-      });
+      await fetch(
+        `http://localhost:3000/api/chats/${chat._id}/messages`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            messages: [{ role: "assistant", content: reply }],
+          }),
+        }
+      );
 
       navigate(`/dashboard/chats/${chat._id}`);
     } catch (error) {
@@ -161,7 +184,6 @@ const DashboardPage = () => {
           <h1>Structranet AI</h1>
         </div>
 
-        {/* 👇 الرسالة الجديدة */}
         <h2 className="greeting">{greeting}</h2>
 
         <div className="options">
@@ -193,11 +215,25 @@ const DashboardPage = () => {
               onChange={(e) => setText(e.target.value)}
             />
 
-            <button type="button" onClick={startListening}>
-              🎤
+            <button
+              type="button"
+              className={`mic-btn ${isListening ? "listening" : ""}`}
+              onClick={startListening}
+            >
+              <img
+                src="/microphone.png"
+                alt="mic"
+                className="mic-icon"
+              />
             </button>
 
-            <button type="submit">➤</button>
+            <button type="submit">
+              <img
+                src="/arrow.png"
+                alt="send"
+                className="send-icon"
+              />
+            </button>
           </div>
         </form>
       </div>

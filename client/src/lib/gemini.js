@@ -6,25 +6,36 @@ const OPENROUTER_KEY = import.meta.env.VITE_OPENROUTER_KEY;
 const ai = GEMINI_KEY ? new GoogleGenAI({ apiKey: GEMINI_KEY }) : null;
 
 const GEMINI_MODEL = "gemini-2.0-flash";
-const OPENROUTER_MODEL = "openrouter/free";
-const OPENROUTER_TIMEOUT = 30000;
+
+const OPENROUTER_MODELS = [
+  "openrouter/free",
+  "mistralai/mistral-7b-instruct:free",
+];
+
+const GEMINI_TIMEOUT = 25000;
+const OPENROUTER_TIMEOUT = 60000;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const systemInstruction = `
 You are StructraNet AI.
 
-You must behave like a Claude-style product-building assistant.
+You are a practical engineering and product-building assistant.
 
-When the user asks to build an app, system, or platform:
-
-- Show progress steps
-- Use checkmarks
-- Include architecture diagram
-- Be practical and structured
-
-Prefer Arabic if the user writes Arabic.
+Rules:
+- Answer only based on the current user request.
+- Do not reuse old projects unless the user explicitly asks.
+- If the user asks for networking, give networking design only.
+- If the user asks for app/system design, give app/system design only.
+- Prefer Arabic if the user writes Arabic.
+- Be clear, practical, and structured.
+- Do not ask the user to write "كمل".
 `;
+
+const timeoutPromise = (ms, message = "TIMEOUT") =>
+  new Promise((_, reject) => {
+    setTimeout(() => reject(new Error(message)), ms);
+  });
 
 const timeoutFetch = async (url, options, timeout = OPENROUTER_TIMEOUT) => {
   const controller = new AbortController();
@@ -40,14 +51,13 @@ const timeoutFetch = async (url, options, timeout = OPENROUTER_TIMEOUT) => {
   }
 };
 
-// ✨ دي أهم حاجة: تحويل الرد لـ streaming وهمي
-const streamTextManually = async (text, onChunk, delay = 6) => {
+const streamTextManually = async (text, onChunk, delay = 2) => {
   let current = "";
 
   for (let i = 0; i < text.length; i++) {
     current += text[i];
 
-    if (i % 3 === 0 || i === text.length - 1) {
+    if (i % 8 === 0 || i === text.length - 1) {
       onChunk(current);
       await sleep(delay);
     }
@@ -56,49 +66,100 @@ const streamTextManually = async (text, onChunk, delay = 6) => {
   return text;
 };
 
-async function callOpenRouter(conversation, imageBase64 = []) {
-  if (!OPENROUTER_KEY) {
-    return "❌ مفيش API key لـ OpenRouter";
+async function callGemini(conversation, onChunk) {
+  if (!ai) {
+    throw new Error("NO_GEMINI_KEY");
   }
 
-  try {
-    const messages = [
-      { role: "system", content: systemInstruction },
-      ...conversation.map((m) => ({
-        role: m.role === "assistant" ? "assistant" : "user",
-        content: m.content || "",
-      })),
-    ];
+  const contents = conversation.map((msg) => ({
+    role: msg.role === "user" ? "user" : "model",
+    parts: [{ text: msg.content || "" }],
+  }));
 
-    const res = await timeoutFetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${OPENROUTER_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: OPENROUTER_MODEL,
-          messages,
-          temperature: 0.75,
-          max_tokens: 1600,
-        }),
-      }
-    );
+  const stream = await ai.models.generateContentStream({
+    model: GEMINI_MODEL,
+    contents,
+    config: {
+      systemInstruction,
+      temperature: 0.75,
+      maxOutputTokens: 1600,
+    },
+  });
 
-    const data = await res.json();
+  let fullText = "";
 
-    if (!res.ok) {
-      console.error("OpenRouter error:", data);
-      return "❌ OpenRouter حصل فيه مشكلة";
+  for await (const chunk of stream) {
+    const text = chunk.text;
+
+    if (text) {
+      fullText += text;
+      onChunk(fullText);
     }
-
-    return data?.choices?.[0]?.message?.content || "❌ مفيش رد";
-  } catch (err) {
-    console.error(err);
-    return "❌ Error في OpenRouter";
   }
+
+  if (!fullText.trim()) {
+    throw new Error("EMPTY_GEMINI_RESPONSE");
+  }
+
+  return fullText;
+}
+
+async function callOpenRouter(conversation) {
+  if (!OPENROUTER_KEY) {
+    return "❌ OpenRouter key مش موجود. تأكد من VITE_OPENROUTER_KEY في client/.env";
+  }
+
+  const messages = [
+    { role: "system", content: systemInstruction },
+    ...conversation.map((m) => ({
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: m.content || "",
+    })),
+  ];
+
+  for (const model of OPENROUTER_MODELS) {
+    try {
+      console.log("Trying OpenRouter model:", model);
+
+      const res = await timeoutFetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${OPENROUTER_KEY}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": window.location.origin,
+            "X-Title": "StructraNet AI",
+          },
+          body: JSON.stringify({
+            model,
+            messages,
+            temperature: 0.65,
+            max_tokens: 1600,
+          }),
+        },
+        OPENROUTER_TIMEOUT
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error(`OpenRouter error with ${model}:`, data);
+        continue;
+      }
+
+      const answer = data?.choices?.[0]?.message?.content;
+
+      if (answer && answer.trim()) {
+        return answer;
+      }
+    } catch (err) {
+      console.error(`OpenRouter failed with ${model}:`, err);
+      continue;
+    }
+  }
+
+  return "❌ Gemini فشل، وOpenRouter فشل أيضًا. افتح Console وشوف سبب OpenRouter error.";
 }
 
 export async function askGeminiStream(
@@ -108,51 +169,20 @@ export async function askGeminiStream(
 ) {
   const safeOnChunk = typeof onChunk === "function" ? onChunk : () => {};
 
-  const contents = conversation.map((msg) => ({
-    role: msg.role === "user" ? "user" : "model",
-    parts: [{ text: msg.content || "" }],
-  }));
+  const cleanConversation = conversation
+    .filter((msg) => msg?.content)
+    .slice(-4);
 
   try {
-    // ✅ Gemini streaming الحقيقي
-    if (ai) {
-      const stream = await ai.models.generateContentStream({
-        model: GEMINI_MODEL,
-        contents,
-        config: {
-          systemInstruction,
-          temperature: 0.75,
-          maxOutputTokens: 1600,
-        },
-      });
-
-      let fullText = "";
-
-      for await (const chunk of stream) {
-        const text = chunk.text;
-
-        if (text) {
-          fullText += text;
-          safeOnChunk(fullText);
-        }
-      }
-
-      return fullText;
-    }
-
-    throw new Error("No Gemini key");
+    return await Promise.race([
+      callGemini(cleanConversation, safeOnChunk),
+      timeoutPromise(GEMINI_TIMEOUT, "GEMINI_TIMEOUT"),
+    ]);
   } catch (error) {
-    console.warn("Gemini failed → OpenRouter fallback");
+    console.warn("Gemini failed → switching to OpenRouter", error);
 
-    const fallback = await callOpenRouter(conversation, imageBase64);
+    const fallback = await callOpenRouter(cleanConversation);
 
-    if (!fallback) {
-      const msg = "❌ مفيش رد";
-      safeOnChunk(msg);
-      return msg;
-    }
-
-    // 🔥 هنا الحل النهائي
     return await streamTextManually(fallback, safeOnChunk);
   }
 }

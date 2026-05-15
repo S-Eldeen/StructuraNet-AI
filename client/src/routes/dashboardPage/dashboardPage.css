@@ -111,15 +111,21 @@
   height: 46px;
   border-radius: 50%;
   border: none;
-  background: rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
 }
 
+/* شكل زر الإرسال */
 .input-row button[type="submit"] {
   background: #605e68;
+}
+
+/* شكل المايك نفس chat page */
+.mic-btn {
+  background: transparent;
+  border: 2px dashed rgba(255, 255, 255, 0.35);
 }
 
 .input-row button[type="submit"]:disabled {
@@ -182,7 +188,8 @@
 }
 
 [data-theme="light"] .mic-btn {
-  background: #eef3ff;
+  background: transparent;
+  border: 2px dashed #b9c8e8;
 }
 
 [data-theme="light"] .input-row button[type="submit"] {
