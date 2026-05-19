@@ -20,7 +20,6 @@ const NewPrompt = forwardRef(
           setShowUploadMenu(false);
         }
       };
-
       document.addEventListener("mousedown", handler);
       return () => document.removeEventListener("mousedown", handler);
     }, []);
@@ -30,10 +29,8 @@ const NewPrompt = forwardRef(
     const fileToBase64 = (file) =>
       new Promise((resolve, reject) => {
         const reader = new FileReader();
-
         reader.onload = () => {
           const result = reader.result;
-
           resolve({
             data: result.split(",")[1],
             mimeType: file.type || "image/jpeg",
@@ -42,7 +39,6 @@ const NewPrompt = forwardRef(
             isFile: !file.type.startsWith("image/"),
           });
         };
-
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
@@ -50,7 +46,6 @@ const NewPrompt = forwardRef(
     const handleImageChange = async (e) => {
       const files = Array.from(e.target.files || []);
       if (!files.length) return;
-
       const converted = await Promise.all(files.map(fileToBase64));
       setImages((prev) => [...prev, ...converted]);
       e.target.value = "";
@@ -60,7 +55,6 @@ const NewPrompt = forwardRef(
     const handleFileChange = async (e) => {
       const files = Array.from(e.target.files || []);
       if (!files.length) return;
-
       const converted = await Promise.all(files.map(fileToBase64));
       setImages((prev) => [...prev, ...converted]);
       e.target.value = "";
@@ -71,36 +65,28 @@ const NewPrompt = forwardRef(
       setImages((prev) => prev.filter((_, i) => i !== index));
 
     const startListening = () => {
-      const SpeechRecognition =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
-
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
         alert("المتصفح لا يدعم التعرف على الصوت.");
         return;
       }
-
       const recognition = new SpeechRecognition();
       recognition.lang = "ar-EG";
       recognition.continuous = false;
       recognition.interimResults = false;
-
       setIsListening(true);
-
       recognition.onresult = (e) => {
         const transcript = e.results[0][0].transcript;
         setText((prev) => prev + (prev ? " " : "") + transcript);
         setIsListening(false);
       };
-
       recognition.onerror = () => setIsListening(false);
       recognition.onend = () => setIsListening(false);
-
       recognition.start();
     };
 
     const isBuildRequest = (input = "") => {
       const lower = input.toLowerCase();
-
       return (
         lower.includes("build") ||
         lower.includes("create") ||
@@ -164,7 +150,6 @@ const NewPrompt = forwardRef(
 
     const typeStage = async (aiMessageId, currentText, stageTitle, stageBody) => {
       let localText = `${currentText}\n\n## ${stageTitle}...\n`;
-
       addMessage(
         {
           role: "assistant",
@@ -175,14 +160,10 @@ const NewPrompt = forwardRef(
         },
         true
       );
-
       await sleep(300);
-
       let typed = "";
-
       for (let i = 0; i < stageBody.length; i++) {
         typed += stageBody[i];
-
         if (i % 5 === 0 || i === stageBody.length - 1) {
           addMessage(
             {
@@ -194,13 +175,10 @@ const NewPrompt = forwardRef(
             },
             true
           );
-
           await sleep(5);
         }
       }
-
       localText = `${currentText}\n\n## ${stageTitle} ✔\n${stageBody}`;
-
       addMessage(
         {
           role: "assistant",
@@ -211,7 +189,6 @@ const NewPrompt = forwardRef(
         },
         true
       );
-
       await sleep(350);
       return localText;
     };
@@ -233,15 +210,13 @@ Important rules:
 `;
     };
 
-    const withTimeout = (promise, ms = 120000) => {
+    const withTimeout = (promise, ms = 1200000) => {
       let timeoutId;
-
       const timeoutPromise = new Promise((_, reject) => {
         timeoutId = setTimeout(() => {
           reject(new Error("AI_TIMEOUT"));
         }, ms);
       });
-
       return Promise.race([promise, timeoutPromise]).finally(() => {
         clearTimeout(timeoutId);
       });
@@ -254,8 +229,6 @@ Important rules:
       userMessage,
       currentHistory,
     }) => {
-      const token = localStorage.getItem("token");
-
       setIsLoading(true);
       setIsTyping(true);
 
@@ -295,7 +268,6 @@ Important rules:
             imageBase64Only,
             (partialText) => {
               finalText = partialText || "";
-
               addMessage(
                 {
                   role: "assistant",
@@ -311,12 +283,10 @@ Important rules:
           120000
         );
 
-        const displayedText = finalText || "لم يصل رد واضح، حاول مرة أخرى.";
-
         addMessage(
           {
             role: "assistant",
-            content: displayedText,
+            content: finalText || "لم يصل رد واضح، حاول مرة أخرى.",
             id: aiMessageId,
             streaming: false,
             images: [],
@@ -324,6 +294,7 @@ Important rules:
           true
         );
 
+        const token = localStorage.getItem("token");
         if (chatId && token) {
           await fetch(`http://localhost:3000/api/chats/${chatId}/messages`, {
             method: "POST",
@@ -334,19 +305,18 @@ Important rules:
             body: JSON.stringify({
               messages: [
                 userMessage,
-                { role: "assistant", content: displayedText, images: [] },
+                { role: "assistant", content: finalText, images: [] },
               ],
             }),
           });
         }
       } catch (error) {
         console.error("AI Error:", error);
-
         addMessage(
           {
             role: "assistant",
             content:
-              "❌ حصل خطأ، لكن الرد السابق لن يتم مسحه. جرّب مرة تانية أو راجع مفتاح Gemini/OpenRouter.",
+              "❌ حصل خطأ، لكن الرد السابق لن يتم مسحه. جرّب مرة تانية أو راجع إعدادات الخادم.",
             id: aiMessageId,
             streaming: false,
             images: [],
@@ -362,7 +332,6 @@ Important rules:
     useImperativeHandle(ref, () => ({
       regenerate: async (lastUserMsg, currentHistory) => {
         if (isLoading) return;
-
         await runAiCall({
           userText: lastUserMsg.content || "",
           dbImages: lastUserMsg.images || [],
@@ -378,12 +347,10 @@ Important rules:
       if (isLoading) return;
 
       const token = localStorage.getItem("token");
-
       if (!token) {
         window.location.href = "/sign-in";
         return;
       }
-
       if (!text.trim() && images.length === 0) return;
 
       const dbImages = images.map((img) => ({
@@ -400,7 +367,6 @@ Important rules:
       addMessage(userMessage);
 
       const currentText = text;
-
       setText("");
       setImages([]);
 
@@ -427,7 +393,6 @@ Important rules:
                   ) : (
                     <img src={img.preview} alt="preview" />
                   )}
-
                   <button
                     type="button"
                     className="remove-preview"
@@ -439,7 +404,6 @@ Important rules:
               ))}
             </div>
           )}
-
           <div className="input-row">
             <div className="upload-wrapper" ref={menuRef}>
               <button
@@ -451,7 +415,6 @@ Important rules:
               >
                 <img src="/attachment.png" alt="upload" />
               </button>
-
               {showUploadMenu && (
                 <div className="upload-menu">
                   <button
@@ -461,7 +424,6 @@ Important rules:
                   >
                     Add Image
                   </button>
-
                   <button
                     type="button"
                     className="upload-menu-item"
@@ -471,7 +433,6 @@ Important rules:
                   </button>
                 </div>
               )}
-
               <input
                 ref={imageInputRef}
                 type="file"
@@ -480,7 +441,6 @@ Important rules:
                 onChange={handleImageChange}
                 hidden
               />
-
               <input
                 ref={fileInputRef}
                 type="file"
@@ -490,7 +450,6 @@ Important rules:
                 hidden
               />
             </div>
-
             <input
               type="text"
               className="text-input"
@@ -499,7 +458,6 @@ Important rules:
               onChange={(e) => setText(e.target.value)}
               disabled={isLoading}
             />
-
             <button
               type="button"
               className={`mic-btn ${isListening ? "listening" : ""}`}
@@ -509,7 +467,6 @@ Important rules:
             >
               <img src="/microphone.png" alt="mic" className="mic-icon" />
             </button>
-
             <button
               type="submit"
               className="send-btn"

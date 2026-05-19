@@ -1,0 +1,7 @@
+requests
+openai
+pydantic
+python-dotenv
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+sse-starlette>=2.0.0

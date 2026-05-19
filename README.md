@@ -12,10 +12,10 @@ It combines **conversational AI (Google Gemini)** with **real-time network topol
 
 Structranet AI is built for network professionals who want to:
 
-* 🧠 Design complex network topologies using **natural language**
-* 📊 Generate **network diagrams, configurations, and images**
-* ⚙️ Automate deployment through **GNS3 integration** *(planned)*
-* 💬 Manage conversations and designs via a **modern web interface**
+- 🧠 Design complex network topologies using **natural language**
+- 📊 Generate **network diagrams, configurations, and images**
+- ⚙️ Automate deployment through **GNS3 integration** _(planned)_
+- 💬 Manage conversations and designs via a **modern web interface**
 
 ---
 
@@ -25,7 +25,7 @@ Structranet AI is built for network professionals who want to:
 | --------------- | ------------------------------------------------------------------------------------- |
 | **Frontend**    | React, Vite, React Router, Clerk (Authentication), React Markdown, ImageKit React SDK |
 | **Backend**     | Node.js, Express, MongoDB (Mongoose), ImageKit Node SDK, Clerk Backend SDK            |
-| **AI Services** | Google Gemini API (text + image generation), GNS3 Automation *(planned)*              |
+| **AI Services** | Google Gemini API (text + image generation), GNS3 Automation _(planned)_              |
 | **Styling**     | CSS Modules, Custom Animations                                                        |
 
 ---
@@ -34,12 +34,12 @@ Structranet AI is built for network professionals who want to:
 
 Make sure you have the following installed:
 
-* Node.js (v18 or later)
-* npm (comes with Node.js)
-* MongoDB Atlas account (or local MongoDB)
-* Clerk account (authentication keys from [https://clerk.com](https://clerk.com))
-* ImageKit account ([https://imagekit.io](https://imagekit.io))
-* Google Gemini API key (Google AI Studio)
+- Node.js (v18 or later)
+- npm (comes with Node.js)
+- MongoDB Atlas account (or local MongoDB)
+- Clerk account (authentication keys from [https://clerk.com](https://clerk.com))
+- ImageKit account ([https://imagekit.io](https://imagekit.io))
+- Google Gemini API key (Google AI Studio)
 
 ---
 
@@ -58,8 +58,8 @@ cd structranet-ai
 
 You will need two terminal windows:
 
-* **Terminal 1:** Backend
-* **Terminal 2:** Client
+- **Terminal 1:** Backend
+- **Terminal 2:** Client
 
 ---
 
@@ -83,8 +83,8 @@ npm install
 
 ## ⚠️ Important Notes
 
-* Do **not modify or delete** existing `.env` or `package.json` files unless necessary
-* The project already includes working configurations for testing
+- Do **not modify or delete** existing `.env` or `package.json` files unless necessary
+- The project already includes working configurations for testing
 
 ---
 
@@ -181,9 +181,9 @@ http://localhost:5173
 
 This is a **test version**. Contributions are welcome:
 
-* Open issues
-* Submit pull requests
-* Suggest improvements
+- Open issues
+- Submit pull requests
+- Suggest improvements
 
 ---
 
@@ -204,16 +204,16 @@ This software is provided for **educational and evaluation purposes only**.
 
 ### 📌 Terms of Use
 
-* ✅ Free to use for **learning, research, and academic purposes**
-* ❌ Not permitted for **commercial use**
-* ❌ Redistribution or modification for production use is **not allowed without permission**
-* ⚠️ No warranty or guarantee is provided with this software
+- ✅ Free to use for **learning, research, and academic purposes**
+- ❌ Not permitted for **commercial use**
+- ❌ Redistribution or modification for production use is **not allowed without permission**
+- ⚠️ No warranty or guarantee is provided with this software
 
 ### 👨‍🎓 Academic Attribution
 
 Any use of this project must include proper acknowledgment of:
 
-> *Structranet AI — Graduation Project (2026), Faculty of Engineering, Tanta University*
+> _Structranet AI — Graduation Project (2026), Faculty of Engineering, Tanta University_
 
 ---
 

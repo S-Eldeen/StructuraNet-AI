@@ -303,7 +303,13 @@ const Chatpage = () => {
     setMessages((prev) => [...prev, msg]);
   };
 
+  // ✅ Fixed: added confirmation dialog to prevent accidental regeneration
   const handleRegenerate = async (msgIndex) => {
+    const confirmed = window.confirm(
+      "Regenerating will create a new GNS3 project and may take a while. Continue?"
+    );
+    if (!confirmed) return;
+
     const current = messagesRef.current;
     const clickedMsg = current[msgIndex];
     const lastUserMsg = [...current.slice(0, msgIndex + 1)].reverse().find((m) => m.role === "user");
