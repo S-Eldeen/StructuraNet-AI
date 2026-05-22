@@ -16,6 +16,9 @@ import CheckoutPage from "./routes/checkoutPage/CheckoutPage";
 import AboutPage from "./routes/aboutPage/AboutPage";
 import ContactPage from "./routes/contactPage/ContactPage";
 
+// ✅ Security Page
+import SecurityPage from "./routes/securityPage/SecurityPage";
+
 const router = createBrowserRouter([
   {
     element: <RootLayout />,
@@ -34,6 +37,8 @@ const router = createBrowserRouter([
         children: [
           { path: "/dashboard", element: <DashboardPage /> },
           { path: "/dashboard/chats/:id", element: <Chatpage /> },
+          // ✅ جوا DashboardLayout — بس الـ CSS position:fixed هيغطي كل حاجة
+          { path: "/dashboard/security", element: <SecurityPage /> },
         ],
       },
     ],
