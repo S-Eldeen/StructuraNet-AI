@@ -2,6 +2,9 @@ import "./chatList.css";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useCallback, useRef } from "react";
 
+// BUG FIX: use env variable, not hardcoded localhost
+const BACKEND = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+
 /* ── Icons ── */
 const NetworkIcon = () => (
   <svg width="20" height="20" viewBox="0 0 36 36" fill="none">
@@ -48,34 +51,27 @@ const ShareIcon = () => (
   </svg>
 );
 
-/* ✅ Security Icon الجديد */
 const SecurityIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-    <path
-      d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"
-      fill="currentColor" fillOpacity="0.18"
-      stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"
-    />
-    <path
-      d="M9 12l2 2 4-4"
-      stroke="currentColor" strokeWidth="1.8"
-      strokeLinecap="round" strokeLinejoin="round"
-    />
+    <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"
+      fill="currentColor" fillOpacity="0.18" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+    <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
+/* ── Helpers ── */
 const formatDate = (dateStr) => {
   if (!dateStr) return null;
   const date = new Date(dateStr);
-  const now = new Date();
+  const now  = new Date();
   const diff = now - date;
-  const mins = Math.floor(diff / 60000);
+  const mins  = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins}m ago`;
+  const days  = Math.floor(diff / 86400000);
+  if (mins  < 1)  return "Just now";
+  if (mins  < 60) return `${mins}m ago`;
   if (hours < 24) return `${hours}h ago`;
-  if (days < 7) return `${days}d ago`;
+  if (days  < 7)  return `${days}d ago`;
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 };
 
@@ -85,33 +81,32 @@ const getUserFromToken = () => {
   const token = getLocalToken();
   if (!token) return null;
   try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload;
-  } catch (err) {
-    console.error("Invalid token payload:", err);
+    return JSON.parse(atob(token.split(".")[1]));
+  } catch {
     return null;
   }
 };
 
-const getDisplayName = (user) => {
-  if (!user) return "My Account";
-  return user.name || user.fullName || user.username || user.email || user.userName || "My Account";
-};
+const getDisplayName = (user) =>
+  user?.name || user?.fullName || user?.username || user?.email || user?.userName || "My Account";
 
 const getAvatarLetter = (user) => {
-  const displayName = getDisplayName(user);
-  return displayName && displayName !== "My Account" ? displayName.charAt(0).toUpperCase() : "A";
+  const name = getDisplayName(user);
+  return name && name !== "My Account" ? name.charAt(0).toUpperCase() : "A";
 };
 
+/* ── Share Modal ── */
 const ShareModal = ({ chatId, onClose }) => {
-  const link = `${window.location.origin}/dashboard/chats/${chatId}`;
+  const link    = `${window.location.origin}/dashboard/chats/${chatId}`;
   const [copied, setCopied] = useState(false);
+
   const handleCopy = () => {
     navigator.clipboard.writeText(link).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
   };
+
   return (
     <div className="share-modal-overlay" onMouseDown={onClose}>
       <div className="share-modal" onMouseDown={(e) => e.stopPropagation()}>
@@ -131,11 +126,12 @@ const ShareModal = ({ chatId, onClose }) => {
   );
 };
 
+/* ── ChatItem ── */
 const ChatItem = ({ chat, onStar, onRename, onDelete, onShareClick }) => {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [renaming, setRenaming] = useState(false);
-  const [newTitle, setNewTitle] = useState(chat.title);
-  const menuRef = useRef(null);
+  const [menuOpen,  setMenuOpen]  = useState(false);
+  const [renaming,  setRenaming]  = useState(false);
+  const [newTitle,  setNewTitle]  = useState(chat.title);
+  const menuRef  = useRef(null);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -153,7 +149,8 @@ const ChatItem = ({ chat, onStar, onRename, onDelete, onShareClick }) => {
 
   const submitRename = (e) => {
     e?.preventDefault();
-    if (newTitle.trim() && newTitle.trim() !== chat.title) onRename(chat._id, newTitle.trim());
+    if (newTitle.trim() && newTitle.trim() !== chat.title)
+      onRename(chat._id, newTitle.trim());
     setRenaming(false);
   };
 
@@ -183,10 +180,12 @@ const ChatItem = ({ chat, onStar, onRename, onDelete, onShareClick }) => {
           {lastModified && <span className="chat-last-modified">{lastModified}</span>}
         </div>
       </Link>
+
       <button className="share-btn" title="Share chat"
         onClick={(e) => { e.preventDefault(); onShareClick(chat._id); }}>
         <ShareIcon />
       </button>
+
       <div className="chat-item-menu" ref={menuRef}>
         <button className="dots-btn"
           onClick={(e) => { e.preventDefault(); setMenuOpen((o) => !o); }}
@@ -215,33 +214,65 @@ const ChatItem = ({ chat, onStar, onRename, onDelete, onShareClick }) => {
   );
 };
 
+/* ── Main ChatList ── */
 const ChatList = () => {
-  const [chats, setChats] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [collapsed, setCollapsed] = useState(false);
-  const [plan, setPlan] = useState(localStorage.getItem("userPlan"));
+  const [chats,           setChats]           = useState([]);
+  const [loading,         setLoading]         = useState(true);
+  const [collapsed,       setCollapsed]       = useState(false);
+  const [plan,            setPlan]            = useState(localStorage.getItem("userPlan"));
   const [shareModalChatId, setShareModalChatId] = useState(null);
-  const [user, setUser] = useState(null);
+  const [user,            setUser]            = useState(null);
+  const [authError,       setAuthError]       = useState(false);
+
   const navigate = useNavigate();
+
+  // ── BUG FIX: proper 401 handling ─────────────────────────────────────────
+  // Previously: just logged the error, user stayed on page with broken state
+  // Now: clears the invalid/expired token and redirects to sign-in
+  const handleUnauthorized = useCallback(() => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setAuthError(true);
+    navigate("/sign-in");
+  }, [navigate]);
 
   const fetchChats = useCallback(async () => {
     const token = getLocalToken();
-    if (!token) { setLoading(false); navigate("/sign-in"); return; }
+
+    // No token at all → redirect immediately
+    if (!token) {
+      setLoading(false);
+      navigate("/sign-in");
+      return;
+    }
+
     try {
-      const res = await fetch("http://localhost:3000/api/userchats", {
+      const res = await fetch(`${BACKEND}/api/userchats`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      // BUG FIX: 401 = token invalid/expired → clear and redirect
+      if (res.status === 401) {
+        handleUnauthorized();
+        return;
+      }
+
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
       const data = await res.json();
       setChats(data.chats || []);
     } catch (err) {
-      console.error("Error fetching chats:", err);
+      // Don't crash the sidebar on network errors — just show empty list
+      console.error("Error fetching chats:", err.message);
+      setChats([]);
     } finally {
       setLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, handleUnauthorized]);
 
-  useEffect(() => { setUser(getUserFromToken()); }, []);
+  useEffect(() => {
+    setUser(getUserFromToken());
+  }, []);
 
   useEffect(() => {
     fetchChats();
@@ -251,7 +282,7 @@ const ChatList = () => {
 
   useEffect(() => {
     const handleChatRenamed = (event) => {
-      const { chatId, newTitle } = event.detail;
+      const { chatId, newTitle } = event.detail || {};
       if (chatId && newTitle) {
         setChats((prev) => prev.map((c) => c._id === chatId ? { ...c, title: newTitle } : c));
       } else {
@@ -264,50 +295,82 @@ const ChatList = () => {
 
   useEffect(() => {
     const updatePlan = () => setPlan(localStorage.getItem("userPlan"));
-    updatePlan();
     window.addEventListener("plan-changed", updatePlan);
     return () => window.removeEventListener("plan-changed", updatePlan);
   }, []);
 
-  const handleLogout = () => { localStorage.removeItem("token"); navigate("/sign-in"); };
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/sign-in");
+  };
 
   const handleStar = async (chatId, starred) => {
     const token = getLocalToken();
-    if (!token) return navigate("/sign-in");
+    if (!token) return handleUnauthorized();
+
+    // Optimistic update
     setChats((prev) => prev.map((c) => c._id === chatId ? { ...c, starred } : c));
+
     try {
-      await fetch(`http://localhost:3000/api/userchats/${chatId}/star`, {
+      const res = await fetch(`${BACKEND}/api/userchats/${chatId}/star`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ starred }),
       });
-    } catch (err) { console.error("Error starring:", err); fetchChats(); }
+      if (res.status === 401) return handleUnauthorized();
+      if (!res.ok) fetchChats(); // revert on error
+    } catch (err) {
+      console.error("Error starring:", err);
+      fetchChats();
+    }
   };
 
   const handleRename = async (chatId, title) => {
     const token = getLocalToken();
-    if (!token) return navigate("/sign-in");
+    if (!token) return handleUnauthorized();
+
+    // Optimistic update
     setChats((prev) => prev.map((c) => c._id === chatId ? { ...c, title } : c));
+
     try {
-      await fetch(`http://localhost:3000/api/userchats/${chatId}/rename`, {
+      const res = await fetch(`${BACKEND}/api/userchats/${chatId}/rename`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ title }),
       });
-    } catch (err) { console.error("Error renaming:", err); fetchChats(); }
+      if (res.status === 401) return handleUnauthorized();
+      if (!res.ok) fetchChats();
+
+      // Notify ChatPage header to update its title
+      window.dispatchEvent(new CustomEvent("chat-renamed", { detail: { chatId, newTitle: title } }));
+    } catch (err) {
+      console.error("Error renaming:", err);
+      fetchChats();
+    }
   };
 
   const handleDelete = async (chatId) => {
     const token = getLocalToken();
-    if (!token) return navigate("/sign-in");
+    if (!token) return handleUnauthorized();
+
+    // Optimistic remove
     setChats((prev) => prev.filter((c) => c._id !== chatId));
+
     try {
-      await fetch(`http://localhost:3000/api/userchats/${chatId}`, {
+      const res = await fetch(`${BACKEND}/api/userchats/${chatId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (res.status === 401) return handleUnauthorized();
+      if (!res.ok) fetchChats();
+
+      // If we deleted the currently open chat, go back to dashboard
       if (window.location.pathname.includes(chatId)) navigate("/dashboard");
-    } catch (err) { console.error("Error deleting:", err); fetchChats(); }
+    } catch (err) {
+      console.error("Error deleting:", err);
+      fetchChats();
+    }
   };
 
   const sortedChats = [...chats].sort((a, b) => {
@@ -316,8 +379,11 @@ const ChatList = () => {
     return new Date(b.createdAt) - new Date(a.createdAt);
   });
 
-  const displayName = getDisplayName(user);
+  const displayName  = getDisplayName(user);
   const avatarLetter = getAvatarLetter(user);
+
+  // While redirecting don't render the broken sidebar
+  if (authError) return null;
 
   return (
     <>
@@ -361,7 +427,6 @@ const ChatList = () => {
             <Link to="/about">Explore StructraNet AI</Link>
             <Link to="/">Contact</Link>
 
-            {/* ✅ Security Analyzer Button */}
             <Link to="/dashboard/security" className="security-nav-btn">
               <SecurityIcon />
               <span>Security Analyzer</span>
