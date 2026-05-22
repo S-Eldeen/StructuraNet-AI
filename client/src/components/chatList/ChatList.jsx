@@ -48,21 +48,34 @@ const ShareIcon = () => (
   </svg>
 );
 
+/* ✅ Security Icon الجديد */
+const SecurityIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+    <path
+      d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.35C17.25 22.15 21 17.25 21 12V7L12 2z"
+      fill="currentColor" fillOpacity="0.18"
+      stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"
+    />
+    <path
+      d="M9 12l2 2 4-4"
+      stroke="currentColor" strokeWidth="1.8"
+      strokeLinecap="round" strokeLinejoin="round"
+    />
+  </svg>
+);
+
 const formatDate = (dateStr) => {
   if (!dateStr) return null;
-
   const date = new Date(dateStr);
   const now = new Date();
   const diff = now - date;
   const mins = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
-
   if (mins < 1) return "Just now";
   if (mins < 60) return `${mins}m ago`;
   if (hours < 24) return `${hours}h ago`;
   if (days < 7) return `${days}d ago`;
-
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 };
 
@@ -71,7 +84,6 @@ const getLocalToken = () => localStorage.getItem("token");
 const getUserFromToken = () => {
   const token = getLocalToken();
   if (!token) return null;
-
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
     return payload;
@@ -83,47 +95,31 @@ const getUserFromToken = () => {
 
 const getDisplayName = (user) => {
   if (!user) return "My Account";
-
-  return (
-    user.name ||
-    user.fullName ||
-    user.username ||
-    user.email ||
-    user.userName ||
-    "My Account"
-  );
+  return user.name || user.fullName || user.username || user.email || user.userName || "My Account";
 };
 
 const getAvatarLetter = (user) => {
   const displayName = getDisplayName(user);
-  return displayName && displayName !== "My Account"
-    ? displayName.charAt(0).toUpperCase()
-    : "A";
+  return displayName && displayName !== "My Account" ? displayName.charAt(0).toUpperCase() : "A";
 };
 
 const ShareModal = ({ chatId, onClose }) => {
   const link = `${window.location.origin}/dashboard/chats/${chatId}`;
   const [copied, setCopied] = useState(false);
-
   const handleCopy = () => {
     navigator.clipboard.writeText(link).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
   };
-
   return (
     <div className="share-modal-overlay" onMouseDown={onClose}>
       <div className="share-modal" onMouseDown={(e) => e.stopPropagation()}>
         <div className="share-modal-header">
           <span className="share-modal-title">Share Chat</span>
-          <button className="share-modal-close" onClick={onClose}>
-            ✕
-          </button>
+          <button className="share-modal-close" onClick={onClose}>✕</button>
         </div>
-
         <p className="share-modal-desc">Anyone with this link can view this chat.</p>
-
         <div className="share-modal-row">
           <input className="share-modal-input" value={link} readOnly />
           <button className="share-modal-copy" onClick={handleCopy}>
@@ -144,13 +140,9 @@ const ChatItem = ({ chat, onStar, onRename, onDelete, onShareClick }) => {
 
   useEffect(() => {
     if (!menuOpen) return;
-
     const handler = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setMenuOpen(false);
-      }
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
     };
-
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [menuOpen]);
@@ -161,11 +153,7 @@ const ChatItem = ({ chat, onStar, onRename, onDelete, onShareClick }) => {
 
   const submitRename = (e) => {
     e?.preventDefault();
-
-    if (newTitle.trim() && newTitle.trim() !== chat.title) {
-      onRename(chat._id, newTitle.trim());
-    }
-
+    if (newTitle.trim() && newTitle.trim() !== chat.title) onRename(chat._id, newTitle.trim());
     setRenaming(false);
   };
 
@@ -190,67 +178,34 @@ const ChatItem = ({ chat, onStar, onRename, onDelete, onShareClick }) => {
     <div className={`chat-item-wrapper ${menuOpen ? "menu-open" : ""}`}>
       <Link to={`/dashboard/chats/${chat._id}`} className="chat-item">
         {chat.starred && <span className="star-dot">★</span>}
-
         <div className="chat-item-info">
           <span className="chat-title">{chat.title}</span>
           {lastModified && <span className="chat-last-modified">{lastModified}</span>}
         </div>
       </Link>
-
-      <button
-        className="share-btn"
-        title="Share chat"
-        onClick={(e) => {
-          e.preventDefault();
-          onShareClick(chat._id);
-        }}
-      >
+      <button className="share-btn" title="Share chat"
+        onClick={(e) => { e.preventDefault(); onShareClick(chat._id); }}>
         <ShareIcon />
       </button>
-
       <div className="chat-item-menu" ref={menuRef}>
-        <button
-          className="dots-btn"
-          onClick={(e) => {
-            e.preventDefault();
-            setMenuOpen((o) => !o);
-          }}
-          title="More options"
-        >
+        <button className="dots-btn"
+          onClick={(e) => { e.preventDefault(); setMenuOpen((o) => !o); }}
+          title="More options">
           <DotsIcon />
         </button>
-
         {menuOpen && (
           <div className="dropdown-menu">
-            <button
-              className="dropdown-item"
-              onClick={() => {
-                onStar(chat._id, !chat.starred);
-                setMenuOpen(false);
-              }}
-            >
+            <button className="dropdown-item"
+              onClick={() => { onStar(chat._id, !chat.starred); setMenuOpen(false); }}>
               <span>{chat.starred ? "Unstar" : "Star"}</span>
             </button>
-
-            <button
-              className="dropdown-item"
-              onClick={() => {
-                setRenaming(true);
-                setMenuOpen(false);
-              }}
-            >
+            <button className="dropdown-item"
+              onClick={() => { setRenaming(true); setMenuOpen(false); }}>
               <span>Rename</span>
             </button>
-
             <div className="dropdown-divider" />
-
-            <button
-              className="dropdown-item danger"
-              onClick={() => {
-                onDelete(chat._id);
-                setMenuOpen(false);
-              }}
-            >
+            <button className="dropdown-item danger"
+              onClick={() => { onDelete(chat._id); setMenuOpen(false); }}>
               <span>Delete</span>
             </button>
           </div>
@@ -267,27 +222,16 @@ const ChatList = () => {
   const [plan, setPlan] = useState(localStorage.getItem("userPlan"));
   const [shareModalChatId, setShareModalChatId] = useState(null);
   const [user, setUser] = useState(null);
-
   const navigate = useNavigate();
 
   const fetchChats = useCallback(async () => {
     const token = getLocalToken();
-
-    if (!token) {
-      setLoading(false);
-      navigate("/sign-in");
-      return;
-    }
-
+    if (!token) { setLoading(false); navigate("/sign-in"); return; }
     try {
       const res = await fetch("http://localhost:3000/api/userchats", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
       const data = await res.json();
       setChats(data.chats || []);
     } catch (err) {
@@ -297,35 +241,23 @@ const ChatList = () => {
     }
   }, [navigate]);
 
-  useEffect(() => {
-    const userData = getUserFromToken();
-    setUser(userData);
-  }, []);
+  useEffect(() => { setUser(getUserFromToken()); }, []);
 
   useEffect(() => {
     fetchChats();
     window.addEventListener("chat-created", fetchChats);
-
-    return () => {
-      window.removeEventListener("chat-created", fetchChats);
-    };
+    return () => window.removeEventListener("chat-created", fetchChats);
   }, [fetchChats]);
 
   useEffect(() => {
     const handleChatRenamed = (event) => {
       const { chatId, newTitle } = event.detail;
-
       if (chatId && newTitle) {
-        setChats((prevChats) =>
-          prevChats.map((chat) =>
-            chat._id === chatId ? { ...chat, title: newTitle } : chat
-          )
-        );
+        setChats((prev) => prev.map((c) => c._id === chatId ? { ...c, title: newTitle } : c));
       } else {
         fetchChats();
       }
     };
-
     window.addEventListener("chat-renamed", handleChatRenamed);
     return () => window.removeEventListener("chat-renamed", handleChatRenamed);
   }, [fetchChats]);
@@ -333,81 +265,49 @@ const ChatList = () => {
   useEffect(() => {
     const updatePlan = () => setPlan(localStorage.getItem("userPlan"));
     updatePlan();
-
     window.addEventListener("plan-changed", updatePlan);
     return () => window.removeEventListener("plan-changed", updatePlan);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/sign-in");
-  };
+  const handleLogout = () => { localStorage.removeItem("token"); navigate("/sign-in"); };
 
   const handleStar = async (chatId, starred) => {
     const token = getLocalToken();
     if (!token) return navigate("/sign-in");
-
-    setChats((prev) =>
-      prev.map((c) => (c._id === chatId ? { ...c, starred } : c))
-    );
-
+    setChats((prev) => prev.map((c) => c._id === chatId ? { ...c, starred } : c));
     try {
       await fetch(`http://localhost:3000/api/userchats/${chatId}/star`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ starred }),
       });
-    } catch (err) {
-      console.error("Error starring:", err);
-      fetchChats();
-    }
+    } catch (err) { console.error("Error starring:", err); fetchChats(); }
   };
 
   const handleRename = async (chatId, title) => {
     const token = getLocalToken();
     if (!token) return navigate("/sign-in");
-
-    setChats((prev) =>
-      prev.map((c) => (c._id === chatId ? { ...c, title } : c))
-    );
-
+    setChats((prev) => prev.map((c) => c._id === chatId ? { ...c, title } : c));
     try {
       await fetch(`http://localhost:3000/api/userchats/${chatId}/rename`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ title }),
       });
-    } catch (err) {
-      console.error("Error renaming:", err);
-      fetchChats();
-    }
+    } catch (err) { console.error("Error renaming:", err); fetchChats(); }
   };
 
   const handleDelete = async (chatId) => {
     const token = getLocalToken();
     if (!token) return navigate("/sign-in");
-
     setChats((prev) => prev.filter((c) => c._id !== chatId));
-
     try {
       await fetch(`http://localhost:3000/api/userchats/${chatId}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-
       if (window.location.pathname.includes(chatId)) navigate("/dashboard");
-    } catch (err) {
-      console.error("Error deleting:", err);
-      fetchChats();
-    }
+    } catch (err) { console.error("Error deleting:", err); fetchChats(); }
   };
 
   const sortedChats = [...chats].sort((a, b) => {
@@ -422,13 +322,11 @@ const ChatList = () => {
   return (
     <>
       {shareModalChatId && (
-        <ShareModal
-          chatId={shareModalChatId}
-          onClose={() => setShareModalChatId(null)}
-        />
+        <ShareModal chatId={shareModalChatId} onClose={() => setShareModalChatId(null)} />
       )}
 
       <div className={`chatList ${collapsed ? "collapsed" : ""}`}>
+
         <div className="chatList-header">
           {!collapsed && (
             <Link to="/" className="chatList-brand">
@@ -436,12 +334,9 @@ const ChatList = () => {
               <span className="brand-name">StructraNet AI</span>
             </Link>
           )}
-
-          <button
-            className="toggle-btn"
+          <button className="toggle-btn"
             onClick={() => setCollapsed((c) => !c)}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
             <ToggleIcon />
           </button>
         </div>
@@ -453,8 +348,7 @@ const ChatList = () => {
 
         {!collapsed ? (
           <Link to="/dashboard" className="new-chat-btn">
-            <NewChatIcon />
-            <span>New Chat</span>
+            <NewChatIcon /><span>New Chat</span>
           </Link>
         ) : (
           <Link to="/dashboard" className="new-chat-icon-only" title="New Chat">
@@ -467,12 +361,15 @@ const ChatList = () => {
             <Link to="/about">Explore StructraNet AI</Link>
             <Link to="/">Contact</Link>
 
-            <button className="logout-btn" onClick={handleLogout}>
-              Sign Out
-            </button>
+            {/* ✅ Security Analyzer Button */}
+            <Link to="/dashboard/security" className="security-nav-btn">
+              <SecurityIcon />
+              <span>Security Analyzer</span>
+            </Link>
+
+            <button className="logout-btn" onClick={handleLogout}>Sign Out</button>
 
             <hr />
-
             <span className="title">RECENT CHATS</span>
 
             <div className="list">
@@ -497,30 +394,20 @@ const ChatList = () => {
             <hr />
 
             {plan ? (
-              <div
-                className="upgrade current-plan-box"
-                onClick={() => navigate("/upgrade")}
-                role="button"
-                tabIndex={0}
-              >
+              <div className="upgrade current-plan-box"
+                onClick={() => navigate("/upgrade")} role="button" tabIndex={0}>
                 <NetworkIcon />
-
                 <div className="texts">
-                  <span className="plan-title">
-                    Current Plan: {plan.toUpperCase()}
-                  </span>
+                  <span className="plan-title">Current Plan: {plan.toUpperCase()}</span>
                   <span className="subtext">Click to change your plan</span>
                 </div>
               </div>
             ) : (
               <Link to="/upgrade" className="upgrade">
                 <NetworkIcon />
-
                 <div className="texts">
                   <span className="plan-title">Upgrade to StructraNet Pro</span>
-                  <span className="subtext">
-                    Unlimited designs & priority support
-                  </span>
+                  <span className="subtext">Unlimited designs & priority support</span>
                 </div>
               </Link>
             )}
