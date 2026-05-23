@@ -196,14 +196,9 @@ const DashboardPage = () => {
               <img src="/arrow.png" alt="send" className="send-icon" />
             </button>
 
-            <button
-              type="button"
-              onClick={handleGenerateGNS3}
-              disabled={generating || loading}
-              style={{ marginLeft: "8px", background: "#10a37f", color: "#fff", border: "none", borderRadius: "8px", padding: "8px 14px", cursor: "pointer", opacity: (generating || loading) ? 0.6 : 1 }}
-            >
-              {generating ? "⏳ Generating..." : "🚀 Generate GNS3"}
-            </button>
+          
+              
+            
           </div>
         </form>
       </div>
