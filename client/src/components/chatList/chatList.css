@@ -673,3 +673,125 @@ a:hover {
   border-color: rgba(37, 99, 235, 0.38);
   color: #1d4ed8;
 }
+/* ══════════════════════════════════════════
+   ✅ أضف الـ CSS ده في آخر chatList.css
+   ══════════════════════════════════════════ */
+
+/* ── Quick Nav Group (collapsed sidebar) ── */
+.quick-nav-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 6px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Each icon button */
+.quick-nav-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.45);
+  text-decoration: none;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+  cursor: pointer;
+}
+
+.quick-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--qnb-color, #4f8ef7);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Active state — current page */
+.quick-nav-btn.quick-nav-active {
+  background: color-mix(in srgb, var(--qnb-color, #4f8ef7) 14%, transparent);
+  color: var(--qnb-color, #4f8ef7);
+  border-color: color-mix(in srgb, var(--qnb-color, #4f8ef7) 35%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--qnb-color, #4f8ef7) 20%, transparent);
+}
+
+/* Tooltip */
+.quick-nav-tooltip {
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #1e1e2e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.88);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  transform: translateY(-50%) translateX(-4px);
+  z-index: 1000;
+}
+
+/* Tooltip arrow */
+.quick-nav-tooltip::before {
+  content: "";
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 5px solid transparent;
+  border-right-color: rgba(255, 255, 255, 0.12);
+}
+.quick-nav-tooltip::after {
+  content: "";
+  position: absolute;
+  right: calc(100% - 1px);
+  top: 50%;
+  transform: translateY(-50%);
+  border: 5px solid transparent;
+  border-right-color: #1e1e2e;
+}
+
+.quick-nav-btn:hover .quick-nav-tooltip {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* Light mode */
+[data-theme="light"] .quick-nav-group {
+  border-color: rgba(0, 0, 0, 0.07);
+}
+
+[data-theme="light"] .quick-nav-btn {
+  color: rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="light"] .quick-nav-btn:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .quick-nav-tooltip {
+  background: #fff;
+  border-color: rgba(0, 0, 0, 0.12);
+  color: #1f2937;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .quick-nav-tooltip::before {
+  border-right-color: rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .quick-nav-tooltip::after {
+  border-right-color: #fff;
+}
