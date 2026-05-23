@@ -2,7 +2,7 @@ import "./dashboardPage.css";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Upload from "../../components/upload/Upload";
-import { askGemini } from "../../lib/gemini";
+import { API_BASE_URL } from "../../config";
 
 const DashboardPage = () => {
   const [text, setText] = useState("");
@@ -26,7 +26,6 @@ const DashboardPage = () => {
     }
   }, []);
 
-  // ✅ FIXED: moved inside the component so it can access text/setGenerating state
   const handleGenerateGNS3 = async () => {
     if (!text.trim()) {
       alert("Please enter a network description first.");
@@ -35,7 +34,7 @@ const DashboardPage = () => {
     setGenerating(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:3000/api/generate", {
+      const response = await fetch(`${API_BASE_URL}/api/generate`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -46,7 +45,7 @@ const DashboardPage = () => {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Generation failed");
       if (data.success && data.downloadUrl) {
-        window.open(`http://localhost:3000${data.downloadUrl}`, "_blank");
+        window.open(`${API_BASE_URL}${data.downloadUrl}`, "_blank");
       } else {
         alert("Failed to generate: " + (data.error || "Unknown error"));
       }
@@ -125,7 +124,7 @@ const DashboardPage = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return navigate("/sign-in");
-      const createResponse = await fetch("http://localhost:3000/api/chats", {
+      const createResponse = await fetch(`${API_BASE_URL}/api/chats`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -135,17 +134,7 @@ const DashboardPage = () => {
       });
       const chat = await createResponse.json();
       window.dispatchEvent(new CustomEvent("chat-created"));
-      const reply = await askGemini(text, completedImages);
-      await fetch(`http://localhost:3000/api/chats/${chat._id}/messages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          messages: [{ role: "assistant", content: reply }],
-        }),
-      });
+      // ✅ تم إزالة استدعاء askGemini - المستخدم سيرسل الرسالة في صفحة الشات
       navigate(`/dashboard/chats/${chat._id}`);
     } catch (error) {
       console.error(error);
@@ -207,7 +196,6 @@ const DashboardPage = () => {
               <img src="/arrow.png" alt="send" className="send-icon" />
             </button>
 
-            {/* ✅ FIXED: Generate GNS3 button now inside the component */}
             <button
               type="button"
               onClick={handleGenerateGNS3}

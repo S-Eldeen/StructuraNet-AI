@@ -1,5 +1,6 @@
 import { useState, forwardRef, useImperativeHandle, useRef, useEffect } from "react";
 import { askGeminiStream } from "../../lib/gemini";
+import { API_BASE_URL } from "../../config";
 import "./newPrompt.css";
 
 const NewPrompt = forwardRef(
@@ -23,8 +24,6 @@ const NewPrompt = forwardRef(
       document.addEventListener("mousedown", handler);
       return () => document.removeEventListener("mousedown", handler);
     }, []);
-
-    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     const fileToBase64 = (file) =>
       new Promise((resolve, reject) => {
@@ -85,113 +84,7 @@ const NewPrompt = forwardRef(
       recognition.start();
     };
 
-    const isBuildRequest = (input = "") => {
-      const lower = input.toLowerCase();
-      return (
-        lower.includes("build") ||
-        lower.includes("create") ||
-        lower.includes("make") ||
-        lower.includes("develop") ||
-        lower.includes("app") ||
-        lower.includes("application") ||
-        lower.includes("system") ||
-        lower.includes("dashboard") ||
-        lower.includes("platform") ||
-        lower.includes("website") ||
-        lower.includes("tool") ||
-        lower.includes("ai") ||
-        lower.includes("frontend") ||
-        lower.includes("backend") ||
-        lower.includes("ui") ||
-        lower.includes("ux") ||
-        lower.includes("diagram") ||
-        lower.includes("architecture") ||
-        lower.includes("code") ||
-        lower.includes("api") ||
-        lower.includes("database") ||
-        lower.includes("network") ||
-        lower.includes("networking") ||
-        lower.includes("router") ||
-        lower.includes("switch") ||
-        lower.includes("topology") ||
-        lower.includes("branch") ||
-        lower.includes("company") ||
-        input.includes("تطبيق") ||
-        input.includes("نظام") ||
-        input.includes("موقع") ||
-        input.includes("منصة") ||
-        input.includes("أداة") ||
-        input.includes("اداة") ||
-        input.includes("ذكاء") ||
-        input.includes("واجهة") ||
-        input.includes("فرونت") ||
-        input.includes("باك") ||
-        input.includes("ديزاين") ||
-        input.includes("تصميم") ||
-        input.includes("اعمل") ||
-        input.includes("أعمل") ||
-        input.includes("ابني") ||
-        input.includes("أنشئ") ||
-        input.includes("انشئ") ||
-        input.includes("ارسم") ||
-        input.includes("داياجرام") ||
-        input.includes("مخطط") ||
-        input.includes("كود") ||
-        input.includes("أكواد") ||
-        input.includes("اكواد") ||
-        input.includes("قاعدة بيانات") ||
-        input.includes("شبكة") ||
-        input.includes("سويتش") ||
-        input.includes("راوتر") ||
-        input.includes("شركة") ||
-        input.includes("فرع")
-      );
-    };
-
-    const typeStage = async (aiMessageId, currentText, stageTitle, stageBody) => {
-      let localText = `${currentText}\n\n## ${stageTitle}...\n`;
-      addMessage(
-        {
-          role: "assistant",
-          content: localText,
-          id: aiMessageId,
-          streaming: true,
-          images: [],
-        },
-        true
-      );
-      await sleep(300);
-      let typed = "";
-      for (let i = 0; i < stageBody.length; i++) {
-        typed += stageBody[i];
-        if (i % 5 === 0 || i === stageBody.length - 1) {
-          addMessage(
-            {
-              role: "assistant",
-              content: localText + typed,
-              id: aiMessageId,
-              streaming: true,
-              images: [],
-            },
-            true
-          );
-          await sleep(5);
-        }
-      }
-      localText = `${currentText}\n\n## ${stageTitle} ✔\n${stageBody}`;
-      addMessage(
-        {
-          role: "assistant",
-          content: localText,
-          id: aiMessageId,
-          streaming: true,
-          images: [],
-        },
-        true
-      );
-      await sleep(350);
-      return localText;
-    };
+    // تم حذف الدوال الميتة: isBuildRequest, typeStage, sleep, buildPrompt القديم
 
     const buildPrompt = (userText) => {
       return `
@@ -210,6 +103,7 @@ Important rules:
 `;
     };
 
+    // ✅ زيادة المهلة إلى 20 دقيقة (1200000 مللي ثانية)
     const withTimeout = (promise, ms = 1200000) => {
       let timeoutId;
       const timeoutPromise = new Promise((_, reject) => {
@@ -245,7 +139,6 @@ Important rules:
       try {
         let finalText = "";
 
-        // مهم: بنبعت آخر 6 رسائل فقط من نفس الشات، عشان ما يخلطش مشاريع قديمة
         const baseHistory = [
           ...currentHistory
             .filter((msg) => msg.content && !msg.streaming)
@@ -280,7 +173,7 @@ Important rules:
               );
             }
           ),
-          120000
+          1200000 // 20 دقيقة
         );
 
         addMessage(
@@ -296,7 +189,7 @@ Important rules:
 
         const token = localStorage.getItem("token");
         if (chatId && token) {
-          await fetch(`http://localhost:3000/api/chats/${chatId}/messages`, {
+          await fetch(`${API_BASE_URL}/api/chats/${chatId}/messages`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

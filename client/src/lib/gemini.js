@@ -1,11 +1,11 @@
-const API_BASE = 'http://localhost:3000/api';
+import { API_BASE_URL } from "../config";
 
 const getAuthToken = () => localStorage.getItem('token');
 
 export async function askGemini(prompt, images = []) {
   const token = getAuthToken();
   if (!token) throw new Error('Not authenticated');
-  const response = await fetch(`${API_BASE}/generate`, {
+  const response = await fetch(`${API_BASE_URL}/api/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify({ prompt }),
@@ -23,7 +23,6 @@ export async function askGemini(prompt, images = []) {
 }
 
 export async function askGeminiStream(conversationHistory, imageDataList, onChunk) {
-  // ✅ Preserve conversation context (last 2 previous user messages)
   let lastUserMessage = '';
   let previousUserMessages = [];
   for (let i = conversationHistory.length - 1; i >= 0; i--) {
@@ -47,7 +46,7 @@ export async function askGeminiStream(conversationHistory, imageDataList, onChun
   }
 
   try {
-    const response = await fetch(`${API_BASE}/generate`, {
+    const response = await fetch(`${API_BASE_URL}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ prompt: fullPrompt }),
@@ -76,7 +75,7 @@ export async function uploadProjectFile(file) {
   if (!token) throw new Error('Not authenticated');
   const formData = new FormData();
   formData.append('file', file);
-  const response = await fetch(`${API_BASE}/upload`, {
+  const response = await fetch(`${API_BASE_URL}/api/upload`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
     body: formData,

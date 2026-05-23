@@ -7,7 +7,7 @@ import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { askGeminiStream } from "../../lib/gemini";
-
+import { API_BASE_URL } from "../../config";
 
 // ── Claude-like Thinking Block ───────────────────────────────────────────────
 const ThinkingBlock = ({ label = "Thinking..." }) => {
@@ -200,12 +200,11 @@ const ChatHeader = ({ chatId, initialTitle }) => {
 
     try {
       const token = localStorage.getItem("token");
-      await fetch(`http://localhost:3000/api/userchats/${chatId}/rename`, {
+      await fetch(`${API_BASE_URL}/api/userchats/${chatId}/rename`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ title: trimmed }),
       });
-      // إرسال حدث يحتوي على chatId والعنوان الجديد
       window.dispatchEvent(new CustomEvent("chat-renamed", {
         detail: { chatId, newTitle: trimmed }
       }));
@@ -272,7 +271,7 @@ const Chatpage = () => {
       const token = getToken();
       if (!token) return navigate("/sign-in");
       try {
-        const res = await fetch(`http://localhost:3000/api/chats/${chatId}`, {
+        const res = await fetch(`${API_BASE_URL}/api/chats/${chatId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -303,7 +302,6 @@ const Chatpage = () => {
     setMessages((prev) => [...prev, msg]);
   };
 
-  // ✅ Fixed: added confirmation dialog to prevent accidental regeneration
   const handleRegenerate = async (msgIndex) => {
     const confirmed = window.confirm(
       "Regenerating will create a new GNS3 project and may take a while. Continue?"
@@ -338,7 +336,7 @@ const Chatpage = () => {
 
       const token = getToken();
       if (chatId && token) {
-        await fetch(`http://localhost:3000/api/chats/${chatId}/messages`, {
+        await fetch(`${API_BASE_URL}/api/chats/${chatId}/messages`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ messages: [{ role: "assistant", content: accumulatedText, images: [] }] }),
@@ -390,7 +388,7 @@ const Chatpage = () => {
                       <ThinkingBlock label="Thinking..." />
                     ) : (
                       <div className={`sn-response-content ${isAi ? "sn-response-content-ai" : ""} ${isStreaming ? "sn-response-streaming" : ""}`}>
-<ReactMarkdown
+                        <ReactMarkdown
                           remarkPlugins={[remarkGfm]}
                           components={{
                             code({ node, inline, className, children, ...props }) {

@@ -230,7 +230,7 @@ app.patch("/api/userchats/:chatId/rename", requireAuth, async (req, res) => {
   }
 });
 
-/* ================= DELETE CHAT ENDPOINT (FIXED) ================= */
+/* ================= DELETE CHAT ENDPOINT ================= */
 app.delete("/api/userchats/:chatId", requireAuth, async (req, res) => {
   const userId = req.userId;
   const { chatId } = req.params;
@@ -260,7 +260,9 @@ app.use("/uploads", express.static(UPLOAD_DIR));
 
 const PYTHON_CMD = process.platform === "win32" ? "python" : "python3";
 
-// ✅ FIXED: Full corrected /api/generate endpoint with image path and platform forcing
+// ✅ متغير بيئة لمسار صورة IOS - يمكن تعيينه في ملف .env
+const IOS_IMAGE_PATH = process.env.IOS_IMAGE_PATH || "";
+
 app.post("/api/generate", requireAuth, async (req, res) => {
   const { prompt } = req.body;
   if (!prompt || prompt.trim() === "") {
@@ -277,16 +279,15 @@ app.post("/api/generate", requireAuth, async (req, res) => {
     return res.status(500).json({ error: "Pipeline script missing", details: `File not found: ${pythonScript}` });
   }
 
-  // --- Force platform and image path (adjust as needed) ---
-  const FORCE_PLATFORM = "c7200";   // or "iou" if you prefer IOU
-  const IMAGE_PATH = "C:\\Users\\DELL\\GNS3\\images\\IOS\\c7200-adventerprisek9-mz.153-3.XB12.image";
-  // ---------------------------------------------------------
+  // قراءة الإعدادات من متغيرات البيئة
+  const FORCE_PLATFORM = process.env.FORCE_PLATFORM || "c7200"; // أو "iou"
+  const IMAGE_PATH = IOS_IMAGE_PATH; // مستخدم من .env
 
   // Build arguments dynamically
   const pythonArgs = [pythonScript, prompt, "--output-dir", runOutputDir];
   if (FORCE_PLATFORM) {
     pythonArgs.push("--force-platform", FORCE_PLATFORM);
-    if (IMAGE_PATH) {
+    if (IMAGE_PATH && IMAGE_PATH.trim() !== "") {
       pythonArgs.push("--image-path", IMAGE_PATH);
     }
   }
@@ -301,11 +302,11 @@ app.post("/api/generate", requireAuth, async (req, res) => {
   let stderr = "";
   let timedOut = false;
 
-  const PIPELINE_TIMEOUT_MS = 15 * 60 * 1000; // 5 minutes
+  const PIPELINE_TIMEOUT_MS = 15 * 60 * 1000; // 15 دقيقة
   const timeout = setTimeout(() => {
     timedOut = true;
     pythonProcess.kill();
-    console.error("Python process timed out after 5 minutes");
+    console.error("Python process timed out after 15 minutes");
   }, PIPELINE_TIMEOUT_MS);
 
   pythonProcess.stdout.on("data", (data) => {
@@ -332,7 +333,7 @@ app.post("/api/generate", requireAuth, async (req, res) => {
     if (timedOut) {
       return res.status(500).json({
         error: "Pipeline timeout",
-        details: "Generation took too long (5 minutes). Try a simpler network description.",
+        details: "Generation took too long (15 minutes). Try a simpler network description.",
       });
     }
 
@@ -342,7 +343,6 @@ app.post("/api/generate", requireAuth, async (req, res) => {
       console.error(`Python exited with code ${code}`);
       console.error(`stderr: ${stderr}`);
 
-      // Friendly error messages
       let friendlyError = "Generation failed. Please try again.";
       if (stderr.includes("ImportError") || stderr.includes("ModuleNotFoundError")) {
         friendlyError = "Missing Python dependency. Run: pip install -r requirements.txt";

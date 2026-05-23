@@ -60,6 +60,25 @@ DEFAULT_PROFILE = {
 }
 
 
+def enhance_prompt(original_prompt: str) -> str:
+    """
+    Add explicit instructions to the prompt to avoid GNS3 VM nodes (IOU, QEMU)
+    and force usage of Dynamips with Cisco 7200 platform only.
+    """
+    enhancement = """
+
+[IMPORTANT CONSTRAINTS FOR GNS3 TOPOLOGY GENERATION]
+- DO NOT use any node type that requires GNS3 VM (no IOU, no QEMU, no Docker).
+- ONLY use Dynamips nodes with platform "c7200".
+- For each router, use template "Cisco 7200" with slot0 = "C7200-IO-FE" and other slots as "PA-FE-TX" or "PA-4T+" (not NM modules).
+- Ensure all devices are compatible with standard GNS3 installation without any VM.
+- The generated topology must be importable on a system where GNS3 VM is NOT configured or available.
+- If the original request asks for IOU, QEMU, or any VM-based node, replace them automatically with c7200 Dynamips routers.
+- Do not output any node that would cause the error: "Cannot use a node on the GNS3 VM server with the GNS3 VM not configured".
+"""
+    return original_prompt + enhancement
+
+
 def convert_dynamips_to_iou(topology_dict: dict, image_path: str = None) -> dict:
     """Convert all dynamips nodes to IOU L3 (supports many Ethernet interfaces)."""
     nodes = topology_dict.get("topology", {}).get("nodes", [])
@@ -150,6 +169,9 @@ def run_pipeline(prompt: str, output_dir: str, profile_path: str = None,
     Returns:
         Absolute path to the generated .gns3project file.
     """
+    # ✅ Enhance prompt to avoid GNS3 VM nodes
+    enhanced_prompt = enhance_prompt(prompt)
+
     temp_profile_file = None
     if not profile_path:
         tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False, encoding="utf-8")
@@ -163,7 +185,7 @@ def run_pipeline(prompt: str, output_dir: str, profile_path: str = None,
         original_argv = sys.argv
         sys.argv = [
             "main.py",
-            "--request", prompt,
+            "--request", enhanced_prompt,   # استخدام النص المحسن
             "--output", os.path.join(output_dir, "final_topology.json"),
             "--project-output", os.path.join(output_dir, "final_topology.gns3project"),
             "--profile", profile_path,
@@ -201,8 +223,8 @@ def run_pipeline(prompt: str, output_dir: str, profile_path: str = None,
         # Remove old GNS3 project if exists
         if os.path.exists(gns3_path):
             os.remove(gns3_path)
-        # Re-export – this may raise ExportError but we made it non-fatal above
-        export_gns3project(topo_data, gns3_path, name_override=None, image_map={}, config_review_dir=None)
+        # ✅ FIXED: Removed name_override parameter (not supported)
+        export_gns3project(topo_data, gns3_path, image_map={}, config_review_dir=None)
         print(f"[force-platform] Re-exported .gns3project after platform conversion ({force_platform})")
         # Re-print the path so backend can capture it
         print(f"GNS3PROJECT_PATH={gns3_path}")
