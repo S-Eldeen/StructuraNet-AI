@@ -139,6 +139,10 @@ const DashboardPage = () => {
             <button type="submit" disabled={loading || !text.trim()}>
               <img src="/arrow.png" alt="send" className="send-icon" />
             </button>
+
+          
+              
+            
           </div>
         </form>
       </div>
