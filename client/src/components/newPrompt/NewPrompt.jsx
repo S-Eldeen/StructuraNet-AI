@@ -5,21 +5,21 @@ import "./newPrompt.css";
 
 const NewPrompt = forwardRef(
   ({ addMessage, setIsTyping, chatId, history = [], onRegenerate }, ref) => {
-    const [text, setText] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
-    const [images, setImages] = useState([]);
-    const [isListening, setIsListening] = useState(false);
+    const [text,           setText]           = useState("");
+    const [isLoading,      setIsLoading]      = useState(false);
+    const [images,         setImages]         = useState([]);
+    const [isListening,    setIsListening]    = useState(false);
     const [showUploadMenu, setShowUploadMenu] = useState(false);
 
     const imageInputRef = useRef(null);
-    const fileInputRef = useRef(null);
-    const menuRef = useRef(null);
+    const fileInputRef  = useRef(null);
+    const menuRef       = useRef(null);
 
+    // Close upload menu on outside click
     useEffect(() => {
       const handler = (e) => {
-        if (menuRef.current && !menuRef.current.contains(e.target)) {
+        if (menuRef.current && !menuRef.current.contains(e.target))
           setShowUploadMenu(false);
-        }
       };
       document.addEventListener("mousedown", handler);
       return () => document.removeEventListener("mousedown", handler);
@@ -31,11 +31,11 @@ const NewPrompt = forwardRef(
         reader.onload = () => {
           const result = reader.result;
           resolve({
-            data: result.split(",")[1],
+            data:     result.split(",")[1],
             mimeType: file.type || "image/jpeg",
-            preview: result,
+            preview:  result,
             fileName: file.name,
-            isFile: !file.type.startsWith("image/"),
+            isFile:   !file.type.startsWith("image/"),
           });
         };
         reader.onerror = reject;
@@ -46,7 +46,7 @@ const NewPrompt = forwardRef(
       const files = Array.from(e.target.files || []);
       if (!files.length) return;
       const converted = await Promise.all(files.map(fileToBase64));
-      setImages((prev) => [...prev, ...converted]);
+      setImages(prev => [...prev, ...converted]);
       e.target.value = "";
       setShowUploadMenu(false);
     };
@@ -55,181 +55,110 @@ const NewPrompt = forwardRef(
       const files = Array.from(e.target.files || []);
       if (!files.length) return;
       const converted = await Promise.all(files.map(fileToBase64));
-      setImages((prev) => [...prev, ...converted]);
+      setImages(prev => [...prev, ...converted]);
       e.target.value = "";
       setShowUploadMenu(false);
     };
 
-    const removeImage = (index) =>
-      setImages((prev) => prev.filter((_, i) => i !== index));
+    const removeImage = (i) => setImages(prev => prev.filter((_, idx) => idx !== i));
 
     const startListening = () => {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (!SpeechRecognition) {
-        alert("المتصفح لا يدعم التعرف على الصوت.");
-        return;
-      }
-      const recognition = new SpeechRecognition();
-      recognition.lang = "ar-EG";
-      recognition.continuous = false;
-      recognition.interimResults = false;
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { alert("المتصفح لا يدعم التعرف على الصوت."); return; }
+      const rec = new SR();
+      rec.lang = "ar-EG";
+      rec.continuous = false;
+      rec.interimResults = false;
       setIsListening(true);
-      recognition.onresult = (e) => {
-        const transcript = e.results[0][0].transcript;
-        setText((prev) => prev + (prev ? " " : "") + transcript);
+      rec.onresult = (e) => {
+        setText(prev => prev + (prev ? " " : "") + e.results[0][0].transcript);
         setIsListening(false);
       };
-      recognition.onerror = () => setIsListening(false);
-      recognition.onend = () => setIsListening(false);
-      recognition.start();
+      rec.onerror = () => setIsListening(false);
+      rec.onend   = () => setIsListening(false);
+      rec.start();
     };
 
-    // تم حذف الدوال الميتة: isBuildRequest, typeStage, sleep, buildPrompt القديم
-
-    const buildPrompt = (userText) => {
-      return `
-You are StructuraNet AI.
-
-The user request is:
-${userText}
-
-Important rules:
-- Do NOT reuse any previous project idea unless the user explicitly asks for it.
-- Answer only based on the current user request.
-- If the user asks for a network design, produce a complete networking design, not a software app.
-- Prefer Arabic explanation if the user writes Arabic.
-- Include diagrams using diagram code blocks when useful.
-- Include device counts, ports, topology, IP plan, VLANs, security, and file naming when relevant.
-`;
-    };
-
-    // ✅ زيادة المهلة إلى 20 دقيقة (1200000 مللي ثانية)
-    const withTimeout = (promise, ms = 1200000) => {
-      let timeoutId;
-      const timeoutPromise = new Promise((_, reject) => {
-        timeoutId = setTimeout(() => {
-          reject(new Error("AI_TIMEOUT"));
-        }, ms);
-      });
-      return Promise.race([promise, timeoutPromise]).finally(() => {
-        clearTimeout(timeoutId);
-      });
-    };
-
-    const runAiCall = async ({
-      userText,
-      dbImages,
-      imageBase64Only,
-      userMessage,
-      currentHistory,
-    }) => {
+    // ── Core AI call ──────────────────────────────────────────────────────────
+    const runAiCall = async ({ userText, imageBase64Only, userMessage, currentHistory }) => {
       setIsLoading(true);
       setIsTyping(true);
 
-      const aiMessageId = Date.now() + Math.random();
+      const aiId = Date.now() + Math.random();
 
-      addMessage({
-        role: "assistant",
-        content: "",
-        id: aiMessageId,
-        streaming: true,
-        images: [],
-      });
+      // Show empty thinking bubble immediately
+      addMessage({ role: "assistant", content: "", id: aiId, streaming: true, images: [] });
 
       try {
         let finalText = "";
 
-        const baseHistory = [
+        // FIX: build a clean conversation history for context (last 6 turns)
+        // gemini.js will extract the last user message and use the rest as context
+        // No more double-wrapping with buildPrompt + "Previous context:" prefix
+        const conversation = [
           ...currentHistory
-            .filter((msg) => msg.content && !msg.streaming)
+            .filter(m => m.content && !m.streaming)
             .slice(-6)
-            .map((msg) => ({
-              role: msg.role === "user" ? "user" : "assistant",
-              content: msg.content,
-            })),
+            .map(m => ({ role: m.role === "user" ? "user" : "assistant", content: m.content })),
+          { role: "user", content: userText || "" },
         ];
 
-        await withTimeout(
-          askGeminiStream(
-            [
-              ...baseHistory,
-              {
-                role: "user",
-                content: buildPrompt(userText || "Describe this."),
-              },
-            ],
+        // 20-minute timeout (pipeline can take up to 15 min on complex designs)
+        const controller = new AbortController();
+        const timeoutId  = setTimeout(() => controller.abort(), 20 * 60 * 1000);
+
+        try {
+          await askGeminiStream(
+            conversation,
             imageBase64Only,
-            (partialText) => {
-              finalText = partialText || "";
-              addMessage(
-                {
-                  role: "assistant",
-                  content: finalText,
-                  id: aiMessageId,
-                  streaming: true,
-                  images: [],
-                },
-                true
-              );
+            (partial) => {
+              finalText = partial || "";
+              addMessage({ role: "assistant", content: finalText, id: aiId, streaming: true, images: [] }, true);
             }
-          ),
-          1200000 // 20 دقيقة
-        );
+          );
+        } finally {
+          clearTimeout(timeoutId);
+        }
 
         addMessage(
-          {
-            role: "assistant",
-            content: finalText || "لم يصل رد واضح، حاول مرة أخرى.",
-            id: aiMessageId,
-            streaming: false,
-            images: [],
-          },
+          { role: "assistant", content: finalText || "لم يصل رد واضح، حاول مرة أخرى.", id: aiId, streaming: false, images: [] },
           true
         );
 
+        // Save user message + AI reply to DB (only if we got a real reply)
         const token = localStorage.getItem("token");
-        if (chatId && token) {
+        if (chatId && token && finalText) {
           await fetch(`${API_BASE_URL}/api/chats/${chatId}/messages`, {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({
               messages: [
                 userMessage,
                 { role: "assistant", content: finalText, images: [] },
               ],
             }),
-          });
+          }).catch(err => console.warn("Save messages error:", err.message));
         }
-      } catch (error) {
-        console.error("AI Error:", error);
-        addMessage(
-          {
-            role: "assistant",
-            content:
-              "❌ حصل خطأ، لكن الرد السابق لن يتم مسحه. جرّب مرة تانية أو راجع إعدادات الخادم.",
-            id: aiMessageId,
-            streaming: false,
-            images: [],
-          },
-          true
-        );
+      } catch (err) {
+        console.error("AI Error:", err);
+        const errMsg = err.name === "AbortError"
+          ? "⏱️ انتهت مهلة الانتظار (20 دقيقة). جرّب طلبًا أبسط."
+          : "❌ حصل خطأ في الاتصال بالـ AI. جرّب مرة تانية.";
+        addMessage({ role: "assistant", content: errMsg, id: aiId, streaming: false, images: [] }, true);
       } finally {
         setIsLoading(false);
         setIsTyping(false);
       }
     };
 
+    // Expose regenerate to parent (ChatPage)
     useImperativeHandle(ref, () => ({
       regenerate: async (lastUserMsg, currentHistory) => {
         if (isLoading) return;
         await runAiCall({
-          userText: lastUserMsg.content || "",
-          dbImages: lastUserMsg.images || [],
-          imageBase64Only: lastUserMsg.images?.map((i) => i.data) || [],
-          userMessage: lastUserMsg,
+          userText:       lastUserMsg.content || "",
+          imageBase64Only: lastUserMsg.images?.map(i => i.data) || [],
+          userMessage:    lastUserMsg,
           currentHistory,
         });
       },
@@ -240,33 +169,20 @@ Important rules:
       if (isLoading) return;
 
       const token = localStorage.getItem("token");
-      if (!token) {
-        window.location.href = "/sign-in";
-        return;
-      }
+      if (!token) { window.location.href = "/sign-in"; return; }
       if (!text.trim() && images.length === 0) return;
 
-      const dbImages = images.map((img) => ({
-        data: img.data,
-        mimeType: img.mimeType,
-      }));
-
-      const userMessage = {
-        role: "user",
-        content: text,
-        images: dbImages,
-      };
+      const dbImages    = images.map(img => ({ data: img.data, mimeType: img.mimeType }));
+      const userMessage = { role: "user", content: text, images: dbImages };
 
       addMessage(userMessage);
-
       const currentText = text;
       setText("");
       setImages([]);
 
       await runAiCall({
-        userText: currentText,
-        dbImages,
-        imageBase64Only: images.map((i) => i.data),
+        userText:       currentText,
+        imageBase64Only: images.map(i => i.data),
         userMessage,
         currentHistory: history,
       });
@@ -279,90 +195,57 @@ Important rules:
             <div className="previews-row">
               {images.map((img, idx) => (
                 <div key={idx} className="preview-item large">
-                  {img.isFile ? (
-                    <div className="file-preview">
-                      <span className="file-name">{img.fileName}</span>
-                    </div>
-                  ) : (
-                    <img src={img.preview} alt="preview" />
-                  )}
-                  <button
-                    type="button"
-                    className="remove-preview"
-                    onClick={() => removeImage(idx)}
-                  >
-                    ✕
-                  </button>
+                  {img.isFile
+                    ? <div className="file-preview"><span className="file-name">{img.fileName}</span></div>
+                    : <img src={img.preview} alt="preview" />
+                  }
+                  <button type="button" className="remove-preview" onClick={() => removeImage(idx)}>✕</button>
                 </div>
               ))}
             </div>
           )}
+
           <div className="input-row">
+            {/* Attach menu */}
             <div className="upload-wrapper" ref={menuRef}>
               <button
-                type="button"
-                className="upload-btn"
-                onClick={() => setShowUploadMenu((p) => !p)}
-                disabled={isLoading}
-                title="Attach"
+                type="button" className="upload-btn"
+                onClick={() => setShowUploadMenu(p => !p)}
+                disabled={isLoading} title="Attach"
               >
                 <img src="/attachment.png" alt="upload" />
               </button>
               {showUploadMenu && (
                 <div className="upload-menu">
-                  <button
-                    type="button"
-                    className="upload-menu-item"
-                    onClick={() => imageInputRef.current?.click()}
-                  >
-                    Add Image
-                  </button>
-                  <button
-                    type="button"
-                    className="upload-menu-item"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    Add File
-                  </button>
+                  <button type="button" className="upload-menu-item" onClick={() => imageInputRef.current?.click()}>Add Image</button>
+                  <button type="button" className="upload-menu-item" onClick={() => fileInputRef.current?.click()}>Add File</button>
                 </div>
               )}
-              <input
-                ref={imageInputRef}
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleImageChange}
-                hidden
-              />
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept=".pdf,.doc,.docx,.txt,.csv,.json,.xml,.zip"
-                onChange={handleFileChange}
-                hidden
-              />
+              <input ref={imageInputRef} type="file" multiple accept="image/*" onChange={handleImageChange} hidden />
+              <input ref={fileInputRef}  type="file" multiple accept=".pdf,.doc,.docx,.txt,.csv,.json,.xml,.zip" onChange={handleFileChange} hidden />
             </div>
+
+            {/* Text input */}
             <input
-              type="text"
-              className="text-input"
+              type="text" className="text-input"
               placeholder={isLoading ? "Thinking..." : "Ask Structranet AI"}
               value={text}
               onChange={(e) => setText(e.target.value)}
               disabled={isLoading}
             />
+
+            {/* Mic */}
             <button
               type="button"
               className={`mic-btn ${isListening ? "listening" : ""}`}
-              onClick={startListening}
-              disabled={isLoading}
-              title="إدخال صوتي"
+              onClick={startListening} disabled={isLoading} title="إدخال صوتي"
             >
               <img src="/microphone.png" alt="mic" className="mic-icon" />
             </button>
+
+            {/* Send */}
             <button
-              type="submit"
-              className="send-btn"
+              type="submit" className="send-btn"
               disabled={isLoading || (!text.trim() && images.length === 0)}
             >
               <img src="/arrow.png" alt="send" />
@@ -375,5 +258,4 @@ Important rules:
 );
 
 NewPrompt.displayName = "NewPrompt";
-
 export default NewPrompt;
